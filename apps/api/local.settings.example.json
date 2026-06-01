@@ -1,0 +1,20 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "SQL_CONNECTION_STRING": "Server=localhost;Database=bms_hiring;User Id=sa;Password=Your_password123;Encrypt=true;TrustServerCertificate=true",
+    "SENDGRID_API_KEY": "",
+    "SENDGRID_FROM_EMAIL": "hiring@example.com",
+    "TWILIO_ACCOUNT_SID": "",
+    "TWILIO_AUTH_TOKEN": "",
+    "TWILIO_FROM_NUMBER": "",
+    "CAPTCHA_SECRET": "",
+    "CAPTCHA_PROVIDER": "turnstile",
+    "ADMIN_PASSWORD_HASH": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
+    "SESSION_SIGNING_SECRET": "dev-secret-change-in-production-min-32-chars",
+    "ALLOWED_ORIGINS": "http://localhost:4321,http://127.0.0.1:4321",
+    "PUBLIC_SITE_BASE_URL": "http://localhost:4321/hiring",
+    "MESSAGING_DISABLED": "true"
+  }
+}

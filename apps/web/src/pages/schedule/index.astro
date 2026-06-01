@@ -1,0 +1,168 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout title="Schedule interview" bodyClass="schedule-page">
+  <div class="card" id="schedule-root">
+    <div id="schedule-loading">
+      <h1>Schedule your interview</h1>
+      <p class="lead">Loading…</p>
+    </div>
+    <div id="schedule-content" hidden>
+      <h1>Hi, <span id="greeting-name"></span></h1>
+      <p class="lead">
+        Pick a time for your <strong id="job-title"></strong> interview at
+        <strong id="office-name"></strong> (<span id="office-location"></span>).
+      </p>
+      <div id="schedule-alert" hidden></div>
+      <div class="slot-days" id="slot-days"></div>
+    </div>
+    <div id="schedule-done" hidden>
+      <h1>You&apos;re all set!</h1>
+      <p class="lead">Your interview is confirmed. Check your email and text for details.</p>
+    </div>
+    <div id="schedule-error" hidden>
+      <h1>Unable to schedule</h1>
+      <p class="lead" id="error-message"></p>
+    </div>
+  </div>
+  <div class="schedule-bar" id="schedule-bar" hidden>
+    <button type="button" class="btn btn-primary" id="confirm-btn" disabled>
+      Confirm selected time
+    </button>
+  </div>
+</BaseLayout>
+
+<script define:vars={{ api, base }}>
+  function resolveToken() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("token")) return params.get("token");
+    const path = window.location.pathname;
+    if (path.includes("/schedule/")) {
+      const part = path.split("/schedule/")[1]?.replace(/\/$/, "");
+      if (part && part !== "index.html" && part !== "") return decodeURIComponent(part);
+    }
+    return null;
+  }
+
+  const token = resolveToken();
+  const loading = document.getElementById("schedule-loading");
+  const content = document.getElementById("schedule-content");
+  const done = document.getElementById("schedule-done");
+  const errBlock = document.getElementById("schedule-error");
+  const bar = document.getElementById("schedule-bar");
+  const confirmBtn = document.getElementById("confirm-btn");
+  const slotDays = document.getElementById("slot-days");
+  const alertEl = document.getElementById("schedule-alert");
+
+  let selectedSlot = null;
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  function showError(msg) {
+    loading.hidden = true;
+    content.hidden = true;
+    errBlock.hidden = false;
+    document.getElementById("error-message").textContent = msg;
+  }
+
+  if (!token) {
+    showError("Missing scheduling link. Use the link from your email.");
+  } else {
+    load();
+  }
+
+  function groupByDay(slots) {
+    const map = new Map();
+    for (const s of slots) {
+      const day = s.startsAt.slice(0, 10);
+      if (!map.has(day)) map.set(day, []);
+      map.get(day).push(s);
+    }
+    return map;
+  }
+
+  function formatDay(isoDate) {
+    const d = new Date(isoDate + "T12:00:00");
+    return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  }
+
+  async function load() {
+    const ctxRes = await fetch(`${api}/schedule/${token}`);
+    if (!ctxRes.ok) {
+      const d = await ctxRes.json().catch(() => ({}));
+      showError(d.error || "This link is invalid or has expired.");
+      return;
+    }
+    const ctx = await ctxRes.json();
+    document.getElementById("greeting-name").textContent = ctx.firstName;
+    document.getElementById("job-title").textContent = ctx.jobTitle;
+    document.getElementById("office-name").textContent = ctx.officeName;
+    document.getElementById("office-location").textContent = ctx.officeLocation;
+
+    const from = new Date().toISOString().slice(0, 10);
+    const to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+    const slotsRes = await fetch(`${api}/schedule/${token}/slots?from=${from}&to=${to}`);
+    if (!slotsRes.ok) {
+      showError("Could not load available times.");
+      return;
+    }
+    const { slots } = await slotsRes.json();
+    loading.hidden = true;
+    content.hidden = false;
+    bar.hidden = false;
+
+    if (!slots.length) {
+      slotDays.innerHTML = "<p class=\"lead\">No times are available in the next two weeks. Please contact us.</p>";
+      return;
+    }
+
+    const grouped = groupByDay(slots);
+    slotDays.innerHTML = "";
+    for (const [day, daySlots] of grouped) {
+      const section = document.createElement("div");
+      section.className = "slot-day";
+      section.innerHTML = `<h2>${formatDay(day)}</h2><div class="slot-list"></div>`;
+      const list = section.querySelector(".slot-list");
+      for (const s of daySlots) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "slot-btn";
+        btn.textContent = s.labelLocal;
+        btn.dataset.start = s.startsAt;
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".slot-btn.selected").forEach((el) => el.classList.remove("selected"));
+          btn.classList.add("selected");
+          selectedSlot = s.startsAt;
+          confirmBtn.disabled = false;
+        });
+        list.appendChild(btn);
+      }
+      slotDays.appendChild(section);
+    }
+  }
+
+  confirmBtn?.addEventListener("click", async () => {
+    if (!selectedSlot || !token) return;
+    confirmBtn.disabled = true;
+    try {
+      const res = await fetch(`${api}/schedule/${token}/book`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ slotStart: selectedSlot, applicantTimezone: tz }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Booking failed");
+      content.hidden = true;
+      bar.hidden = true;
+      done.hidden = false;
+    } catch (e) {
+      alertEl.hidden = false;
+      alertEl.className = "alert alert-error";
+      alertEl.textContent = e.message;
+      confirmBtn.disabled = false;
+    }
+  });
+</script>

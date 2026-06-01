@@ -1,0 +1,26 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const base = import.meta.env.BASE_URL;
+---
+<AdminLayout title="Dashboard">
+  <div class="admin-card">
+    <h1>Hiring admin</h1>
+    <p>Manage offices, jobs, applications, templates, and scheduling settings.</p>
+    <ul>
+      <li><a href={`${base}admin/offices/`}>Offices</a></li>
+      <li><a href={`${base}admin/jobs/`}>Jobs</a></li>
+      <li><a href={`${base}admin/applications/`}>Applications</a></li>
+      <li><a href={`${base}admin/templates/`}>Message templates</a></li>
+      <li><a href={`${base}admin/settings/`}>Global schedule settings</a></li>
+    </ul>
+  </div>
+</AdminLayout>
+
+<script define:vars={{ api, base }}>
+  fetch(`${api}/admin/session`, { credentials: "include" })
+    .then((r) => r.json())
+    .then((d) => {
+      if (!d.authenticated) location.href = `${base}admin/login/`;
+    });
+</script>

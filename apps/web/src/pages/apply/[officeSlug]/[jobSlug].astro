@@ -1,0 +1,174 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+
+export async function getStaticPaths() {
+  const api = import.meta.env.PUBLIC_API_BASE_URL;
+  const fallback = [
+    { params: { officeSlug: "colorado-springs", jobSlug: "driver" } },
+    { params: { officeSlug: "colorado-springs", jobSlug: "crew-member" } },
+    { params: { officeSlug: "denver", jobSlug: "driver" } },
+    { params: { officeSlug: "denver", jobSlug: "crew-member" } },
+  ];
+  if (!api) return fallback;
+  try {
+    const res = await fetch(`${api}/public/openings`);
+    if (!res.ok) return fallback;
+    const { openings } = await res.json();
+    if (!openings?.length) return fallback;
+    return openings.map(
+      (o: { office_slug: string; job_slug: string }) => ({
+        params: { officeSlug: o.office_slug, jobSlug: o.job_slug },
+      })
+    );
+  } catch {
+    return fallback;
+  }
+}
+
+const { officeSlug, jobSlug } = Astro.params;
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const captchaKey = import.meta.env.PUBLIC_CAPTCHA_SITE_KEY;
+
+let job: Record<string, unknown> | null = null;
+let loadError = "";
+
+try {
+  const res = await fetch(`${api}/public/jobs/${officeSlug}/${jobSlug}`);
+  if (res.ok) job = await res.json();
+  else loadError = res.status === 404 ? "This position is not available." : "Unable to load job.";
+} catch {
+  loadError = "Unable to connect. Please try again later.";
+}
+
+const pageContent = (job?.pageContent as Record<string, string>) ?? {};
+const formFields = (job?.formFields as Array<Record<string, unknown>>) ?? [];
+---
+<BaseLayout title={job ? String(job.title) : "Apply"}>
+  <div class="card" id="apply-root" data-office={officeSlug} data-job={jobSlug}>
+    {loadError ? (
+      <p class="alert alert-error">{loadError}</p>
+    ) : job ? (
+      <>
+        <h1>{pageContent.headline ?? job.title}</h1>
+        {pageContent.description && <p class="lead">{pageContent.description}</p>}
+        <p class="lead">{job.officeName} · {job.locationLabel}</p>
+        <div id="form-alert" hidden></div>
+        <form id="apply-form" novalidate>
+          <div class="field">
+            <label for="firstName">First name</label>
+            <input id="firstName" name="firstName" type="text" required autocomplete="given-name" />
+          </div>
+          <div class="field">
+            <label for="lastName">Last name</label>
+            <input id="lastName" name="lastName" type="text" required autocomplete="family-name" />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required autocomplete="email" />
+          </div>
+          <div class="field">
+            <label for="phone">Mobile phone</label>
+            <input id="phone" name="phone" type="tel" required autocomplete="tel" placeholder="(555) 555-5555" />
+          </div>
+          {formFields.map((f) => (
+            <div class="field">
+              <label for={`cf-${f.key}`}>{f.label}</label>
+              {f.type === "textarea" ? (
+                <textarea id={`cf-${f.key}`} name={String(f.key)} required={f.required}></textarea>
+              ) : (
+                <input id={`cf-${f.key}`} name={String(f.key)} type="text" required={f.required} />
+              )}
+            </div>
+          ))}
+          <div class="field hp" aria-hidden="true">
+            <label for="website">Website</label>
+            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+          </div>
+          {captchaKey && (
+            <div class="field" id="captcha-container"></div>
+          )}
+          <button type="submit" class="btn btn-primary" id="submit-btn">Submit application</button>
+        </form>
+      </>
+    ) : (
+      <p>Loading…</p>
+    )}
+  </div>
+</BaseLayout>
+
+<script define:vars={{ api, officeSlug, jobSlug, captchaKey }}>
+  const form = document.getElementById("apply-form");
+  const alertEl = document.getElementById("form-alert");
+  const submitBtn = document.getElementById("submit-btn");
+
+  function showAlert(msg, type) {
+    if (!alertEl) return;
+    alertEl.hidden = false;
+    alertEl.className = `alert alert-${type}`;
+    alertEl.textContent = msg;
+  }
+
+  let captchaToken = "";
+
+  if (captchaKey) {
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+    script.async = true;
+    script.onload = () => {
+      const container = document.getElementById("captcha-container");
+      if (container && window.turnstile) {
+        window.turnstile.render(container, {
+          sitekey: captchaKey,
+          callback: (token) => { captchaToken = token; },
+        });
+      }
+    };
+    document.head.appendChild(script);
+  } else {
+    captchaToken = "dev-bypass";
+  }
+
+  form?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    if (!captchaToken) {
+      showAlert("Please complete the security check.", "error");
+      return;
+    }
+    submitBtn.disabled = true;
+    const fd = new FormData(form);
+    const customFields = {};
+    for (const [k, v] of fd.entries()) {
+      if (!["firstName", "lastName", "email", "phone", "website"].includes(k)) {
+        customFields[k] = String(v);
+      }
+    }
+    const body = {
+      officeSlug,
+      jobSlug,
+      firstName: fd.get("firstName"),
+      lastName: fd.get("lastName"),
+      email: fd.get("email"),
+      phone: fd.get("phone"),
+      captchaToken,
+      honeypot: fd.get("website") || "",
+      customFields,
+    };
+    try {
+      const res = await fetch(`${api}/applications`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Submission failed");
+      form.hidden = true;
+      showAlert(
+        "Thank you! Check your email for a link to schedule your interview.",
+        "success"
+      );
+    } catch (err) {
+      showAlert(err.message || "Something went wrong. Please try again.", "error");
+      submitBtn.disabled = false;
+    }
+  });
+</script>

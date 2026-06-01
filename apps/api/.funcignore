@@ -1,0 +1,7 @@
+*.ts
+!dist/**
+node_modules/**
+local.settings.json
+tests/**
+jest.config.cjs
+tsconfig.json

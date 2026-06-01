@@ -1,0 +1,61 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const base = import.meta.env.BASE_URL;
+---
+<AdminLayout title="Applications">
+  <div class="admin-card">
+    <h1>Applications</h1>
+    <div class="filters">
+      <label>Office <select id="filter-office"><option value="">All</option></select></label>
+      <label>Job <select id="filter-job"><option value="">All</option></select></label>
+      <button type="button" class="btn btn-secondary" id="apply-filters">Filter</button>
+    </div>
+    <div id="apps-table">Loading…</div>
+  </div>
+</AdminLayout>
+
+<script define:vars={{ api, base }}>
+  async function guard() {
+    const s = await fetch(`${api}/admin/session`, { credentials: "include" }).then((r) => r.json());
+    if (!s.authenticated) location.href = `${base}admin/login/`;
+  }
+  async function initFilters() {
+    const oRes = await fetch(`${api}/admin/offices`, { credentials: "include" });
+    const { offices } = await oRes.json();
+    const oSel = document.getElementById("filter-office");
+    offices.forEach((o) => {
+      oSel.innerHTML += `<option value="${o.id}">${o.name}</option>`;
+    });
+    const jRes = await fetch(`${api}/admin/jobs`, { credentials: "include" });
+    const { jobs } = await jRes.json();
+    const jSel = document.getElementById("filter-job");
+    jobs.forEach((j) => {
+      jSel.innerHTML += `<option value="${j.id}">${j.office_name} — ${j.title}</option>`;
+    });
+  }
+  async function load() {
+    const officeId = document.getElementById("filter-office").value;
+    const jobId = document.getElementById("filter-job").value;
+    const params = new URLSearchParams();
+    if (officeId) params.set("officeId", officeId);
+    if (jobId) params.set("jobId", jobId);
+    const res = await fetch(`${api}/admin/applications?${params}`, { credentials: "include" });
+    const { applications } = await res.json();
+    document.getElementById("apps-table").innerHTML = `<table class="data"><thead><tr><th>Name</th><th>Office</th><th>Role</th><th>Status</th><th>Interview</th><th>Applied</th></tr></thead><tbody>${applications
+      .map((a) => {
+        const when = a.interview_starts_at
+          ? new Date(a.interview_starts_at).toLocaleString()
+          : "—";
+        const applied = new Date(a.created_at).toLocaleDateString();
+        return `<tr><td>${a.first_name} ${a.last_name}</td><td>${a.office_name}</td><td>${a.job_title}</td><td>${a.status}</td><td>${when}</td><td>${applied}</td></tr>`;
+      })
+      .join("")}</tbody></table>`;
+  }
+  document.getElementById("apply-filters")?.addEventListener("click", load);
+  (async () => {
+    await guard();
+    await initFilters();
+    await load();
+  })();
+</script>

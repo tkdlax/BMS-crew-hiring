@@ -1,0 +1,57 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const base = import.meta.env.BASE_URL;
+---
+<AdminLayout title="Offices">
+  <div class="admin-card">
+    <h1>Offices</h1>
+    <div id="offices-table">Loading…</div>
+    <h2>Add office</h2>
+    <form id="office-form" class="admin-form">
+      <div class="field"><label>Slug</label><input name="slug" required pattern="[a-z0-9-]+" /></div>
+      <div class="field"><label>Name</label><input name="name" required /></div>
+      <div class="field"><label>Timezone (IANA)</label><input name="timezone" value="America/Denver" required /></div>
+      <div class="field"><label>Location label</label><input name="locationLabel" required /></div>
+      <button type="submit" class="btn">Create office</button>
+    </form>
+  </div>
+</AdminLayout>
+
+<script define:vars={{ api, base }}>
+  async function guard() {
+    const s = await fetch(`${api}/admin/session`, { credentials: "include" }).then((r) => r.json());
+    if (!s.authenticated) location.href = `${base}admin/login/`;
+  }
+  async function load() {
+    await guard();
+    const res = await fetch(`${api}/admin/offices`, { credentials: "include" });
+    const { offices } = await res.json();
+    const el = document.getElementById("offices-table");
+    el.innerHTML = `<table class="data"><thead><tr><th>Name</th><th>Slug</th><th>TZ</th><th>Active</th></tr></thead><tbody>${offices
+      .map(
+        (o) =>
+          `<tr><td>${o.name}</td><td>${o.slug}</td><td>${o.timezone}</td><td>${o.active ? "Yes" : "No"}</td></tr>`
+      )
+      .join("")}</tbody></table>`;
+  }
+  document.getElementById("office-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await fetch(`${api}/admin/offices`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        slug: fd.get("slug"),
+        name: fd.get("name"),
+        timezone: fd.get("timezone"),
+        locationLabel: fd.get("locationLabel"),
+        active: true,
+      }),
+    });
+    e.target.reset();
+    load();
+  });
+  load();
+</script>

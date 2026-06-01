@@ -1,0 +1,2 @@
+# Cloudflare/Webflow: path-style schedule links → query token (SPA fallback)
+/hiring/schedule/* /hiring/schedule/?token=:splat 200

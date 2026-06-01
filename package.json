@@ -1,0 +1,26 @@
+{
+  "name": "bms-crew-hiring",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build -w @bms/shared && npm run build -w @bms/api && npm run build -w @bms/web",
+    "build:api": "npm run build -w @bms/api",
+    "build:web": "npm run build -w @bms/web",
+    "dev:api": "npm run start -w @bms/api",
+    "dev:web": "npm run dev -w @bms/web",
+    "test": "npm run test -w @bms/api",
+    "db:migrate": "node scripts/run-migrations.js",
+    "hash-password": "node scripts/hash-password.js"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "bcryptjs": "^2.4.3",
+    "mssql": "^11.0.1"
+  }
+}

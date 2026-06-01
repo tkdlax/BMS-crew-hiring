@@ -1,0 +1,12 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+
+const base = import.meta.env.BASE_URL;
+---
+<BaseLayout title="Careers">
+  <div class="card">
+    <h1>Join the BMS team</h1>
+    <p class="lead">Explore open roles at our offices and apply in minutes.</p>
+    <a href={`${base}careers/`} class="btn btn-primary" style="text-decoration:none;display:inline-flex">View open positions</a>
+  </div>
+</BaseLayout>

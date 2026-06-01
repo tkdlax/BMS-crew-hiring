@@ -1,0 +1,62 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const base = import.meta.env.BASE_URL;
+---
+<AdminLayout title="Templates">
+  <div class="admin-card">
+    <h1>Message templates</h1>
+    <p>Use placeholders: <code>{'{{firstName}}'}</code>, <code>{'{{jobTitle}}'}</code>, <code>{'{{officeName}}'}</code>, <code>{'{{officeLocation}}'}</code>, <code>{'{{scheduleUrl}}'}</code>, <code>{'{{interviewTimeLocal}}'}</code></p>
+    <div id="templates-list">Loading…</div>
+    <h2>Upsert template</h2>
+    <form id="tpl-form" class="admin-form">
+      <div class="field"><label>Template key</label><input name="templateKey" required placeholder="interview_invite" /></div>
+      <div class="field"><label>Channel</label><select name="channel"><option value="email">email</option><option value="sms">sms</option></select></div>
+      <div class="field"><label>Scope</label><select name="scope"><option value="global">global</option><option value="office">office</option><option value="job">job</option></select></div>
+      <div class="field"><label>Scope ID (office/job id, empty for global)</label><input name="scopeId" type="number" /></div>
+      <div class="field"><label>Subject (email only)</label><input name="subject" /></div>
+      <div class="field"><label>Body</label><textarea name="body" required rows="8"></textarea></div>
+      <button type="submit" class="btn">Save template</button>
+    </form>
+  </div>
+</AdminLayout>
+
+<script define:vars={{ api, base }}>
+  async function guard() {
+    const s = await fetch(`${api}/admin/session`, { credentials: "include" }).then((r) => r.json());
+    if (!s.authenticated) location.href = `${base}admin/login/`;
+  }
+  async function load() {
+    const res = await fetch(`${api}/admin/templates`, { credentials: "include" });
+    const { templates } = await res.json();
+    document.getElementById("templates-list").innerHTML = `<table class="data"><thead><tr><th>Key</th><th>Channel</th><th>Scope</th><th>Subject</th></tr></thead><tbody>${templates
+      .map(
+        (t) =>
+          `<tr><td>${t.template_key}</td><td>${t.channel}</td><td>${t.scope}${t.scope_id ? ` #${t.scope_id}` : ""}</td><td>${t.subject || "—"}</td></tr>`
+      )
+      .join("")}</tbody></table>`;
+  }
+  document.getElementById("tpl-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    const scopeIdRaw = fd.get("scopeId");
+    await fetch(`${api}/admin/templates`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        templateKey: fd.get("templateKey"),
+        channel: fd.get("channel"),
+        scope: fd.get("scope"),
+        scopeId: scopeIdRaw ? parseInt(scopeIdRaw, 10) : null,
+        subject: fd.get("subject") || undefined,
+        body: fd.get("body"),
+      }),
+    });
+    load();
+  });
+  (async () => {
+    await guard();
+    await load();
+  })();
+</script>

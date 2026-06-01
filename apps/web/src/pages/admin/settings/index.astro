@@ -1,0 +1,66 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const base = import.meta.env.BASE_URL;
+---
+<AdminLayout title="Settings">
+  <div class="admin-card">
+    <h1>Global schedule settings</h1>
+    <form id="settings-form" class="admin-form">
+      <div class="field"><label>Slot duration (minutes)</label><input name="slotDurationMinutes" type="number" min="15" /></div>
+      <div class="field"><label>Buffer between slots (minutes)</label><input name="bufferMinutes" type="number" min="0" /></div>
+      <div class="field"><label>Quiet hours start (HH:mm)</label><input name="quietHoursStart" /></div>
+      <div class="field"><label>Quiet hours end (HH:mm)</label><input name="quietHoursEnd" /></div>
+      <div class="field"><label>Token expiry (days)</label><input name="tokenExpiryDays" type="number" /></div>
+      <div class="field"><label>Reminder offsets (JSON)</label><textarea name="reminderOffsetsJson" rows="4"></textarea></div>
+      <div class="field"><label><input type="checkbox" name="smsOnInvite" /> SMS on invite</label></div>
+      <button type="submit" class="btn">Save</button>
+    </form>
+    <p id="save-msg"></p>
+  </div>
+</AdminLayout>
+
+<script define:vars={{ api, base }}>
+  async function guard() {
+    const s = await fetch(`${api}/admin/session`, { credentials: "include" }).then((r) => r.json());
+    if (!s.authenticated) location.href = `${base}admin/login/`;
+  }
+  async function load() {
+    const res = await fetch(`${api}/admin/schedule-config?scope=global`, { credentials: "include" });
+    const { config: c } = await res.json();
+    if (!c) return;
+    const f = document.getElementById("settings-form");
+    f.slotDurationMinutes.value = c.slot_duration_minutes;
+    f.bufferMinutes.value = c.buffer_minutes;
+    f.quietHoursStart.value = c.quiet_hours_start;
+    f.quietHoursEnd.value = c.quiet_hours_end;
+    f.tokenExpiryDays.value = c.token_expiry_days;
+    f.reminderOffsetsJson.value = c.reminder_offsets_json;
+    f.smsOnInvite.checked = c.sms_on_invite;
+  }
+  document.getElementById("settings-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await fetch(`${api}/admin/schedule-config`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scope: "global",
+        scopeId: null,
+        slotDurationMinutes: parseInt(fd.get("slotDurationMinutes"), 10),
+        bufferMinutes: parseInt(fd.get("bufferMinutes"), 10),
+        quietHoursStart: fd.get("quietHoursStart"),
+        quietHoursEnd: fd.get("quietHoursEnd"),
+        tokenExpiryDays: parseInt(fd.get("tokenExpiryDays"), 10),
+        reminderOffsetsJson: fd.get("reminderOffsetsJson"),
+        smsOnInvite: fd.get("smsOnInvite") === "on",
+      }),
+    });
+    document.getElementById("save-msg").textContent = "Saved.";
+  });
+  (async () => {
+    await guard();
+    await load();
+  })();
+</script>

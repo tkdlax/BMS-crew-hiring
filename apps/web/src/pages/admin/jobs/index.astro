@@ -1,0 +1,84 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const base = import.meta.env.BASE_URL;
+---
+<AdminLayout title="Jobs">
+  <div class="admin-card">
+    <h1>Jobs</h1>
+    <div class="filters">
+      <label>Office
+        <select id="filter-office"><option value="">All</option></select>
+      </label>
+    </div>
+    <div id="jobs-table">Loading…</div>
+    <h2>Add job</h2>
+    <form id="job-form" class="admin-form">
+      <div class="field"><label>Office</label><select name="officeId" id="office-select" required></select></div>
+      <div class="field"><label>Slug</label><input name="slug" required pattern="[a-z0-9-]+" /></div>
+      <div class="field"><label>Title</label><input name="title" required /></div>
+      <div class="field"><label>Headline (page)</label><input name="headline" /></div>
+      <div class="field"><label>Description (page)</label><textarea name="description"></textarea></div>
+      <button type="submit" class="btn">Create job</button>
+    </form>
+  </div>
+</AdminLayout>
+
+<script define:vars={{ api, base }}>
+  let offices = [];
+  async function guard() {
+    const s = await fetch(`${api}/admin/session`, { credentials: "include" }).then((r) => r.json());
+    if (!s.authenticated) location.href = `${base}admin/login/`;
+  }
+  async function loadOffices() {
+    const res = await fetch(`${api}/admin/offices`, { credentials: "include" });
+    const data = await res.json();
+    offices = data.offices;
+    const sel = document.getElementById("office-select");
+    const filt = document.getElementById("filter-office");
+    offices.forEach((o) => {
+      sel.innerHTML += `<option value="${o.id}">${o.name}</option>`;
+      filt.innerHTML += `<option value="${o.id}">${o.name}</option>`;
+    });
+  }
+  async function loadJobs() {
+    const officeId = document.getElementById("filter-office").value;
+    const q = officeId ? `?officeId=${officeId}` : "";
+    const res = await fetch(`${api}/admin/jobs${q}`, { credentials: "include" });
+    const { jobs } = await res.json();
+    document.getElementById("jobs-table").innerHTML = `<table class="data"><thead><tr><th>Title</th><th>Office</th><th>Apply URL</th><th>Active</th></tr></thead><tbody>${jobs
+      .map(
+        (j) =>
+          `<tr><td>${j.title}</td><td>${j.office_name}</td><td><a href="${j.applyUrl}" target="_blank">Copy link</a></td><td>${j.active ? "Yes" : "No"}</td></tr>`
+      )
+      .join("")}</tbody></table>`;
+  }
+  document.getElementById("filter-office")?.addEventListener("change", loadJobs);
+  document.getElementById("job-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    await fetch(`${api}/admin/jobs`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        officeId: parseInt(fd.get("officeId"), 10),
+        slug: fd.get("slug"),
+        title: fd.get("title"),
+        active: true,
+        pageContent: {
+          headline: fd.get("headline") || fd.get("title"),
+          description: fd.get("description") || "",
+        },
+        formFields: [],
+      }),
+    });
+    e.target.reset();
+    loadJobs();
+  });
+  (async () => {
+    await guard();
+    await loadOffices();
+    await loadJobs();
+  })();
+</script>

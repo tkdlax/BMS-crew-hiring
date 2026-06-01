@@ -1,0 +1,43 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+
+const api = import.meta.env.PUBLIC_API_BASE_URL;
+const base = import.meta.env.BASE_URL;
+
+let openings: Array<{
+  office_slug: string;
+  office_name: string;
+  job_slug: string;
+  job_title: string;
+}> = [];
+
+try {
+  const res = await fetch(`${api}/public/openings`);
+  if (res.ok) {
+    const data = await res.json();
+    openings = data.openings ?? [];
+  }
+} catch {
+  /* dev without API */
+}
+---
+<BaseLayout title="Open positions">
+  <div class="card">
+    <h1>Open positions</h1>
+    <p class="lead">Select a role to start your application.</p>
+    {openings.length === 0 ? (
+      <p class="lead">No openings are listed right now. Please check back soon.</p>
+    ) : (
+      <ul class="openings-list">
+        {openings.map((o) => (
+          <li>
+            <a href={`${base}apply/${o.office_slug}/${o.job_slug}/`}>
+              <strong>{o.job_title}</strong>
+              <span>{o.office_name}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+</BaseLayout>
