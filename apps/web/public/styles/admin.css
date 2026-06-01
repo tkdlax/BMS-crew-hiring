@@ -1,13 +1,27 @@
+/* Admin — Bailey's brand tokens (desktop-first) */
 :root {
-  --admin-sidebar: #1a1d23;
-  --admin-accent: #c41e3a;
-  --admin-bg: #f0f2f5;
+  --blue: #1b437b;
+  --blue-dark: #143264;
+  --orange: #ee7b22;
+  --orange-dark: #d96a10;
+  --text: #2d3748;
+  --text-light: #718096;
+  --bg-light: #f7f9fc;
+  --border: #e2e8f0;
+  --white: #ffffff;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body.admin-body {
   margin: 0;
-  font-family: system-ui, sans-serif;
-  background: var(--admin-bg);
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--bg-light);
+  color: var(--text);
   min-height: 100vh;
 }
 
@@ -16,26 +30,29 @@ body.admin-body {
   flex-wrap: wrap;
   gap: 0.5rem 1rem;
   align-items: center;
-  padding: 1rem 1.25rem;
-  background: var(--admin-sidebar);
+  padding: 0.75rem 1.25rem;
+  background: var(--blue);
+  border-bottom: 2px solid var(--blue-dark);
 }
 
 .admin-nav a {
-  color: #fff;
+  color: rgba(255, 255, 255, 0.9);
   text-decoration: none;
   font-size: 0.875rem;
+  font-weight: 600;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
 }
 
 .admin-nav a:hover {
   background: rgba(255, 255, 255, 0.1);
+  color: var(--orange);
 }
 
 .btn-text {
   background: none;
   border: none;
-  color: #aaa;
+  color: rgba(255, 255, 255, 0.65);
   cursor: pointer;
   margin-left: auto;
   font-size: 0.875rem;
@@ -48,11 +65,18 @@ body.admin-body {
 }
 
 .admin-card {
-  background: #fff;
-  border-radius: 8px;
+  background: var(--white);
+  border-radius: 10px;
   padding: 1.25rem;
   margin-bottom: 1rem;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
+}
+
+.admin-card h1,
+.admin-card h2 {
+  color: var(--blue);
+  font-weight: 800;
 }
 
 table.data {
@@ -65,12 +89,13 @@ table.data th,
 table.data td {
   padding: 0.625rem 0.75rem;
   text-align: left;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
 }
 
 table.data th {
   font-weight: 600;
-  background: #fafafa;
+  background: var(--bg-light);
+  color: var(--blue);
 }
 
 .admin-form .field {
@@ -91,8 +116,16 @@ table.data th {
   max-width: 24rem;
   padding: 0.5rem 0.75rem;
   font-size: 1rem;
-  border: 1px solid #ccc;
+  border: 1.5px solid var(--border);
   border-radius: 6px;
+  font-family: inherit;
+}
+
+.admin-form input:focus,
+.admin-form select:focus,
+.admin-form textarea:focus {
+  outline: none;
+  border-color: var(--blue);
 }
 
 .admin-form textarea {
@@ -101,17 +134,25 @@ table.data th {
 }
 
 .btn {
-  padding: 0.5rem 1rem;
-  background: var(--admin-accent);
-  color: #fff;
+  padding: 0.625rem 1.25rem;
+  background: var(--orange);
+  color: var(--white);
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9375rem;
+  font-weight: 800;
+  min-height: 2.75rem;
+}
+
+.btn:hover {
+  background: var(--orange-dark);
 }
 
 .btn-secondary {
-  background: #555;
+  background: var(--white);
+  color: var(--blue);
+  border: 2px solid var(--blue);
 }
 
 .filters {
@@ -119,6 +160,19 @@ table.data th {
   flex-wrap: wrap;
   gap: 0.75rem;
   margin-bottom: 1rem;
+}
+
+.alert {
+  padding: 0.875rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9375rem;
+}
+
+.alert-error {
+  background: #fef3f2;
+  color: #b42318;
+  border: 1px solid #fecdca;
 }
 
 @media (max-width: 40rem) {

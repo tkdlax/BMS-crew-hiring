@@ -11,6 +11,6 @@ async function httpApi(
 app.http("api", {
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   authLevel: "anonymous",
-  route: "api/{*route}",
+  route: "{*route}",
   handler: httpApi,
 });

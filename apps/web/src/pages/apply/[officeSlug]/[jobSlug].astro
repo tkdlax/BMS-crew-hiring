@@ -1,174 +1,570 @@
 ---
+
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 
+import ApplyHero from "../../../components/apply/ApplyHero.astro";
+
+import JobDetailsCard from "../../../components/apply/JobDetailsCard.astro";
+
+import VideoGallery from "../../../components/apply/VideoGallery.astro";
+
+import TrustStrip from "../../../components/TrustStrip.astro";
+
+import { BRAND } from "../../../constants/brand";
+
+import { mergeJobPageContent } from "../../../lib/jobPageContent";
+
+
+
 export async function getStaticPaths() {
+
   const api = import.meta.env.PUBLIC_API_BASE_URL;
+
   const fallback = [
+
     { params: { officeSlug: "colorado-springs", jobSlug: "driver" } },
+
     { params: { officeSlug: "colorado-springs", jobSlug: "crew-member" } },
+
     { params: { officeSlug: "denver", jobSlug: "driver" } },
+
     { params: { officeSlug: "denver", jobSlug: "crew-member" } },
+
   ];
+
   if (!api) return fallback;
+
   try {
+
     const res = await fetch(`${api}/public/openings`);
+
     if (!res.ok) return fallback;
+
     const { openings } = await res.json();
+
     if (!openings?.length) return fallback;
+
     return openings.map(
+
       (o: { office_slug: string; job_slug: string }) => ({
+
         params: { officeSlug: o.office_slug, jobSlug: o.job_slug },
+
       })
+
     );
+
   } catch {
+
     return fallback;
+
   }
+
 }
+
+
 
 const { officeSlug, jobSlug } = Astro.params;
+
 const api = import.meta.env.PUBLIC_API_BASE_URL;
+
 const captchaKey = import.meta.env.PUBLIC_CAPTCHA_SITE_KEY;
 
+const base = import.meta.env.BASE_URL;
+
+const privacyUrl = `${BRAND.mainSite}/privacy-policy`;
+
+
+
 let job: Record<string, unknown> | null = null;
+
 let loadError = "";
 
+
+
 try {
+
   const res = await fetch(`${api}/public/jobs/${officeSlug}/${jobSlug}`);
+
   if (res.ok) job = await res.json();
+
   else loadError = res.status === 404 ? "This position is not available." : "Unable to load job.";
+
 } catch {
+
   loadError = "Unable to connect. Please try again later.";
+
 }
 
-const pageContent = (job?.pageContent as Record<string, string>) ?? {};
+
+
+const pageContent = job
+
+  ? mergeJobPageContent(
+
+      officeSlug!,
+
+      jobSlug!,
+
+      job.pageContent as Record<string, unknown>,
+
+      {
+
+        title: String(job.title),
+
+        officeName: String(job.officeName),
+
+        locationLabel: String(job.locationLabel),
+
+      }
+
+    )
+
+  : null;
+
+
+
 const formFields = (job?.formFields as Array<Record<string, unknown>>) ?? [];
+
+const headline = pageContent?.headline ?? "Apply";
+
+const interestOptions = pageContent?.interestOptions ?? [];
+
+const showInterest = interestOptions.length > 0;
+
+const showMovingExperience = jobSlug === "crew-member" || jobSlug === "driver";
+
 ---
-<BaseLayout title={job ? String(job.title) : "Apply"}>
-  <div class="card" id="apply-root" data-office={officeSlug} data-job={jobSlug}>
-    {loadError ? (
-      <p class="alert alert-error">{loadError}</p>
-    ) : job ? (
-      <>
-        <h1>{pageContent.headline ?? job.title}</h1>
-        {pageContent.description && <p class="lead">{pageContent.description}</p>}
-        <p class="lead">{job.officeName} · {job.locationLabel}</p>
-        <div id="form-alert" hidden></div>
-        <form id="apply-form" novalidate>
-          <div class="field">
-            <label for="firstName">First name</label>
-            <input id="firstName" name="firstName" type="text" required autocomplete="given-name" />
-          </div>
-          <div class="field">
-            <label for="lastName">Last name</label>
-            <input id="lastName" name="lastName" type="text" required autocomplete="family-name" />
-          </div>
-          <div class="field">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" required autocomplete="email" />
-          </div>
-          <div class="field">
-            <label for="phone">Mobile phone</label>
-            <input id="phone" name="phone" type="tel" required autocomplete="tel" placeholder="(555) 555-5555" />
-          </div>
-          {formFields.map((f) => (
-            <div class="field">
-              <label for={`cf-${f.key}`}>{f.label}</label>
-              {f.type === "textarea" ? (
-                <textarea id={`cf-${f.key}`} name={String(f.key)} required={f.required}></textarea>
-              ) : (
-                <input id={`cf-${f.key}`} name={String(f.key)} type="text" required={f.required} />
-              )}
+
+<BaseLayout title={headline} bodyClass="page-apply">
+
+  {loadError ? (
+
+    <section class="page-band">
+
+      <div class="page-band__inner">
+
+        <h1>Position unavailable</h1>
+
+        <p class="sub">{loadError}</p>
+
+      </div>
+
+    </section>
+
+    <div class="page-wrap">
+
+      <a href={`${base}careers/`} class="btn btn-secondary">Back to open positions</a>
+
+    </div>
+
+  ) : job && pageContent ? (
+
+    <>
+
+      <ApplyHero content={pageContent} />
+
+      <TrustStrip />
+
+
+
+      <div class="apply-body">
+        <div class="apply-layout">
+
+        <div class="apply-layout__main">
+
+          <section class="apply-form-section" id="apply">
+
+            <h2 class="apply-form-section__title">{pageContent.formTitle}</h2>
+
+            <div class="apply-form-card">
+
+              <div id="form-alert" hidden></div>
+
+              <form id="apply-form" novalidate>
+
+                <div class="field">
+
+                  <label for="fullName">Name <span class="req">*</span></label>
+
+                  <input id="fullName" name="fullName" type="text" required autocomplete="name" />
+
+                </div>
+
+                <div class="field">
+
+                  <label for="email">Email Address <span class="req">*</span></label>
+
+                  <input id="email" name="email" type="email" required autocomplete="email" inputmode="email" />
+
+                </div>
+
+                <div class="field">
+
+                  <label for="phone">Phone Number (must be text-enabled) <span class="req">*</span></label>
+
+                  <input
+
+                    id="phone"
+
+                    name="phone"
+
+                    type="tel"
+
+                    required
+
+                    autocomplete="tel"
+
+                    inputmode="tel"
+
+                    placeholder="(555) 555-5555"
+
+                  />
+
+                </div>
+
+                {showInterest && (
+
+                  <div class="field">
+
+                    <label for="interest">What are you most interested in? <span class="req">*</span></label>
+
+                    <select id="interest" name="interest" required>
+
+                      <option value="">Select one...</option>
+
+                      {interestOptions.map((opt) => (
+
+                        <option value={opt}>{opt}</option>
+
+                      ))}
+
+                    </select>
+
+                  </div>
+
+                )}
+
+                {showMovingExperience && (
+
+                  <div class="field field-checkbox">
+
+                    <label class="checkbox-label">
+
+                      <input type="checkbox" id="movingExperience" name="movingExperience" value="yes" />
+
+                      <span>Have you worked in the moving industry before?</span>
+
+                    </label>
+
+                    <p class="field-hint">Check here, if YES.</p>
+
+                    {pageContent.trainingNote && (
+
+                      <p class="field-note">{pageContent.trainingNote}</p>
+
+                    )}
+
+                  </div>
+
+                )}
+
+                {formFields.map((f) => (
+
+                  <div class="field">
+
+                    <label for={`cf-${f.key}`}>
+
+                      {f.label}
+
+                      {f.required ? <span class="req">*</span> : null}
+
+                    </label>
+
+                    {f.type === "textarea" ? (
+
+                      <textarea id={`cf-${f.key}`} name={String(f.key)} required={!!f.required}></textarea>
+
+                    ) : (
+
+                      <input id={`cf-${f.key}`} name={String(f.key)} type="text" required={!!f.required} />
+
+                    )}
+
+                  </div>
+
+                ))}
+
+                <div class="field hp" aria-hidden="true">
+
+                  <label for="website">Website</label>
+
+                  <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+
+                </div>
+
+                {captchaKey && (
+
+                  <div class="field captcha-wrap">
+
+                    <div id="captcha-container" class="g-recaptcha" data-sitekey={captchaKey}></div>
+
+                  </div>
+
+                )}
+
+                <button type="submit" class="btn btn-primary" id="submit-btn">Submit application</button>
+
+                <p class="form-legal">
+
+                  A resume is not required. All fields marked with &apos;*&apos; are required.
+
+                </p>
+
+                <p class="form-legal">
+
+                  By submitting this form, you agree that we can contact you via the methods provided here.
+
+                  For more information, visit our{" "}
+
+                  <a href={privacyUrl} target="_blank" rel="noopener noreferrer">privacy policy</a>.
+
+                </p>
+
+              </form>
+
             </div>
-          ))}
-          <div class="field hp" aria-hidden="true">
-            <label for="website">Website</label>
-            <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
-          </div>
-          {captchaKey && (
-            <div class="field" id="captcha-container"></div>
+
+          </section>
+
+
+
+          {pageContent.videos && pageContent.videos.length > 0 && pageContent.learnSectionTitle && (
+
+            <VideoGallery title={pageContent.learnSectionTitle} videos={pageContent.videos} />
+
           )}
-          <button type="submit" class="btn btn-primary" id="submit-btn">Submit application</button>
-        </form>
-      </>
-    ) : (
-      <p>Loading…</p>
-    )}
-  </div>
+
+        </div>
+
+
+
+        {pageContent.jobDetails && (
+
+          <JobDetailsCard details={pageContent.jobDetails} />
+
+        )}
+
+      </div>
+      </div>
+
+
+
+      <section class="apply-social-band">
+
+        <p>Follow us for more moving tips, videos, and more.</p>
+
+        <div class="apply-social-band__links">
+
+          <a href="https://www.facebook.com/baileysmoving" target="_blank" rel="noopener noreferrer">Facebook</a>
+
+          <a href="https://www.instagram.com/baileysmoving" target="_blank" rel="noopener noreferrer">Instagram</a>
+
+          <a href="https://www.youtube.com/@baileysmoving" target="_blank" rel="noopener noreferrer">YouTube</a>
+
+        </div>
+
+      </section>
+
+    </>
+
+  ) : (
+
+    <div class="page-wrap">
+
+      <p class="lead">Loading position details…</p>
+
+    </div>
+
+  )}
+
 </BaseLayout>
 
+
+
+{captchaKey && (
+
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+)}
+
+
+
 <script define:vars={{ api, officeSlug, jobSlug, captchaKey }}>
+
   const form = document.getElementById("apply-form");
+
   const alertEl = document.getElementById("form-alert");
+
   const submitBtn = document.getElementById("submit-btn");
 
+
+
   function showAlert(msg, type) {
+
     if (!alertEl) return;
+
     alertEl.hidden = false;
+
     alertEl.className = `alert alert-${type}`;
+
     alertEl.textContent = msg;
+
+    alertEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
   }
 
-  let captchaToken = "";
 
-  if (captchaKey) {
-    const script = document.createElement("script");
-    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-    script.async = true;
-    script.onload = () => {
-      const container = document.getElementById("captcha-container");
-      if (container && window.turnstile) {
-        window.turnstile.render(container, {
-          sitekey: captchaKey,
-          callback: (token) => { captchaToken = token; },
-        });
-      }
-    };
-    document.head.appendChild(script);
-  } else {
-    captchaToken = "dev-bypass";
+
+  function splitName(full) {
+
+    const parts = String(full || "").trim().split(/\s+/).filter(Boolean);
+
+    if (!parts.length) return { firstName: "", lastName: "" };
+
+    if (parts.length === 1) return { firstName: parts[0], lastName: parts[0] };
+
+    return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
+
   }
+
+
+
+  function getCaptchaToken() {
+
+    if (!captchaKey) return "dev-bypass";
+
+    if (typeof grecaptcha !== "undefined") {
+
+      return grecaptcha.getResponse() || "";
+
+    }
+
+    return "";
+
+  }
+
+
 
   form?.addEventListener("submit", async (e) => {
+
     e.preventDefault();
-    if (!captchaToken) {
-      showAlert("Please complete the security check.", "error");
+
+    const captchaToken = getCaptchaToken();
+
+    if (captchaKey && !captchaToken) {
+
+      showAlert("Please complete the security check below.", "error");
+
       return;
+
     }
+
     submitBtn.disabled = true;
+
     const fd = new FormData(form);
+
+    const { firstName, lastName } = splitName(fd.get("fullName"));
+
     const customFields = {};
+
     for (const [k, v] of fd.entries()) {
-      if (!["firstName", "lastName", "email", "phone", "website"].includes(k)) {
+
+      if (
+
+        !["fullName", "email", "phone", "website", "movingExperience"].includes(k)
+
+      ) {
+
         customFields[k] = String(v);
+
       }
+
     }
+
+    if (fd.get("movingExperience")) {
+
+      customFields.movingExperience = "yes";
+
+    }
+
     const body = {
+
       officeSlug,
+
       jobSlug,
-      firstName: fd.get("firstName"),
-      lastName: fd.get("lastName"),
+
+      firstName,
+
+      lastName,
+
       email: fd.get("email"),
+
       phone: fd.get("phone"),
+
       captchaToken,
+
       honeypot: fd.get("website") || "",
+
       customFields,
+
     };
+
     try {
+
       const res = await fetch(`${api}/applications`, {
+
         method: "POST",
+
         headers: { "Content-Type": "application/json" },
+
         body: JSON.stringify(body),
+
       });
+
       const data = await res.json();
+
       if (!res.ok) throw new Error(data.error || "Submission failed");
+
       form.hidden = true;
+
+      if (typeof grecaptcha !== "undefined") grecaptcha.reset();
+
       showAlert(
-        "Thank you! Check your email for a link to schedule your interview.",
+
+        "Thank you! Check your phone and email for instructions. We'll be in touch shortly to discuss your application.",
+
         "success"
+
       );
+
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
     } catch (err) {
-      showAlert(err.message || "Something went wrong. Please try again.", "error");
+
+      showAlert(
+
+        err.message || "Oops! Something went wrong. Check all fields and try again.",
+
+        "error"
+
+      );
+
       submitBtn.disabled = false;
+
     }
+
   });
+
 </script>
+

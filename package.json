@@ -14,6 +14,7 @@
     "dev:web": "npm run dev -w @bms/web",
     "test": "npm run test -w @bms/api",
     "db:migrate": "node scripts/run-migrations.js",
+    "db:migrate:local": "node scripts/run-migrations-local.js",
     "hash-password": "node scripts/hash-password.js"
   },
   "engines": {

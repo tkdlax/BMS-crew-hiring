@@ -27,7 +27,12 @@ export async function routeRequest(
   if (opt) return opt;
 
   const url = new URL(req.url);
-  const path = url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
+  const routeParam =
+    (req.params as Record<string, string | undefined>)?.route ??
+    (req.params as Record<string, string | undefined>)?.["*route"];
+  const path = routeParam
+    ? routeParam.replace(/\/$/, "")
+    : url.pathname.replace(/^\/api\/?/, "").replace(/\/$/, "");
   const segments = path.split("/").filter(Boolean);
 
   if (segments.length === 0) {

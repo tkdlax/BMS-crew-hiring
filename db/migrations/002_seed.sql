@@ -14,7 +14,7 @@ VALUES ('colorado-springs', 'Colorado Springs', 'America/Denver', 'Colorado Spri
 
 IF NOT EXISTS (SELECT 1 FROM hire_offices WHERE slug = 'denver')
 INSERT INTO hire_offices (slug, name, timezone, location_label, active)
-VALUES ('denver', 'Denver', 'America/Denver', 'Denver, CO', 1);
+VALUES ('denver', 'Denver', 'America/Denver', '11755 E Peakview Ave, Centennial, CO 80111', 1);
 
 DECLARE @cosId INT = (SELECT id FROM hire_offices WHERE slug = 'colorado-springs');
 DECLARE @denverId INT = (SELECT id FROM hire_offices WHERE slug = 'denver');
@@ -54,7 +54,7 @@ IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @denverId AND slug = 'c
 INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
 VALUES (@denverId, 'crew-member', 'Crew Member',
   1, '[]',
-  '{"headline":"Crew Member — Denver","description":"Be part of our Denver crew."}');
+  '{"heroEyebrow":"Work in Denver","headline":"Get Your Colorado Career On The Move.","heroLead":"Movers are the core of our company, and our industry. Join the storied history of the men and women who keep our nation moving.","compensation":"Full-time or Seasonal BOE $17 - $25/hr + CASH tips (full-time benefits available).","address":"11755 E Peakview Ave Centennial, CO 80111","formTitle":"Apply to Join Our Denver Team","learnSectionTitle":"Learn About The Job and What It''s Like:","interestOptions":["Driver","Mover & Packer","Summer or Temporary Help","I''m new, I want to start a career"],"trainingNote":"We do not require moving industry experience. Training is provided to all.","videos":[{"title":"Hear From Employees","youtubeId":"1WYvchjYBXU"},{"title":"Hear From A Customer","youtubeId":"-pnkJe0ALAE"},{"title":"Hear From A Master Mover","youtubeId":"7GVmdYHKUE4"},{"title":"Get To Know Us","youtubeId":"LoDlPPyDaKw"}],"jobDetails":{"title":"Moving Operations Crew Positions","compensation":"Full-time or Seasonal | $17-25/hr (DOE)","compensationNote":"(plus benefits for full-time)","location":"11755 E Peakview Ave\nCentennial, CO 80111","requirements":["Must be 17 years or older","Must be capable of heavy lifting over 8-hour days","Must pass background check","Must agree to code of conduct"],"benefits":["Medical/Dental with HSA/FSA","401k with Employer Match","Personal Time Off","CDL Training (if desired)"]}}');
 
 -- Availability: Mon-Fri 9-17 for each office
 DECLARE @d INT = 1;

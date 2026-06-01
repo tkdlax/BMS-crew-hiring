@@ -1,0 +1,29 @@
+---
+import { BRAND } from "../constants/brand";
+
+const base = import.meta.env.BASE_URL;
+const year = new Date().getFullYear();
+---
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <img src={BRAND.logoWhite} alt="" class="footer-logo" width="160" height="40" />
+      <p class="footer-tagline">We Move With You Every Step Of The Way</p>
+      <p class="footer-meta">Locally owned &amp; operated since 1952</p>
+    </div>
+    <div class="footer-col">
+      <p class="footer-heading">Careers</p>
+      <a href={`${base}careers/`}>Open positions</a>
+      <a href={`${base}`}>Hiring home</a>
+    </div>
+    <div class="footer-col">
+      <p class="footer-heading">Contact</p>
+      <a href={BRAND.phoneHref}>{BRAND.phone}</a>
+      <a href={BRAND.mainSite}>baileysallied.com</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p>US DOT 4205683 | CO PUC HHG-00739</p>
+    <p>&copy; {year} Bailey&apos;s Moving &amp; Storage. All rights reserved.</p>
+  </div>
+</footer>

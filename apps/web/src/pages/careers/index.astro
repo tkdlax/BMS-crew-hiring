@@ -22,22 +22,37 @@ try {
 }
 ---
 <BaseLayout title="Open positions">
-  <div class="card">
-    <h1>Open positions</h1>
-    <p class="lead">Select a role to start your application.</p>
+  <section class="page-band">
+    <div class="page-band__inner">
+      <p class="eyebrow">Careers</p>
+      <h1>Open positions</h1>
+      <p class="sub">Select a role below to start your application. Most applications take about 3 minutes.</p>
+    </div>
+  </section>
+
+  <div class="page-wrap page-wrap--narrow">
     {openings.length === 0 ? (
-      <p class="lead">No openings are listed right now. Please check back soon.</p>
+      <div class="content-card">
+        <p class="lead" style="margin-bottom: 0;">
+          No openings are listed right now. Please check back soon or call us at{" "}
+          <a href="tel:+18882605717" style="color: var(--orange); font-weight: 700;">888-260-5717</a>.
+        </p>
+      </div>
     ) : (
-      <ul class="openings-list">
-        {openings.map((o) => (
-          <li>
-            <a href={`${base}apply/${o.office_slug}/${o.job_slug}/`}>
-              <strong>{o.job_title}</strong>
-              <span>{o.office_name}</span>
-            </a>
-          </li>
-        ))}
-      </ul>
+      <>
+        <p class="section-label">{openings.length} roles available</p>
+        <ul class="job-grid">
+          {openings.map((o) => (
+            <li>
+              <a class="job-card" href={`${base}apply/${o.office_slug}/${o.job_slug}/`}>
+                <span class="job-card__title">{o.job_title}</span>
+                <span class="job-card__meta">{o.office_name}</span>
+                <span class="job-card__cta">Apply now →</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </>
     )}
   </div>
 </BaseLayout>

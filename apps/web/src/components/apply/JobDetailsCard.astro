@@ -1,0 +1,60 @@
+---
+import type { JobDetailsBlock } from "../../lib/jobPageContent";
+import { BRAND } from "../../constants/brand";
+
+interface Props {
+  details: JobDetailsBlock;
+}
+
+const { details } = Astro.props;
+const locationLines = details.location.split("\n");
+---
+<aside class="job-details-card" id="job-details">
+  <div class="job-details-card__accent" aria-hidden="true"></div>
+  <div class="job-details-card__body">
+  <h2 class="job-details-card__title">{details.title}</h2>
+  <p class="job-details-card__pay">{details.compensation}</p>
+  {details.compensationNote && (
+    <p class="job-details-card__pay-note">{details.compensationNote}</p>
+  )}
+
+  <h3 class="job-details-card__label">Location</h3>
+  <p class="job-details-card__text">
+    {locationLines.map((line) => (
+      <>
+        {line}
+        <br />
+      </>
+    ))}
+  </p>
+
+  <h3 class="job-details-card__label">Requirements</h3>
+  <ul class="job-details-card__list">
+    {details.requirements.map((item) => (
+      <li>{item}</li>
+    ))}
+  </ul>
+
+  {details.benefits.length > 0 && (
+    <>
+      <h3 class="job-details-card__label">Full-time Benefits</h3>
+      <ul class="job-details-card__list">
+        {details.benefits.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </>
+  )}
+
+  <div class="job-details-card__cta">
+    <h3 class="job-details-card__label">Questions?</h3>
+    <p class="job-details-card__contact">Contact Us Today!</p>
+    <a href={BRAND.phoneHref} class="btn btn-primary job-details-card__phone">
+      {BRAND.phone}
+    </a>
+    <a href={`${BRAND.mainSite}/pricing`} class="job-details-card__link">
+      Explore Pricing Options
+    </a>
+  </div>
+  </div>
+</aside>

@@ -1,0 +1,36 @@
+---
+import type { JobPageContent } from "../../lib/jobPageContent";
+
+interface Props {
+  content: JobPageContent;
+}
+
+const { content } = Astro.props;
+const heroStyle = content.heroImage
+  ? `--hero-bg: url('${content.heroImage}')`
+  : undefined;
+---
+<section class="hero apply-hero" style={heroStyle}>
+  <div class="hero__inner">
+    {content.heroEyebrow && <p class="hero__eyebrow">{content.heroEyebrow}</p>}
+    <h1>{content.headline ?? "Apply"}</h1>
+    {content.heroLead && <p class="hero__lead">{content.heroLead}</p>}
+    {(content.compensation || content.address) && (
+      <div class="hero__meta">
+        {content.compensation && <p class="hero__pay">{content.compensation}</p>}
+        {content.address && (
+          <p class="hero__location">
+            <span class="hero__location-label">Location</span>
+            <span class="hero__location-value">{content.address}</span>
+          </p>
+        )}
+      </div>
+    )}
+    <div class="hero__actions">
+      <a href="#videos" class="btn btn-hero-outline">See What It&apos;s Like</a>
+      <a href={content.aboutUrl ?? "https://www.baileysallied.com/about-us"} class="btn btn-hero-outline">
+        Learn About Bailey&apos;s Moving
+      </a>
+    </div>
+  </div>
+</section>

@@ -1,27 +1,32 @@
 ---
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { assetUrl } from "../lib/assets.ts";
+
 interface Props {
   title: string;
   bodyClass?: string;
+  hideHero?: boolean;
 }
-const { title, bodyClass = "" } = Astro.props;
+const { title, bodyClass = "", hideHero = false } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title} | BMS Hiring</title>
-    <link rel="stylesheet" href={`${import.meta.env.BASE_URL}styles/applicant.css`} />
+    <meta name="description" content="Join Bailey's Moving &amp; Storage — careers in Colorado and Utah." />
+    <title>{title} | Bailey&apos;s Careers</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href={assetUrl("styles/applicant.css")} />
   </head>
-  <body class={bodyClass}>
-    <header class="site-header">
-      <a href={`${import.meta.env.BASE_URL}`} class="logo">BMS Careers</a>
-    </header>
-    <main class="main">
+  <body class={`baileys-hiring ${bodyClass}`}>
+    <SiteHeader />
+    <main class="site-main" data-hide-hero={hideHero ? "true" : "false"}>
       <slot />
     </main>
-    <footer class="site-footer">
-      <p>&copy; {new Date().getFullYear()} BMS. All rights reserved.</p>
-    </footer>
+    <SiteFooter />
   </body>
 </html>

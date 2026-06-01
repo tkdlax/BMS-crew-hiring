@@ -1,12 +1,44 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
+import TrustStrip from "../components/TrustStrip.astro";
+import { BRAND } from "../constants/brand";
 
 const base = import.meta.env.BASE_URL;
 ---
 <BaseLayout title="Careers">
-  <div class="card">
-    <h1>Join the BMS team</h1>
-    <p class="lead">Explore open roles at our offices and apply in minutes.</p>
-    <a href={`${base}careers/`} class="btn btn-primary" style="text-decoration:none;display:inline-flex">View open positions</a>
+  <section
+    class="hero"
+    style={`--hero-bg: url('${BRAND.heroImage}')`}
+  >
+    <div class="hero__inner" style="max-width: 1200px; margin: 0 auto; width: 100%;">
+      <p class="hero__eyebrow">Join our team</p>
+      <h1>Build your career with <span class="accent">Bailey&apos;s</span></h1>
+      <p class="hero__lead">
+        We&apos;ve moved families and businesses across Colorado and Utah for 70+ years.
+        Explore open roles and apply in minutes from your phone.
+      </p>
+      <div class="hero__badges">
+        <span class="hero__badge">70+ years</span>
+        <span class="hero__badge">Allied Van Lines agent</span>
+        <span class="hero__badge">4.9★ on Google</span>
+      </div>
+      <a href={`${base}careers/`} class="btn btn-primary" style="max-width: 20rem;">
+        View open positions →
+      </a>
+    </div>
+  </section>
+
+  <TrustStrip />
+
+  <div class="page-wrap">
+    <p class="section-label">Why Bailey&apos;s</p>
+    <h2 class="section-title">A team that moves with you</h2>
+    <p class="lead">
+      From drivers to crew members, our people are trained, vetted, and proud of the work.
+      Apply online — we&apos;ll follow up quickly to schedule your interview.
+    </p>
+    <a href={`${base}careers/`} class="btn btn-secondary" style="width: 100%; max-width: 20rem;">
+      See all open roles
+    </a>
   </div>
 </BaseLayout>
