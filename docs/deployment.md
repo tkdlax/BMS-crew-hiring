@@ -23,8 +23,8 @@
 | `CAPTCHA_PROVIDER` | `turnstile` or `recaptcha` |
 | `ADMIN_PASSWORD_HASH` | bcrypt hash |
 | `SESSION_SIGNING_SECRET` | Random 32+ char string |
-| `ALLOWED_ORIGINS` | `https://yoursite.webflow.io` |
-| `PUBLIC_SITE_BASE_URL` | `https://yoursite.webflow.io/hiring` |
+| `ALLOWED_ORIGINS` | Comma-separated site origins, e.g. `https://www.baileysallied.com,https://baileysallied.com,https://baileys-moving-storage.webflow.io` |
+| `PUBLIC_SITE_BASE_URL` | `https://www.baileysallied.com/hiring` (its origin is also allowed automatically) |
 | `MESSAGING_DISABLED` | `false` in production |
 
 4. Deploy via GitHub Actions (`.github/workflows/deploy-api.yml`) or:
@@ -51,7 +51,8 @@
 ### Admin login
 
 - `ADMIN_PASSWORD_HASH` in Azure is a **bcrypt hash**, not the password you type. Use the original plaintext password that was hashed (local dev without a hash uses `password`).
-- `ALLOWED_ORIGINS` on the Function App must include `https://www.baileysallied.com` (and `https://baileysallied.com` if you use that host) so the browser can call the API with cookies.
+- `ALLOWED_ORIGINS` on the Function App must list every browser origin that calls the API (www and non-www). `PUBLIC_SITE_BASE_URL` adds its origin automatically.
+- In the Azure Portal → Function App → **API** → **CORS**: either add the same origins there **or** leave the platform list empty so the app sets headers (avoid conflicting `*` with credentialed requests).
 - After changing API CORS or session cookie settings, redeploy the Function App.
 
 ## Staging checklist

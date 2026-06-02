@@ -15,7 +15,7 @@
     "CAPTCHA_PROVIDER": "turnstile",
     "ADMIN_PASSWORD_HASH": "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy",
     "SESSION_SIGNING_SECRET": "dev-secret-change-in-production-min-32-chars",
-    "ALLOWED_ORIGINS": "http://localhost:4321,http://127.0.0.1:4321",
+    "ALLOWED_ORIGINS": "http://localhost:4321,http://127.0.0.1:4321,https://www.baileysallied.com,https://baileysallied.com,https://baileys-moving-storage.webflow.io",
     "PUBLIC_SITE_BASE_URL": "http://localhost:4321/hiring",
     "MESSAGING_DISABLED": "true"
   }

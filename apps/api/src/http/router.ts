@@ -56,11 +56,12 @@ export async function routeRequest(
 }
 
 function withCors(req: HttpRequest, res: HttpResponseInit): HttpResponseInit {
+  const cors = corsHeaders(req.headers.get("origin"));
   return {
     ...res,
     headers: {
-      ...corsHeaders(req.headers.get("origin")),
       ...(res.headers ?? {}),
+      ...cors,
     },
   };
 }
