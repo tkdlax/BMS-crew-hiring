@@ -1,13 +1,10 @@
 ---
-import { assetUrl } from "../lib/assets.ts";
+import { assetUrl, hrefPath } from "../lib/assets.ts";
 
 interface Props {
   title: string;
 }
 const { title } = Astro.props;
-const base = import.meta.env.BASE_URL.endsWith("/")
-  ? import.meta.env.BASE_URL
-  : `${import.meta.env.BASE_URL}/`;
 ---
 <!doctype html>
 <html lang="en">
@@ -21,12 +18,12 @@ const base = import.meta.env.BASE_URL.endsWith("/")
   </head>
   <body class="admin-body">
     <nav class="admin-nav">
-      <a href={`${base}admin/`}>Dashboard</a>
-      <a href={`${base}admin/offices/`}>Offices</a>
-      <a href={`${base}admin/jobs/`}>Jobs</a>
-      <a href={`${base}admin/applications/`}>Applications</a>
-      <a href={`${base}admin/templates/`}>Templates</a>
-      <a href={`${base}admin/settings/`}>Settings</a>
+      <a href={hrefPath("admin/")}>Dashboard</a>
+      <a href={hrefPath("admin/offices/")}>Offices</a>
+      <a href={hrefPath("admin/jobs/")}>Jobs</a>
+      <a href={hrefPath("admin/applications/")}>Applications</a>
+      <a href={hrefPath("admin/templates/")}>Templates</a>
+      <a href={hrefPath("admin/settings/")}>Settings</a>
       <button type="button" id="admin-logout" class="btn-text">Log out</button>
     </nav>
     <main class="admin-main">
@@ -36,7 +33,7 @@ const base = import.meta.env.BASE_URL.endsWith("/")
       const api = import.meta.env.PUBLIC_API_BASE_URL;
       document.getElementById("admin-logout")?.addEventListener("click", async () => {
         await fetch(`${api}/admin/logout`, { method: "POST", credentials: "include" });
-        location.href = `${import.meta.env.BASE_URL}admin/login/`;
+        location.href = new URL("admin/login/", document.baseURI).href;
       });
     </script>
   </body>

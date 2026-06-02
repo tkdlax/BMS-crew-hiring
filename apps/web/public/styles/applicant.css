@@ -1271,6 +1271,36 @@ h2.section-title {
   margin: 0 auto;
 }
 
+/* Careers page — grouped by office */
+.careers-by-office {
+  max-width: var(--max-w);
+}
+
+.careers-by-office.page-wrap--narrow {
+  max-width: var(--max-w);
+}
+
+.office-group {
+  margin-bottom: 2.5rem;
+  padding-bottom: 2rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.office-group:last-of-type {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.office-group__title {
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  font-weight: 800;
+  color: var(--blue);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+  scroll-margin-top: calc(var(--header-h) + 1rem);
+}
+
 @media (min-width: 600px) {
   .hero__meta {
     flex-direction: row;

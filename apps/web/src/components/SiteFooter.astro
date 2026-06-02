@@ -1,7 +1,6 @@
 ---
 import { BRAND } from "../constants/brand";
-
-const base = import.meta.env.BASE_URL;
+import { hrefPath } from "../lib/assets";
 const year = new Date().getFullYear();
 ---
 <footer class="site-footer">
@@ -13,8 +12,8 @@ const year = new Date().getFullYear();
     </div>
     <div class="footer-col">
       <p class="footer-heading">Operations hiring</p>
-      <a href={`${base}careers/`}>Driver &amp; crew openings</a>
-      <a href={`${base}`}>Operations home</a>
+      <a href={hrefPath("careers/")}>Driver &amp; crew openings</a>
+      <a href={hrefPath("")}>Operations home</a>
       <a href={BRAND.careersPage}>All company careers</a>
     </div>
     <div class="footer-col">

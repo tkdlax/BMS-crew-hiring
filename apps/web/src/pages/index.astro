@@ -3,8 +3,7 @@ import BaseLayout from "../layouts/BaseLayout.astro";
 import TrustStrip from "../components/TrustStrip.astro";
 import CareersCrosslink from "../components/CareersCrosslink.astro";
 import { BRAND } from "../constants/brand";
-
-const base = import.meta.env.BASE_URL;
+import { hrefPath } from "../lib/assets";
 ---
 <BaseLayout title="Operations hiring">
   <section
@@ -16,7 +15,8 @@ const base = import.meta.env.BASE_URL;
       <h1>Join our <span class="accent">operations</span> team</h1>
       <p class="hero__lead">
         Bailey&apos;s is built by the people on the trucks and on the job site — drivers, movers,
-        and packers who keep families and businesses moving across Colorado and Utah.
+        and packers who keep families and businesses moving across Colorado and Utah — Denver,
+        Colorado Springs, Grand Junction, and Salt Lake City.
         Apply in minutes from your phone.
       </p>
       <div class="hero__badges">
@@ -24,7 +24,7 @@ const base = import.meta.env.BASE_URL;
         <span class="hero__badge">Crew &amp; packers</span>
         <span class="hero__badge">Training provided</span>
       </div>
-      <a href={`${base}careers/`} class="btn btn-primary" style="max-width: 22rem;">
+      <a href={hrefPath("careers/")} class="btn btn-primary" style="max-width: 22rem;">
         View driver &amp; crew openings →
       </a>
     </div>
@@ -48,7 +48,7 @@ const base = import.meta.env.BASE_URL;
         <strong>Crew members &amp; packers</strong> — On-site moving and packing; seasonal and full-time options.
       </li>
     </ul>
-    <a href={`${base}careers/`} class="btn btn-secondary" style="width: 100%; max-width: 22rem;">
+    <a href={hrefPath("careers/")} class="btn btn-secondary" style="width: 100%; max-width: 22rem;">
       See open operations roles
     </a>
   </div>

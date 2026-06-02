@@ -6,6 +6,8 @@ import { getPool, t } from "../../db/pool.js";
 const OFFICE_SMS_REGION: Record<string, string> = {
   denver: "CO",
   "colorado-springs": "CO",
+  "grand-junction": "CO",
+  "salt-lake-city": "UT",
 };
 
 export function twilioFromNumberForRegion(region: string): string | undefined {

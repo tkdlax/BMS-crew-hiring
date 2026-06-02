@@ -1,16 +1,19 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import CareersCrosslink from "../../components/CareersCrosslink.astro";
+import { OPERATIONS_OFFICE_ORDER } from "../../constants/offices";
+import { hrefPath } from "../../lib/assets";
 
 const api = import.meta.env.PUBLIC_API_BASE_URL;
-const base = import.meta.env.BASE_URL;
 
-let openings: Array<{
+type Opening = {
   office_slug: string;
   office_name: string;
   job_slug: string;
   job_title: string;
-}> = [];
+};
+
+let openings: Opening[] = [];
 
 try {
   const res = await fetch(`${api}/public/openings`);
@@ -21,6 +24,35 @@ try {
 } catch {
   /* dev without API */
 }
+
+type OfficeGroup = {
+  slug: string;
+  name: string;
+  jobs: Opening[];
+};
+
+const bySlug = new Map<string, OfficeGroup>();
+for (const o of openings) {
+  let group = bySlug.get(o.office_slug);
+  if (!group) {
+    group = { slug: o.office_slug, name: o.office_name, jobs: [] };
+    bySlug.set(o.office_slug, group);
+  }
+  group.jobs.push(o);
+}
+
+const officeGroups: OfficeGroup[] = [];
+for (const slug of OPERATIONS_OFFICE_ORDER) {
+  const g = bySlug.get(slug);
+  if (g) officeGroups.push(g);
+}
+for (const g of bySlug.values()) {
+  if (!(OPERATIONS_OFFICE_ORDER as readonly string[]).includes(g.slug)) {
+    officeGroups.push(g);
+  }
+}
+
+const totalRoles = openings.length;
 ---
 <BaseLayout title="Driver & crew openings">
   <section class="page-band">
@@ -28,14 +60,14 @@ try {
       <p class="eyebrow">Operations hiring</p>
       <h1>Driver &amp; crew openings</h1>
       <p class="sub">
-        Moving operations roles in Colorado — drivers, crew members, and packers.
-        Select a role below to apply; most take about 3 minutes.
+        Choose your office below — Denver, Colorado Springs, Grand Junction, or Salt Lake City.
+        Select a role to apply; most applications take about 3 minutes.
       </p>
     </div>
   </section>
 
-  <div class="page-wrap page-wrap--narrow">
-    {openings.length === 0 ? (
+  <div class="page-wrap careers-by-office">
+    {totalRoles === 0 ? (
       <div class="content-card">
         <p class="lead" style="margin-bottom: 0;">
           No operations openings are listed right now. Please check back soon or call us at{" "}
@@ -44,18 +76,29 @@ try {
       </div>
     ) : (
       <>
-        <p class="section-label">{openings.length} operations {openings.length === 1 ? "role" : "roles"} open</p>
-        <ul class="job-grid">
-          {openings.map((o) => (
-            <li>
-              <a class="job-card" href={`${base}apply/${o.office_slug}/${o.job_slug}/`}>
-                <span class="job-card__title">{o.job_title}</span>
-                <span class="job-card__meta">{o.office_name}</span>
-                <span class="job-card__cta">Apply now →</span>
-              </a>
-            </li>
-          ))}
-        </ul>
+        <p class="section-label">
+          {totalRoles} operations {totalRoles === 1 ? "role" : "roles"} open across {officeGroups.length}{" "}
+          {officeGroups.length === 1 ? "office" : "offices"}
+        </p>
+        {officeGroups.map((office) => (
+          <section class="office-group" id={office.slug}>
+            <h2 class="office-group__title">{office.name}</h2>
+            <ul class="job-grid">
+              {office.jobs.map((o) => (
+                <li>
+                  <a
+                    class="job-card"
+                    href={hrefPath(`apply/${o.office_slug}/${o.job_slug}/`)}
+                  >
+                    <span class="job-card__title">{o.job_title}</span>
+                    <span class="job-card__meta">{office.name}</span>
+                    <span class="job-card__cta">Apply now →</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))}
       </>
     )}
   </div>

@@ -1,10 +1,9 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
+import { hrefPath } from "../../lib/assets";
 
 const api = import.meta.env.PUBLIC_API_BASE_URL;
-const base = import.meta.env.BASE_URL.endsWith("/")
-  ? import.meta.env.BASE_URL
-  : `${import.meta.env.BASE_URL}/`;
+const adminHome = hrefPath("admin/");
 ---
 <AdminLayout title="Admin sign in">
   <div class="admin-card" style="max-width: 24rem;">
@@ -20,7 +19,7 @@ const base = import.meta.env.BASE_URL.endsWith("/")
   </div>
 </AdminLayout>
 
-<script define:vars={{ api, base }}>
+<script define:vars={{ api, adminHome }}>
   document.getElementById("login-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const password = new FormData(e.target).get("password");
@@ -32,7 +31,7 @@ const base = import.meta.env.BASE_URL.endsWith("/")
     });
     const alertEl = document.getElementById("login-alert");
     if (res.ok) {
-      location.href = `${base}admin/`;
+      location.href = adminHome;
       return;
     }
     const data = await res.json().catch(() => ({}));
