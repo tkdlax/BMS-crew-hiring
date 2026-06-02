@@ -1,5 +1,6 @@
 node_modules/
 dist/
+deploy_pkg/
 .astro/
 .azure/
 local.settings.json

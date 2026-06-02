@@ -1,7 +1,9 @@
 *.ts
-!dist/**
-node_modules/**
-local.settings.json
-tests/**
-jest.config.cjs
+src/**
 tsconfig.json
+jest.config.cjs
+tests/**
+local.settings.json
+local.settings.example.json
+node_modules/@types/**
+.deploy
