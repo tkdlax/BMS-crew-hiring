@@ -1,4 +1,4 @@
-import { formatDetailsCompensation, formatHeroCompensation } from "@bms/shared";
+import { formatDetailsCompensation, formatHeroCompensation } from "./payRange.js";
 import { BRAND } from "../constants/brand";
 
 export type JobVideo = { title: string; youtubeId: string };
