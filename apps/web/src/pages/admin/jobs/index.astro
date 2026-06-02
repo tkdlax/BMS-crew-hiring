@@ -1,7 +1,5 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-
-const api = import.meta.env.PUBLIC_API_BASE_URL;
 ---
 <AdminLayout title="Jobs">
   <div class="admin-card">
@@ -24,9 +22,11 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   </div>
 </AdminLayout>
 
-<script define:vars={{ api }}>
+<script>
+  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+
   let offices = [];
-  async function loadOffices() {
+  async function loadOffices(api) {
     const res = await fetch(`${api}/admin/offices`, { credentials: "include" });
     const data = await res.json();
     offices = data.offices;
@@ -37,7 +37,7 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
       filt.innerHTML += `<option value="${o.id}">${o.name}</option>`;
     });
   }
-  async function loadJobs() {
+  async function loadJobs(api) {
     const officeId = document.getElementById("filter-office").value;
     const q = officeId ? `?officeId=${officeId}` : "";
     const res = await fetch(`${api}/admin/jobs${q}`, { credentials: "include" });
@@ -49,9 +49,14 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
       )
       .join("")}</tbody></table>`;
   }
-  document.getElementById("filter-office")?.addEventListener("change", loadJobs);
+  document.getElementById("filter-office")?.addEventListener("change", async () => {
+    const api = await resolveApiBaseUrl();
+    if (api) await loadJobs(api);
+  });
   document.getElementById("job-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
     const fd = new FormData(e.target);
     await fetch(`${api}/admin/jobs`, {
       method: "POST",
@@ -70,11 +75,13 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
       }),
     });
     e.target.reset();
-    loadJobs();
+    loadJobs(api);
   });
   (async () => {
     await window.adminAuthCheck;
-    await loadOffices();
-    await loadJobs();
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
+    await loadOffices(api);
+    await loadJobs(api);
   })();
 </script>

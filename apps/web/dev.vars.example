@@ -1,0 +1,5 @@
+# Copy to dev.vars for `npm run preview` (Wrangler local runtime env).
+PUBLIC_API_BASE_URL=http://localhost:7071/api
+PUBLIC_SITE_BASE_URL=http://localhost:4321/hiring
+PUBLIC_CAPTCHA_SITE_KEY=
+PUBLIC_BASE_PATH=/hiring

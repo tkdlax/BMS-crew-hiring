@@ -1,10 +1,13 @@
 ---
+export const prerender = false;
+
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import CareersCrosslink from "../../components/CareersCrosslink.astro";
 import { OPERATIONS_OFFICE_ORDER } from "../../constants/offices";
+import { getRuntimeApiBaseUrl } from "../../lib/api";
 import { hrefPath } from "../../lib/assets";
 
-const api = import.meta.env.PUBLIC_API_BASE_URL;
+const api = getRuntimeApiBaseUrl(Astro.locals);
 
 type Opening = {
   office_slug: string;

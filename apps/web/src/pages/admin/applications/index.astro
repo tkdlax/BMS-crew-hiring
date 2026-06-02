@@ -1,7 +1,5 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-
-const api = import.meta.env.PUBLIC_API_BASE_URL;
 ---
 <AdminLayout title="Applications">
   <div class="admin-card">
@@ -15,8 +13,10 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   </div>
 </AdminLayout>
 
-<script define:vars={{ api }}>
-  async function initFilters() {
+<script>
+  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+
+  async function initFilters(api) {
     const oRes = await fetch(`${api}/admin/offices`, { credentials: "include" });
     const { offices } = await oRes.json();
     const oSel = document.getElementById("filter-office");
@@ -48,10 +48,15 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
       })
       .join("")}</tbody></table>`;
   }
-  document.getElementById("apply-filters")?.addEventListener("click", load);
+  document.getElementById("apply-filters")?.addEventListener("click", async () => {
+    const api = await resolveApiBaseUrl();
+    if (api) await load(api);
+  });
   (async () => {
     await window.adminAuthCheck;
-    await initFilters();
-    await load();
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
+    await initFilters(api);
+    await load(api);
   })();
 </script>

@@ -2,7 +2,6 @@
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { hrefPath } from "../../lib/assets";
 
-const api = import.meta.env.PUBLIC_API_BASE_URL;
 const adminHome = hrefPath("admin/");
 ---
 <AdminLayout title="Admin sign in" requireAuth={false} showNav={false}>
@@ -14,30 +13,40 @@ const adminHome = hrefPath("admin/");
         <label for="password">Password</label>
         <input id="password" name="password" type="password" required autocomplete="current-password" />
       </div>
-      <button type="submit" class="btn">Sign in</button>
+      <button type="submit" class="btn" id="login-submit" disabled>Sign in</button>
     </form>
   </div>
 </AdminLayout>
 
-<script define:vars={{ api, adminHome }}>
-  document.getElementById("login-form")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const password = new FormData(e.target).get("password");
-    const res = await fetch(`${api}/admin/login`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ password }),
+<script>
+  import { enableLoginWhenApiReady } from "../../lib/api.client.ts";
+
+  const adminHome = document.documentElement.dataset.adminHome!;
+
+  enableLoginWhenApiReady("login-form", "#login-submit").then(() => {
+    document.getElementById("login-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const { resolveApiBaseUrl } = await import("../../lib/api.client.ts");
+      const api = await resolveApiBaseUrl();
+      if (!api) return;
+
+      const password = new FormData(e.target as HTMLFormElement).get("password");
+      const res = await fetch(`${api}/admin/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ password }),
+      });
+      const alertEl = document.getElementById("login-alert");
+      if (res.ok) {
+        location.href = adminHome;
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      if (alertEl) {
+        alertEl.style.display = "block";
+        alertEl.textContent = (data as { error?: string }).error || "Invalid password";
+      }
     });
-    const alertEl = document.getElementById("login-alert");
-    if (res.ok) {
-      location.href = adminHome;
-      return;
-    }
-    const data = await res.json().catch(() => ({}));
-    if (alertEl) {
-      alertEl.style.display = "block";
-      alertEl.textContent = data.error || "Invalid password";
-    }
   });
 </script>

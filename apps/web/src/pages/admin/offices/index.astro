@@ -1,7 +1,5 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-
-const api = import.meta.env.PUBLIC_API_BASE_URL;
 ---
 <AdminLayout title="Offices">
   <div class="admin-card">
@@ -18,9 +16,13 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   </div>
 </AdminLayout>
 
-<script define:vars={{ api }}>
+<script>
+  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+
   async function load() {
     await window.adminAuthCheck;
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
     const res = await fetch(`${api}/admin/offices`, { credentials: "include" });
     const { offices } = await res.json();
     const el = document.getElementById("offices-table");
@@ -33,6 +35,8 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   }
   document.getElementById("office-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
     const fd = new FormData(e.target);
     await fetch(`${api}/admin/offices`, {
       method: "POST",

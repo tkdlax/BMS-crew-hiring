@@ -2,7 +2,6 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { hrefPath } from "../../lib/assets";
 
-const api = import.meta.env.PUBLIC_API_BASE_URL;
 const careersUrl = hrefPath("careers/");
 ---
 <BaseLayout title="Schedule interview" bodyClass="schedule-page">
@@ -48,7 +47,9 @@ const careersUrl = hrefPath("careers/");
   </div>
 </BaseLayout>
 
-<script define:vars={{ api }}>
+<script>
+  import { resolveApiBaseUrl } from "../../lib/api.client.ts";
+
   function resolveToken() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("token")) return params.get("token");
@@ -86,7 +87,13 @@ const careersUrl = hrefPath("careers/");
   if (!token) {
     showError("Missing scheduling link. Please use the link from your email.");
   } else {
-    load();
+    resolveApiBaseUrl().then((api) => {
+      if (!api) {
+        showError("Scheduling is temporarily unavailable. Please try again later.");
+        return;
+      }
+      load(api);
+    });
   }
 
   function groupByDay(slots) {
@@ -161,6 +168,8 @@ const careersUrl = hrefPath("careers/");
 
   confirmBtn?.addEventListener("click", async () => {
     if (!selectedSlot || !token) return;
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
     confirmBtn.disabled = true;
     try {
       const res = await fetch(`${api}/schedule/${token}/book`, {

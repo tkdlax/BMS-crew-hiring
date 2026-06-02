@@ -1,7 +1,5 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-
-const api = import.meta.env.PUBLIC_API_BASE_URL;
 ---
 <AdminLayout title="Settings">
   <div class="admin-card">
@@ -20,8 +18,10 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   </div>
 </AdminLayout>
 
-<script define:vars={{ api }}>
-  async function load() {
+<script>
+  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+
+  async function load(api) {
     const res = await fetch(`${api}/admin/schedule-config?scope=global`, { credentials: "include" });
     const { config: c } = await res.json();
     if (!c) return;
@@ -36,6 +36,8 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   }
   document.getElementById("settings-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
     const fd = new FormData(e.target);
     await fetch(`${api}/admin/schedule-config`, {
       method: "PUT",
@@ -57,6 +59,7 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   });
   (async () => {
     await window.adminAuthCheck;
-    await load();
+    const api = await resolveApiBaseUrl();
+    if (api) await load(api);
   })();
 </script>

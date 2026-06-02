@@ -5,13 +5,16 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro build && wrangler dev",
+    "preview:astro": "astro preview"
   },
   "dependencies": {
     "astro": "^5.1.1"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
-    "typescript": "^5.7.2"
+    "@astrojs/cloudflare": "^12.6.13",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.96.0"
   }
 }

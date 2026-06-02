@@ -38,13 +38,21 @@
 1. Connect GitHub repo to Webflow Cloud.
 2. Set project path: `apps/web`
 3. Mount path: `/hiring`
-4. Environment variables:
-   - `PUBLIC_API_BASE_URL` → `https://<function-app>.azurewebsites.net/api`
-   - `PUBLIC_SITE_BASE_URL` → `https://<site>.webflow.io/hiring`
+4. Environment variables (injected at **runtime** on Webflow Cloud — redeploy after changing):
+   - `PUBLIC_API_BASE_URL` → `https://<function-app>.azurewebsites.net/api` (no trailing slash). Secret or plain both work.
+   - `PUBLIC_SITE_BASE_URL` → `https://www.baileysallied.com/hiring` (production)
    - `PUBLIC_CAPTCHA_SITE_KEY` → Turnstile site key
    - `PUBLIC_BASE_PATH` → `/hiring`
 
+   The site loads these via `GET /hiring/api/public-config` (Cloudflare Worker). Local dev still uses `.env` at build time.
+
 5. Publish the main Webflow site after Cloud environment is created.
+
+### Admin login
+
+- `ADMIN_PASSWORD_HASH` in Azure is a **bcrypt hash**, not the password you type. Use the original plaintext password that was hashed (local dev without a hash uses `password`).
+- `ALLOWED_ORIGINS` on the Function App must include `https://www.baileysallied.com` (and `https://baileysallied.com` if you use that host) so the browser can call the API with cookies.
+- After changing API CORS or session cookie settings, redeploy the Function App.
 
 ## Staging checklist
 

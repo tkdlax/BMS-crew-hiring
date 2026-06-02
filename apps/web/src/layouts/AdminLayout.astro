@@ -10,12 +10,17 @@ interface Props {
 }
 
 const { title, requireAuth = true, showNav = requireAuth } = Astro.props;
-const api = import.meta.env.PUBLIC_API_BASE_URL;
 const loginPath = hrefPath("admin/login/");
 const adminHome = hrefPath("admin/");
 ---
 <!doctype html>
-<html lang="en" data-admin-auth={requireAuth ? "checking" : "skip"}>
+<html
+  lang="en"
+  data-admin-auth={requireAuth ? "checking" : "skip"}
+  data-login-path={loginPath}
+  data-admin-home={adminHome}
+  data-require-auth={requireAuth ? "1" : "0"}
+>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -23,38 +28,6 @@ const adminHome = hrefPath("admin/");
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href={assetUrl("styles/admin.css")} />
-    {
-      requireAuth && (
-        <script define:vars={{ api, loginPath }}>
-          window.adminAuthCheck = fetch(`${api}/admin/session`, { credentials: "include" })
-            .then((r) => r.json())
-            .then((d) => {
-              if (!d.authenticated) {
-                location.replace(loginPath);
-                throw new Error("unauthenticated");
-              }
-              document.documentElement.dataset.adminAuth = "ok";
-              return d;
-            })
-            .catch((err) => {
-              if (err?.message !== "unauthenticated") location.replace(loginPath);
-              throw err;
-            });
-        </script>
-      )
-    }
-    {
-      !requireAuth && (
-        <script define:vars={{ api, adminHome }}>
-          fetch(`${api}/admin/session`, { credentials: "include" })
-            .then((r) => r.json())
-            .then((d) => {
-              if (d.authenticated) location.replace(adminHome);
-            })
-            .catch(() => {});
-        </script>
-      )
-    }
   </head>
   <body class="admin-body">
     {showNav && (
@@ -69,11 +42,33 @@ const adminHome = hrefPath("admin/");
     </nav>
     )}
     <main class="admin-main">
+      <div id="admin-config-error" class="admin-card alert alert-error" role="alert" hidden>
+        <strong>API not configured.</strong> Set <code>PUBLIC_API_BASE_URL</code> in Webflow Cloud (e.g.
+        <code>https://&lt;your-function-app&gt;.azurewebsites.net/api</code>) and redeploy.
+      </div>
       <slot />
     </main>
     <script>
-      const api = import.meta.env.PUBLIC_API_BASE_URL;
+      import {
+        initAdminLoginRedirect,
+        initAdminSessionGuard,
+        resolveApiBaseUrl,
+      } from "../lib/api.client.ts";
+
+      const root = document.documentElement;
+      const loginPath = root.dataset.loginPath!;
+      const adminHome = root.dataset.adminHome!;
+      const requireAuth = root.dataset.requireAuth === "1";
+
+      if (requireAuth) {
+        initAdminSessionGuard(loginPath);
+      } else {
+        initAdminLoginRedirect(adminHome);
+      }
+
       document.getElementById("admin-logout")?.addEventListener("click", async () => {
+        const api = await resolveApiBaseUrl();
+        if (!api) return;
         await fetch(`${api}/admin/logout`, { method: "POST", credentials: "include" });
         location.href = new URL("admin/login/", document.baseURI).href;
       });

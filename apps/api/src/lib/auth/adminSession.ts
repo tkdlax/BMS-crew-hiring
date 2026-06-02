@@ -40,14 +40,15 @@ export function getSessionCookie(req: HttpRequest): string | null {
 
 export function sessionCookieHeader(token: string): Record<string, string> {
   const maxAge = 8 * 60 * 60;
+  // SameSite=None: admin UI (baileysallied.com) calls API on another host (Azure).
   return {
-    "Set-Cookie": `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAge}`,
+    "Set-Cookie": `${COOKIE_NAME}=${token}; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=${maxAge}`,
   };
 }
 
 export function clearSessionCookie(): Record<string, string> {
   return {
-    "Set-Cookie": `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0`,
+    "Set-Cookie": `${COOKIE_NAME}=; HttpOnly; Secure; SameSite=None; Path=/; Max-Age=0`,
   };
 }
 

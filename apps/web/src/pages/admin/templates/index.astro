@@ -1,7 +1,5 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-
-const api = import.meta.env.PUBLIC_API_BASE_URL;
 ---
 <AdminLayout title="Templates">
   <div class="admin-card">
@@ -21,8 +19,10 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   </div>
 </AdminLayout>
 
-<script define:vars={{ api }}>
-  async function load() {
+<script>
+  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+
+  async function load(api) {
     const res = await fetch(`${api}/admin/templates`, { credentials: "include" });
     const { templates } = await res.json();
     document.getElementById("templates-list").innerHTML = `<table class="data"><thead><tr><th>Key</th><th>Channel</th><th>Scope</th><th>Subject</th></tr></thead><tbody>${templates
@@ -34,6 +34,8 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
   }
   document.getElementById("tpl-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
     const fd = new FormData(e.target);
     const scopeIdRaw = fd.get("scopeId");
     await fetch(`${api}/admin/templates`, {
@@ -49,10 +51,11 @@ const api = import.meta.env.PUBLIC_API_BASE_URL;
         body: fd.get("body"),
       }),
     });
-    load();
+    load(api);
   });
   (async () => {
     await window.adminAuthCheck;
-    await load();
+    const api = await resolveApiBaseUrl();
+    if (api) await load(api);
   })();
 </script>
