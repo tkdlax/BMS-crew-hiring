@@ -7,7 +7,14 @@ export function getPublicConfigUrl(): string {
   return `${withSlash}api/public-config`;
 }
 
-type PublicConfig = { apiBaseUrl?: string; captchaSiteKey?: string };
+import type { CaptchaProvider } from "./captcha.js";
+import { resolveCaptchaProvider } from "./captcha.js";
+
+type PublicConfig = {
+  apiBaseUrl?: string;
+  captchaSiteKey?: string;
+  captchaProvider?: CaptchaProvider;
+};
 
 let cachedConfig: PublicConfig | undefined;
 
@@ -25,12 +32,16 @@ async function loadPublicConfig(): Promise<PublicConfig> {
     const res = await fetch(getPublicConfigUrl());
     if (!res.ok) throw new Error(`config ${res.status}`);
     const data = (await res.json()) as PublicConfig;
+    const captchaSiteKey = data.captchaSiteKey?.trim() ?? "";
     cachedConfig = {
       apiBaseUrl: normalizeApiBaseUrl(data.apiBaseUrl),
-      captchaSiteKey: data.captchaSiteKey?.trim() ?? "",
+      captchaSiteKey,
+      captchaProvider:
+        data.captchaProvider ??
+        resolveCaptchaProvider(captchaSiteKey, import.meta.env.PUBLIC_CAPTCHA_PROVIDER),
     };
   } catch {
-    cachedConfig = { apiBaseUrl: "", captchaSiteKey: "" };
+    cachedConfig = { apiBaseUrl: "", captchaSiteKey: "", captchaProvider: "turnstile" };
   }
 
   return cachedConfig;
@@ -44,6 +55,12 @@ export async function resolveApiBaseUrl(): Promise<string> {
 export async function resolveCaptchaSiteKey(): Promise<string> {
   const cfg = await loadPublicConfig();
   return cfg.captchaSiteKey ?? "";
+}
+
+export async function resolveCaptchaProviderFromConfig(): Promise<CaptchaProvider> {
+  const cfg = await loadPublicConfig();
+  const siteKey = cfg.captchaSiteKey ?? "";
+  return cfg.captchaProvider ?? resolveCaptchaProvider(siteKey);
 }
 
 /** Same-origin admin API (proxied to Azure on the server — avoids browser CORS). */

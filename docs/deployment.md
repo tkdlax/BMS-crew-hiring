@@ -20,7 +20,7 @@
 | `TWILIO_FROM_NUMBER_UT` | Utah SMS from number (E.164) |
 | `TWILIO_FROM_NUMBER` | Optional fallback |
 | `CAPTCHA_SECRET` | Turnstile or reCAPTCHA secret |
-| `CAPTCHA_PROVIDER` | `turnstile` or `recaptcha` |
+| `CAPTCHA_PROVIDER` | `turnstile` or `recaptcha` (must match the site key type on Webflow) |
 | `ADMIN_PASSWORD_HASH` | bcrypt hash |
 | `SESSION_SIGNING_SECRET` | Random 32+ char string |
 | `ALLOWED_ORIGINS` | Comma-separated site origins, e.g. `https://www.baileysallied.com,https://baileysallied.com,https://baileys-moving-storage.webflow.io` |
@@ -41,7 +41,8 @@
 4. Environment variables (injected at **runtime** on Webflow Cloud — redeploy after changing):
    - `PUBLIC_API_BASE_URL` → `https://<function-app>.azurewebsites.net/api` (no trailing slash). Secret or plain both work.
    - `PUBLIC_SITE_BASE_URL` → `https://www.baileysallied.com/hiring` (production)
-   - `PUBLIC_CAPTCHA_SITE_KEY` → Turnstile site key
+   - `PUBLIC_CAPTCHA_SITE_KEY` → CAPTCHA site key (Cloudflare Turnstile or Google reCAPTCHA; keys starting with `6L` auto-use reCAPTCHA)
+   - `PUBLIC_CAPTCHA_PROVIDER` → optional `turnstile` or `recaptcha` (omit to infer from site key)
    - `PUBLIC_BASE_PATH` → `/hiring`
 
    The site loads these via `GET /hiring/api/public-config` (Cloudflare Worker). Local dev still uses `.env` at build time.

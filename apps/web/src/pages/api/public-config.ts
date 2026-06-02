@@ -1,5 +1,6 @@
 import type { APIRoute } from "astro";
 import { getRuntimeApiBaseUrl } from "../../lib/api";
+import { resolveCaptchaProvider } from "../../lib/captcha";
 
 export const prerender = false;
 
@@ -12,7 +13,11 @@ export const GET: APIRoute = async ({ locals }) => {
   const apiBaseUrl = getRuntimeApiBaseUrl(locals);
   const captchaSiteKey =
     env.PUBLIC_CAPTCHA_SITE_KEY?.trim() || import.meta.env.PUBLIC_CAPTCHA_SITE_KEY?.trim() || "";
-  return new Response(JSON.stringify({ apiBaseUrl, captchaSiteKey }), {
+  const captchaProvider = resolveCaptchaProvider(
+    captchaSiteKey,
+    env.PUBLIC_CAPTCHA_PROVIDER ?? env.CAPTCHA_PROVIDER
+  );
+  return new Response(JSON.stringify({ apiBaseUrl, captchaSiteKey, captchaProvider }), {
     status: 200,
     headers: {
       "Content-Type": "application/json",

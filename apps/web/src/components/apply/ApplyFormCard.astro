@@ -99,7 +99,7 @@ const interestOptions = content.interestOptions ?? [];
     </div>
 
     {captchaSiteKey ? (
-      <div class="form-group captcha-wrap">
+      <div class="form-group captcha-wrap" data-captcha-provider={captchaProvider}>
         {captchaProvider === "turnstile" ? (
           <div class="cf-turnstile" data-sitekey={captchaSiteKey} data-theme="light"></div>
         ) : (

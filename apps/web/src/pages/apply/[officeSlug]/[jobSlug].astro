@@ -17,6 +17,7 @@ import {
   getRuntimeCaptchaSiteKey,
 } from "../../../lib/api";
 import { hrefPath } from "../../../lib/assets";
+import { resolveCaptchaProvider } from "../../../lib/captcha";
 
 export async function getStaticPaths() {
   const api = getApiBaseUrl();
@@ -44,12 +45,12 @@ export async function getStaticPaths() {
 const { officeSlug, jobSlug } = Astro.params;
 const api = getRuntimeApiBaseUrl(Astro.locals);
 const captchaKey = getRuntimeCaptchaSiteKey(Astro.locals);
-const captchaProvider =
-  (Astro.locals.runtime?.env?.CAPTCHA_PROVIDER as string) ||
-  import.meta.env.PUBLIC_CAPTCHA_PROVIDER ||
-  "turnstile";
-const captchaProviderNorm =
-  captchaProvider === "recaptcha" ? "recaptcha" : ("turnstile" as const);
+const captchaProviderNorm = resolveCaptchaProvider(
+  captchaKey,
+  (Astro.locals.runtime?.env?.PUBLIC_CAPTCHA_PROVIDER as string) ||
+    (Astro.locals.runtime?.env?.CAPTCHA_PROVIDER as string) ||
+    import.meta.env.PUBLIC_CAPTCHA_PROVIDER
+);
 
 const privacyUrl = `${BRAND.mainSite}/privacy-policy`;
 const operationsUrl = hrefPath("operations/");
