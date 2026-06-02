@@ -33,14 +33,26 @@ export const officeUpsertSchema = z.object({
   active: z.boolean().optional(),
 });
 
-export const jobUpsertSchema = z.object({
-  officeId: z.number().int().positive(),
-  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
-  title: z.string().min(1).max(200),
-  active: z.boolean().optional(),
-  formFields: z.array(z.any()).optional(),
-  pageContent: z.record(z.any()).optional(),
-});
+export const jobUpsertSchema = z
+  .object({
+    officeId: z.number().int().positive(),
+    slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
+    title: z.string().min(1).max(200),
+    active: z.boolean().optional(),
+    payMinHourly: z.number().min(0).max(999).nullable().optional(),
+    payMaxHourly: z.number().min(0).max(999).nullable().optional(),
+    formFields: z.array(z.any()).optional(),
+    pageContent: z.record(z.any()).optional(),
+  })
+  .refine(
+    (d) => {
+      const min = d.payMinHourly;
+      const max = d.payMaxHourly;
+      if (min == null || max == null) return true;
+      return min <= max;
+    },
+    { message: "payMinHourly must be <= payMaxHourly" }
+  );
 
 export const templateUpsertSchema = z.object({
   templateKey: z.string().min(1).max(100),

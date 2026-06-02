@@ -58,6 +58,7 @@ const knownOpsApply =
   Boolean(officeSlug && jobSlug === OPERATIONS_JOB_SLUG && isKnownOperationsOffice(officeSlug!));
 
 let job: Record<string, unknown> | null = null;
+let officeLocationLabel = "";
 let loadError = "";
 
 if (api) {
@@ -70,6 +71,18 @@ if (api) {
   } catch {
     if (!knownOpsApply) loadError = "Unable to connect. Please try again later.";
   }
+
+  if (!job?.locationLabel && officeSlug && knownOpsApply) {
+    try {
+      const ores = await fetch(`${api}/public/offices/${officeSlug}`);
+      if (ores.ok) {
+        const office = await ores.json();
+        officeLocationLabel = office.locationLabel ? String(office.locationLabel) : "";
+      }
+    } catch {
+      /* use merge fallbacks */
+    }
+  }
 } else if (!knownOpsApply) {
   loadError = "Unable to connect. Please try again later.";
 }
@@ -79,7 +92,13 @@ const pageContent =
     ? mergeJobPageContent(officeSlug, jobSlug, job?.pageContent as Record<string, unknown>, {
         title: job?.title ? String(job.title) : "Moving Operations Crew",
         officeName: job?.officeName ? String(job.officeName) : officeDisplayName(officeSlug),
-        locationLabel: job?.locationLabel ? String(job.locationLabel) : "",
+        locationLabel: job?.locationLabel
+          ? String(job.locationLabel)
+          : officeLocationLabel,
+        payMinHourly:
+          job?.payMinHourly != null ? Number(job.payMinHourly) : null,
+        payMaxHourly:
+          job?.payMaxHourly != null ? Number(job.payMaxHourly) : null,
       })
     : null;
 

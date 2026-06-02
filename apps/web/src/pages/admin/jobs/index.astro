@@ -16,6 +16,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       <div class="field"><label>Office</label><select name="officeId" id="office-select" required></select></div>
       <div class="field"><label>Slug</label><input name="slug" required pattern="[a-z0-9-]+" /></div>
       <div class="field"><label>Title</label><input name="title" required /></div>
+      <div class="field"><label>Pay min ($/hr)</label><input name="payMinHourly" type="number" min="0" max="999" step="0.01" value="17" /></div>
+      <div class="field"><label>Pay max ($/hr)</label><input name="payMaxHourly" type="number" min="0" max="999" step="0.01" value="25" /></div>
       <div class="field"><label>Headline (apply page)</label><input name="headline" /></div>
       <div class="field"><label>Address override (apply page)</label><input name="address" placeholder="Leave blank to use office address" /></div>
       <div class="field"><label>Description (apply page)</label><textarea name="description"></textarea></div>
@@ -45,6 +47,39 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     }
   }
 
+  function buildPageContent(fd, existing = {}) {
+    const address = String(fd.get("address") ?? "").trim();
+    const pageContent = {
+      ...existing,
+      headline: fd.get("headline") || fd.get("title"),
+      description: fd.get("description") || "",
+    };
+    if (address) {
+      pageContent.address = address;
+      pageContent.addressOverride = true;
+    } else {
+      delete pageContent.address;
+      delete pageContent.addressOverride;
+    }
+    return pageContent;
+  }
+
+  function parsePayFields(fd) {
+    const minStr = String(fd.get("payMinHourly") ?? "").trim();
+    const maxStr = String(fd.get("payMaxHourly") ?? "").trim();
+    return {
+      payMinHourly: minStr ? parseFloat(minStr) : null,
+      payMaxHourly: maxStr ? parseFloat(maxStr) : null,
+    };
+  }
+
+  function formatPayCell(j) {
+    const min = j.pay_min_hourly ?? j.payMinHourly;
+    const max = j.pay_max_hourly ?? j.payMaxHourly;
+    if (min == null || max == null) return "—";
+    return `$${min}–$${max}/hr`;
+  }
+
   let offices = [];
   let jobs = [];
 
@@ -54,10 +89,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       el.innerHTML = "<p>No jobs yet.</p>";
       return;
     }
-    el.innerHTML = `<table class="data"><thead><tr><th>Title</th><th>Office</th><th>Slug</th><th>Apply URL</th><th>Active</th><th></th></tr></thead><tbody>${jobs
+    el.innerHTML = `<table class="data"><thead><tr><th>Title</th><th>Office</th><th>Pay</th><th>Slug</th><th>Apply URL</th><th>Active</th><th></th></tr></thead><tbody>${jobs
       .map(
         (j) =>
-          `<tr><td>${esc(j.title)}</td><td>${esc(j.office_name)}</td><td>${esc(j.slug)}</td><td><a href="${esc(j.applyUrl)}" target="_blank" rel="noopener">Open</a></td><td>${j.active ? "Yes" : "No"}</td><td class="table-actions"><button type="button" class="btn btn-small btn-secondary" data-edit="${j.id}">Edit</button></td></tr>`
+          `<tr><td>${esc(j.title)}</td><td>${esc(j.office_name)}</td><td>${formatPayCell(j)}</td><td>${esc(j.slug)}</td><td><a href="${esc(j.applyUrl)}" target="_blank" rel="noopener">Open</a></td><td>${j.active ? "Yes" : "No"}</td><td class="table-actions"><button type="button" class="btn btn-small btn-secondary" data-edit="${j.id}">Edit</button></td></tr>`
       )
       .join("")}</tbody></table>`;
     el.querySelectorAll("[data-edit]").forEach((btn) => {
@@ -80,8 +115,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           <div class="field"><label>Office</label><select name="officeId" required>${officeOptions}</select></div>
           <div class="field"><label>Slug</label><input name="slug" required pattern="[a-z0-9-]+" value="${esc(j.slug)}" /></div>
           <div class="field"><label>Title</label><input name="title" required value="${esc(j.title)}" /></div>
+          <div class="field"><label>Pay min ($/hr)</label><input name="payMinHourly" type="number" min="0" max="999" step="0.01" value="${esc(j.pay_min_hourly ?? j.payMinHourly ?? 17)}" /></div>
+          <div class="field"><label>Pay max ($/hr)</label><input name="payMaxHourly" type="number" min="0" max="999" step="0.01" value="${esc(j.pay_max_hourly ?? j.payMaxHourly ?? 25)}" /></div>
           <div class="field"><label>Headline (apply page)</label><input name="headline" value="${esc(page.headline ?? "")}" /></div>
-          <div class="field"><label>Address override (apply page)</label><input name="address" value="${esc(page.address ?? "")}" placeholder="Leave blank to use office address" /></div>
+          <div class="field"><label>Address override (apply page)</label><input name="address" value="${esc(page.addressOverride ? page.address ?? "" : "")}" placeholder="Leave blank to use office address" /></div>
           <div class="field"><label>Description (apply page)</label><textarea name="description">${esc(page.description ?? "")}</textarea></div>
           <div class="field"><label><input type="checkbox" name="active" ${j.active ? "checked" : ""} /> Active</label></div>
           <div class="table-actions">
@@ -106,14 +143,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         : typeof j.form_fields === "string"
           ? JSON.parse(j.form_fields || "[]")
           : [];
-      const address = String(fd.get("address") ?? "").trim();
-      const pageContent = {
-        ...existing,
-        headline: fd.get("headline") || fd.get("title"),
-        description: fd.get("description") || "",
-      };
-      if (address) pageContent.address = address;
-      else delete pageContent.address;
+      const pageContent = buildPageContent(fd, existing);
 
       const res = await fetch(`${api}/jobs/${id}`, {
         method: "PUT",
@@ -124,6 +154,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           slug: fd.get("slug"),
           title: fd.get("title"),
           active: fd.get("active") === "on",
+          ...parsePayFields(fd),
           pageContent,
           formFields,
         }),
@@ -173,12 +204,6 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     const api = await resolveAdminApiBaseUrl();
     if (!api) return;
     const fd = new FormData(e.target);
-    const address = String(fd.get("address") ?? "").trim();
-    const pageContent = {
-      headline: fd.get("headline") || fd.get("title"),
-      description: fd.get("description") || "",
-    };
-    if (address) pageContent.address = address;
     await fetch(`${api}/jobs`, {
       method: "POST",
       credentials: "include",
@@ -188,7 +213,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         slug: fd.get("slug"),
         title: fd.get("title"),
         active: true,
-        pageContent,
+        ...parsePayFields(fd),
+        pageContent: buildPageContent(fd),
         formFields: [],
       }),
     });
