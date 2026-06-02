@@ -14,10 +14,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 </AdminLayout>
 
 <script>
-  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+  import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
 
   async function initFilters(api) {
-    const oRes = await fetch(`${api}/admin/offices`, { credentials: "include" });
+    const oRes = await fetch(`${api}/offices`, { credentials: "include" });
     const { offices } = await oRes.json();
     const oSel = document.getElementById("filter-office");
     offices.forEach((o) => {
@@ -36,7 +36,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     const params = new URLSearchParams();
     if (officeId) params.set("officeId", officeId);
     if (jobId) params.set("jobId", jobId);
-    const res = await fetch(`${api}/admin/applications?${params}`, { credentials: "include" });
+    const res = await fetch(`${api}/applications?${params}`, { credentials: "include" });
     const { applications } = await res.json();
     document.getElementById("apps-table").innerHTML = `<table class="data"><thead><tr><th>Name</th><th>Office</th><th>Role</th><th>Status</th><th>Interview</th><th>Applied</th></tr></thead><tbody>${applications
       .map((a) => {
@@ -49,12 +49,12 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       .join("")}</tbody></table>`;
   }
   document.getElementById("apply-filters")?.addEventListener("click", async () => {
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (api) await load(api);
   });
   (async () => {
     await window.adminAuthCheck;
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (!api) return;
     await initFilters(api);
     await load(api);

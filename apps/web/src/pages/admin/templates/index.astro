@@ -20,10 +20,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 </AdminLayout>
 
 <script>
-  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+  import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
 
   async function load(api) {
-    const res = await fetch(`${api}/admin/templates`, { credentials: "include" });
+    const res = await fetch(`${api}/templates`, { credentials: "include" });
     const { templates } = await res.json();
     document.getElementById("templates-list").innerHTML = `<table class="data"><thead><tr><th>Key</th><th>Channel</th><th>Scope</th><th>Subject</th></tr></thead><tbody>${templates
       .map(
@@ -34,11 +34,11 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
   }
   document.getElementById("tpl-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (!api) return;
     const fd = new FormData(e.target);
     const scopeIdRaw = fd.get("scopeId");
-    await fetch(`${api}/admin/templates`, {
+    await fetch(`${api}/templates`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -55,7 +55,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
   });
   (async () => {
     await window.adminAuthCheck;
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (api) await load(api);
   })();
 </script>

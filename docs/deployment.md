@@ -46,6 +46,8 @@
 
    The site loads these via `GET /hiring/api/public-config` (Cloudflare Worker). Local dev still uses `.env` at build time.
 
+   **Admin UI** calls same-origin `/hiring/api/admin/*` (Webflow Worker proxy to Azure) so login is not blocked by cross-origin CORS.
+
 5. Publish the main Webflow site after Cloud environment is created.
 
 ### Admin login

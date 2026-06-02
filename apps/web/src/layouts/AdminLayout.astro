@@ -52,7 +52,7 @@ const adminHome = hrefPath("admin/");
       import {
         initAdminLoginRedirect,
         initAdminSessionGuard,
-        resolveApiBaseUrl,
+        resolveAdminApiBaseUrl,
       } from "../lib/api.client.ts";
 
       const root = document.documentElement;
@@ -67,9 +67,9 @@ const adminHome = hrefPath("admin/");
       }
 
       document.getElementById("admin-logout")?.addEventListener("click", async () => {
-        const api = await resolveApiBaseUrl();
+        const api = await resolveAdminApiBaseUrl();
         if (!api) return;
-        await fetch(`${api}/admin/logout`, { method: "POST", credentials: "include" });
+        await fetch(`${api}/logout`, { method: "POST", credentials: "include" });
         location.href = new URL("admin/login/", document.baseURI).href;
       });
     </script>

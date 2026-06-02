@@ -23,11 +23,11 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 </AdminLayout>
 
 <script>
-  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+  import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
 
   let offices = [];
   async function loadOffices(api) {
-    const res = await fetch(`${api}/admin/offices`, { credentials: "include" });
+    const res = await fetch(`${api}/offices`, { credentials: "include" });
     const data = await res.json();
     offices = data.offices;
     const sel = document.getElementById("office-select");
@@ -40,7 +40,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
   async function loadJobs(api) {
     const officeId = document.getElementById("filter-office").value;
     const q = officeId ? `?officeId=${officeId}` : "";
-    const res = await fetch(`${api}/admin/jobs${q}`, { credentials: "include" });
+    const res = await fetch(`${api}/jobs${q}`, { credentials: "include" });
     const { jobs } = await res.json();
     document.getElementById("jobs-table").innerHTML = `<table class="data"><thead><tr><th>Title</th><th>Office</th><th>Apply URL</th><th>Active</th></tr></thead><tbody>${jobs
       .map(
@@ -50,15 +50,15 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       .join("")}</tbody></table>`;
   }
   document.getElementById("filter-office")?.addEventListener("change", async () => {
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (api) await loadJobs(api);
   });
   document.getElementById("job-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (!api) return;
     const fd = new FormData(e.target);
-    await fetch(`${api}/admin/jobs`, {
+    await fetch(`${api}/jobs`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -79,7 +79,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
   });
   (async () => {
     await window.adminAuthCheck;
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (!api) return;
     await loadOffices(api);
     await loadJobs(api);

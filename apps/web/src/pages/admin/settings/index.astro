@@ -19,10 +19,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 </AdminLayout>
 
 <script>
-  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+  import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
 
   async function load(api) {
-    const res = await fetch(`${api}/admin/schedule-config?scope=global`, { credentials: "include" });
+    const res = await fetch(`${api}/schedule-config?scope=global`, { credentials: "include" });
     const { config: c } = await res.json();
     if (!c) return;
     const f = document.getElementById("settings-form");
@@ -36,10 +36,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
   }
   document.getElementById("settings-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (!api) return;
     const fd = new FormData(e.target);
-    await fetch(`${api}/admin/schedule-config`, {
+    await fetch(`${api}/schedule-config`, {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -59,7 +59,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
   });
   (async () => {
     await window.adminAuthCheck;
-    const api = await resolveApiBaseUrl();
+    const api = await resolveAdminApiBaseUrl();
     if (api) await load(api);
   })();
 </script>

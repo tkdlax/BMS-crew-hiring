@@ -26,12 +26,12 @@ const adminHome = hrefPath("admin/");
   enableLoginWhenApiReady("login-form", "#login-submit").then(() => {
     document.getElementById("login-form")?.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const { resolveApiBaseUrl } = await import("../../lib/api.client.ts");
-      const api = await resolveApiBaseUrl();
+      const { resolveAdminApiBaseUrl } = await import("../../lib/api.client.ts");
+      const api = await resolveAdminApiBaseUrl();
       if (!api) return;
 
       const password = new FormData(e.target as HTMLFormElement).get("password");
-      const res = await fetch(`${api}/admin/login`, {
+      const res = await fetch(`${api}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

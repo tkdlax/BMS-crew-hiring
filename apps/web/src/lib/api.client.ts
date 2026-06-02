@@ -46,6 +46,20 @@ export async function resolveCaptchaSiteKey(): Promise<string> {
   return cfg.captchaSiteKey ?? "";
 }
 
+/** Same-origin admin API (proxied to Azure on the server — avoids browser CORS). */
+export function getAdminApiBaseUrl(): string {
+  const base = import.meta.env.BASE_URL || "/";
+  const withSlash = base.endsWith("/") ? base : `${base}/`;
+  return `${withSlash}api/admin`;
+}
+
+/** Resolves when the Azure backend is configured; returns the browser-facing admin base URL. */
+export async function resolveAdminApiBaseUrl(): Promise<string> {
+  const azure = await resolveApiBaseUrl();
+  if (!azure) return "";
+  return getAdminApiBaseUrl();
+}
+
 declare global {
   interface Window {
     adminAuthCheck?: Promise<unknown>;
@@ -53,13 +67,13 @@ declare global {
 }
 
 export function initAdminSessionGuard(loginPath: string): void {
-  window.adminAuthCheck = resolveApiBaseUrl().then((api) => {
+  window.adminAuthCheck = resolveAdminApiBaseUrl().then((api) => {
     if (!api) {
       document.documentElement.dataset.adminAuth = "config-error";
       showAdminConfigError();
       throw new Error("api-not-configured");
     }
-    return fetch(`${api}/admin/session`, { credentials: "include" })
+    return fetch(`${api}/session`, { credentials: "include" })
       .then((r) => r.json())
       .then((d) => {
         if (!d.authenticated) {
@@ -78,12 +92,12 @@ export function initAdminSessionGuard(loginPath: string): void {
 }
 
 export function initAdminLoginRedirect(adminHome: string): void {
-  resolveApiBaseUrl().then((api) => {
+  resolveAdminApiBaseUrl().then((api) => {
     if (!api) {
       showAdminConfigError();
       return;
     }
-    fetch(`${api}/admin/session`, { credentials: "include" })
+    fetch(`${api}/session`, { credentials: "include" })
       .then((r) => r.json())
       .then((d) => {
         if (d.authenticated) location.replace(adminHome);
@@ -106,7 +120,7 @@ export async function enableLoginWhenApiReady(
   formId: string,
   submitSelector: string
 ): Promise<string> {
-  const api = await resolveApiBaseUrl();
+  const api = await resolveAdminApiBaseUrl();
   const form = document.getElementById(formId);
   const btn = form?.querySelector(submitSelector) as HTMLButtonElement | null;
   if (!api) {
