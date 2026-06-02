@@ -9,6 +9,14 @@ const adminHome = hrefPath("admin/");
     <h1>Admin sign in</h1>
     <div id="login-alert" hidden class="alert alert-error" style="display: none;"></div>
     <form id="login-form" class="admin-form">
+      <div class="field hp" aria-hidden="true">
+        <label for="username">Username</label>
+        <input id="username" name="username" type="text" tabindex="-1" autocomplete="username" />
+      </div>
+      <div class="field hp" aria-hidden="true">
+        <label for="login-website">Website</label>
+        <input id="login-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+      </div>
       <div class="field">
         <label for="password">Password</label>
         <input id="password" name="password" type="password" required autocomplete="current-password" />
@@ -30,14 +38,29 @@ const adminHome = hrefPath("admin/");
       const api = await resolveAdminApiBaseUrl();
       if (!api) return;
 
-      const password = new FormData(e.target as HTMLFormElement).get("password");
+      const form = e.target as HTMLFormElement;
+      const fd = new FormData(form);
+      const alertEl = document.getElementById("login-alert");
+
+      const decoyUsername = String(fd.get("username") ?? "").trim();
+      const honeypot = String(fd.get("website") ?? "").trim();
+      if (decoyUsername || honeypot) {
+        if (alertEl) {
+          alertEl.style.display = "block";
+          alertEl.textContent = "Invalid password";
+        }
+        return;
+      }
+
       const res = await fetch(`${api}/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({
+          password: fd.get("password"),
+          honeypot: "",
+        }),
       });
-      const alertEl = document.getElementById("login-alert");
       if (res.ok) {
         location.href = adminHome;
         return;

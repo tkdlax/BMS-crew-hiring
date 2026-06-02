@@ -4,13 +4,15 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 <AdminLayout title="Offices">
   <div class="admin-card">
     <h1>Offices</h1>
+    <p class="admin-hint">Location / address is shown on apply pages and scheduling emails. Edit any office below.</p>
     <div id="offices-table">Loading…</div>
+    <div id="office-edit-host"></div>
     <h2>Add office</h2>
     <form id="office-form" class="admin-form">
       <div class="field"><label>Slug</label><input name="slug" required pattern="[a-z0-9-]+" /></div>
       <div class="field"><label>Name</label><input name="name" required /></div>
       <div class="field"><label>Timezone (IANA)</label><input name="timezone" value="America/Denver" required /></div>
-      <div class="field"><label>Location label</label><input name="locationLabel" required /></div>
+      <div class="field"><label>Address / location</label><input name="locationLabel" required placeholder="11755 E Peakview Ave, Centennial, CO 80111" /></div>
       <button type="submit" class="btn">Create office</button>
     </form>
   </div>
@@ -19,20 +21,95 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 <script>
   import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
 
+  function esc(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  let offices = [];
+
+  function renderTable() {
+    const el = document.getElementById("offices-table");
+    if (!offices.length) {
+      el.innerHTML = "<p>No offices yet.</p>";
+      return;
+    }
+    el.innerHTML = `<table class="data"><thead><tr><th>Name</th><th>Slug</th><th>Address</th><th>TZ</th><th>Active</th><th></th></tr></thead><tbody>${offices
+      .map(
+        (o) =>
+          `<tr data-id="${o.id}"><td>${esc(o.name)}</td><td>${esc(o.slug)}</td><td>${esc(o.location_label)}</td><td>${esc(o.timezone)}</td><td>${o.active ? "Yes" : "No"}</td><td class="table-actions"><button type="button" class="btn btn-small btn-secondary" data-edit="${o.id}">Edit</button></td></tr>`
+      )
+      .join("")}</tbody></table>`;
+    el.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => openEdit(parseInt(btn.getAttribute("data-edit")!, 10)));
+    });
+  }
+
+  function openEdit(id) {
+    const o = offices.find((x) => x.id === id);
+    if (!o) return;
+    const host = document.getElementById("office-edit-host");
+    host.innerHTML = `
+      <div class="admin-edit-panel" id="office-edit-panel">
+        <h3>Edit office: ${esc(o.name)}</h3>
+        <form id="office-edit-form" class="admin-form">
+          <div class="field"><label>Slug</label><input name="slug" required pattern="[a-z0-9-]+" value="${esc(o.slug)}" /></div>
+          <div class="field"><label>Name</label><input name="name" required value="${esc(o.name)}" /></div>
+          <div class="field"><label>Timezone (IANA)</label><input name="timezone" required value="${esc(o.timezone)}" /></div>
+          <div class="field"><label>Address / location</label><input name="locationLabel" required value="${esc(o.location_label)}" /></div>
+          <div class="field"><label><input type="checkbox" name="active" ${o.active ? "checked" : ""} /> Active</label></div>
+          <div class="table-actions">
+            <button type="submit" class="btn">Save changes</button>
+            <button type="button" class="btn btn-secondary" id="office-edit-cancel">Cancel</button>
+          </div>
+        </form>
+        <p id="office-edit-msg"></p>
+      </div>`;
+    host.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    document.getElementById("office-edit-cancel")?.addEventListener("click", () => {
+      host.innerHTML = "";
+    });
+    document.getElementById("office-edit-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const api = await resolveAdminApiBaseUrl();
+      if (!api) return;
+      const fd = new FormData(e.target);
+      const res = await fetch(`${api}/offices/${id}`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: fd.get("slug"),
+          name: fd.get("name"),
+          timezone: fd.get("timezone"),
+          locationLabel: fd.get("locationLabel"),
+          active: fd.get("active") === "on",
+        }),
+      });
+      const msg = document.getElementById("office-edit-msg");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        if (msg) msg.textContent = (data as { error?: string }).error || "Save failed.";
+        return;
+      }
+      if (msg) msg.textContent = "Saved.";
+      host.innerHTML = "";
+      await load();
+    });
+  }
+
   async function load() {
     await window.adminAuthCheck;
     const api = await resolveAdminApiBaseUrl();
     if (!api) return;
     const res = await fetch(`${api}/offices`, { credentials: "include" });
-    const { offices } = await res.json();
-    const el = document.getElementById("offices-table");
-    el.innerHTML = `<table class="data"><thead><tr><th>Name</th><th>Slug</th><th>TZ</th><th>Active</th></tr></thead><tbody>${offices
-      .map(
-        (o) =>
-          `<tr><td>${o.name}</td><td>${o.slug}</td><td>${o.timezone}</td><td>${o.active ? "Yes" : "No"}</td></tr>`
-      )
-      .join("")}</tbody></table>`;
+    const data = await res.json();
+    offices = data.offices;
+    renderTable();
   }
+
   document.getElementById("office-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const api = await resolveAdminApiBaseUrl();
@@ -55,3 +132,11 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
   });
   load();
 </script>
+
+<style>
+  .admin-hint {
+    color: var(--text-light);
+    font-size: 0.875rem;
+    margin: 0 0 1rem;
+  }
+</style>

@@ -19,6 +19,10 @@ export const bookSlotSchema = z.object({
 
 export const adminLoginSchema = z.object({
   password: z.string().min(1),
+  /** Hidden field; bots that fill it are rejected. */
+  honeypot: z.string().max(0).optional(),
+  /** Decoy; legitimate clients must not send this key. */
+  username: z.string().max(0).optional(),
 });
 
 export const officeUpsertSchema = z.object({

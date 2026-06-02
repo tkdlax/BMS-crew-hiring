@@ -53,6 +53,9 @@ async function adminLogin(req: HttpRequest): Promise<HttpResponseInit> {
   const body = (await req.json()) as unknown;
   const parsed = adminLoginSchema.safeParse(body);
   if (!parsed.success) return error("Invalid request", 400);
+  if (parsed.data.honeypot || parsed.data.username) {
+    return error("Invalid request", 400);
+  }
   const ok = await verifyAdminPassword(parsed.data.password);
   if (!ok) return error("Invalid password", 401);
   const token = await createSessionToken();
@@ -125,10 +128,20 @@ async function handleJobs(
         WHERE (@officeId IS NULL OR j.office_id = @officeId)
         ORDER BY o.name, j.title
       `);
-    const jobs = r.recordset.map((row: Record<string, unknown>) => ({
-      ...row,
-      applyUrl: `${config.publicSiteBaseUrl}/apply/${row.office_slug}/${row.slug}`,
-    }));
+    const jobs = r.recordset.map((row: Record<string, unknown>) => {
+      const pageContent = row.page_content
+        ? (JSON.parse(row.page_content as string) as Record<string, unknown>)
+        : {};
+      const formFields = row.form_fields
+        ? (JSON.parse(row.form_fields as string) as unknown[])
+        : [];
+      return {
+        ...row,
+        page_content: pageContent,
+        form_fields: formFields,
+        applyUrl: `${config.publicSiteBaseUrl}/apply/${row.office_slug}/${row.slug}`,
+      };
+    });
     return json({ jobs });
   }
   if (segments.length === 0 && req.method === "POST") {
