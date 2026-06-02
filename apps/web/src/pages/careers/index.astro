@@ -3,6 +3,7 @@ export const prerender = false;
 
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import CareersCrosslink from "../../components/CareersCrosslink.astro";
+import { OPERATIONS_JOB_SLUG } from "../../constants/jobs";
 import { OPERATIONS_OFFICE_ORDER } from "../../constants/offices";
 import { getRuntimeApiBaseUrl } from "../../lib/api";
 import { hrefPath } from "../../lib/assets";
@@ -22,7 +23,9 @@ try {
   const res = await fetch(`${api}/public/openings`);
   if (res.ok) {
     const data = await res.json();
-    openings = data.openings ?? [];
+    openings = (data.openings ?? []).filter(
+      (o: Opening) => o.job_slug === OPERATIONS_JOB_SLUG
+    );
   }
 } catch {
   /* dev without API */
@@ -57,14 +60,14 @@ for (const g of bySlug.values()) {
 
 const totalRoles = openings.length;
 ---
-<BaseLayout title="Driver & crew openings">
+<BaseLayout title="Moving operations crew openings">
   <section class="page-band">
     <div class="page-band__inner">
       <p class="eyebrow">Operations hiring</p>
-      <h1>Driver &amp; crew openings</h1>
+      <h1>Moving operations crew</h1>
       <p class="sub">
-        Choose your office below — Denver, Colorado Springs, Grand Junction, or Salt Lake City.
-        Select a role to apply; most applications take about 3 minutes.
+        One team per office — Denver, Colorado Springs, Grand Junction, and Salt Lake City.
+        Apply in about 2 minutes; tell us what you&apos;re most interested in on the form.
       </p>
     </div>
   </section>
@@ -80,8 +83,7 @@ const totalRoles = openings.length;
     ) : (
       <>
         <p class="section-label">
-          {totalRoles} operations {totalRoles === 1 ? "role" : "roles"} open across {officeGroups.length}{" "}
-          {officeGroups.length === 1 ? "office" : "offices"}
+          {officeGroups.length} {officeGroups.length === 1 ? "office" : "offices"} hiring moving operations crew
         </p>
         {officeGroups.map((office) => (
           <section class="office-group" id={office.slug}>

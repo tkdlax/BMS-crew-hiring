@@ -2,453 +2,172 @@
 export const prerender = false;
 
 import BaseLayout from "../../../layouts/BaseLayout.astro";
-
-import ApplyHero from "../../../components/apply/ApplyHero.astro";
-
-import JobDetailsCard from "../../../components/apply/JobDetailsCard.astro";
-
+import ApplyHeroShell from "../../../components/apply/ApplyHeroShell.astro";
 import VideoGallery from "../../../components/apply/VideoGallery.astro";
-
+import JobDetailsCard from "../../../components/apply/JobDetailsCard.astro";
 import TrustStrip from "../../../components/TrustStrip.astro";
-
 import { BRAND } from "../../../constants/brand";
-
-import { mergeJobPageContent } from "../../../lib/jobPageContent";
+import { OPERATIONS_JOB_SLUG, LEGACY_JOB_SLUGS } from "../../../constants/jobs";
 import { OPERATIONS_OFFICE_ORDER } from "../../../constants/offices";
-import { getApiBaseUrl, getRuntimeApiBaseUrl, getRuntimeCaptchaSiteKey } from "../../../lib/api";
+import { mergeJobPageContent } from "../../../lib/jobPageContent";
+import {
+  getApiBaseUrl,
+  getRuntimeApiBaseUrl,
+  getRuntimeCaptchaSiteKey,
+} from "../../../lib/api";
 import { hrefPath } from "../../../lib/assets";
 
 export async function getStaticPaths() {
   const api = getApiBaseUrl();
-  const jobSlugs = ["driver", "crew-member"];
-  const fallback = OPERATIONS_OFFICE_ORDER.flatMap((officeSlug) =>
-    jobSlugs.map((jobSlug) => ({ params: { officeSlug, jobSlug } }))
-  );
+  const fallback = OPERATIONS_OFFICE_ORDER.map((officeSlug) => ({
+    params: { officeSlug, jobSlug: OPERATIONS_JOB_SLUG },
+  }));
 
   if (!api) return fallback;
 
   try {
-
     const res = await fetch(`${api}/public/openings`);
-
     if (!res.ok) return fallback;
-
     const { openings } = await res.json();
-
     if (!openings?.length) return fallback;
-
-    return openings.map(
-
-      (o: { office_slug: string; job_slug: string }) => ({
-
+    return openings
+      .filter((o: { job_slug: string }) => !LEGACY_JOB_SLUGS.includes(o.job_slug as typeof LEGACY_JOB_SLUGS[number]))
+      .map((o: { office_slug: string; job_slug: string }) => ({
         params: { officeSlug: o.office_slug, jobSlug: o.job_slug },
-
-      })
-
-    );
-
+      }));
   } catch {
-
     return fallback;
-
   }
-
 }
 
-
-
 const { officeSlug, jobSlug } = Astro.params;
-
-const api = getApiBaseUrl();
-
-const captchaKey = import.meta.env.PUBLIC_CAPTCHA_SITE_KEY;
+const api = getRuntimeApiBaseUrl(Astro.locals);
+const captchaKey = getRuntimeCaptchaSiteKey(Astro.locals);
+const captchaProvider =
+  (Astro.locals.runtime?.env?.CAPTCHA_PROVIDER as string) ||
+  import.meta.env.PUBLIC_CAPTCHA_PROVIDER ||
+  "turnstile";
+const captchaProviderNorm =
+  captchaProvider === "recaptcha" ? "recaptcha" : ("turnstile" as const);
 
 const privacyUrl = `${BRAND.mainSite}/privacy-policy`;
 const careersUrl = hrefPath("careers/");
 
-
-
 let job: Record<string, unknown> | null = null;
-
 let loadError = "";
 
-
-
 try {
-
-  const res = await fetch(`${api}/public/jobs/${officeSlug}/${jobSlug}`);
-
-  if (res.ok) job = await res.json();
-
-  else loadError = res.status === 404 ? "This position is not available." : "Unable to load job.";
-
+  if (api) {
+    const res = await fetch(`${api}/public/jobs/${officeSlug}/${jobSlug}`);
+    if (res.ok) job = await res.json();
+    else loadError = res.status === 404 ? "This position is not available." : "Unable to load job.";
+  } else {
+    loadError = "Unable to connect. Please try again later.";
+  }
 } catch {
-
   loadError = "Unable to connect. Please try again later.";
-
 }
 
-
-
 const pageContent = job
-
-  ? mergeJobPageContent(
-
-      officeSlug!,
-
-      jobSlug!,
-
-      job.pageContent as Record<string, unknown>,
-
-      {
-
-        title: String(job.title),
-
-        officeName: String(job.officeName),
-
-        locationLabel: String(job.locationLabel),
-
-      }
-
-    )
-
+  ? mergeJobPageContent(officeSlug!, jobSlug!, job.pageContent as Record<string, unknown>, {
+      title: String(job.title),
+      officeName: String(job.officeName),
+      locationLabel: String(job.locationLabel),
+    })
   : null;
-
-
-
-const formFields = (job?.formFields as Array<Record<string, unknown>>) ?? [];
-
-const headline = pageContent?.headline ?? "Apply";
-
-const interestOptions = pageContent?.interestOptions ?? [];
-
-const showInterest = interestOptions.length > 0;
-
-const showMovingExperience = jobSlug === "crew-member" || jobSlug === "driver";
-
 ---
 
-<BaseLayout title={headline} bodyClass="page-apply">
-
+<BaseLayout title={pageContent?.headline ?? "Apply"} bodyClass="page-apply" applyChrome>
   {loadError ? (
-
-    <section class="page-band">
-
-      <div class="page-band__inner">
-
-        <h1>Position unavailable</h1>
-
-        <p class="sub">{loadError}</p>
-
-      </div>
-
-    </section>
-
-    <div class="page-wrap">
-
-      <a href={careersUrl} class="btn btn-secondary">Back to operations openings</a>
-
-    </div>
-
-  ) : job && pageContent ? (
-
     <>
-
-      <ApplyHero content={pageContent} />
+      <section class="page-band">
+        <div class="page-band__inner">
+          <h1>Position unavailable</h1>
+          <p class="sub">{loadError}</p>
+        </div>
+      </section>
+      <div class="page-wrap">
+        <a href={careersUrl} class="btn btn-secondary">Back to operations openings</a>
+      </div>
+    </>
+  ) : job && pageContent ? (
+    <>
+      <ApplyHeroShell
+        content={pageContent}
+        officeSlug={officeSlug!}
+        jobSlug={jobSlug!}
+        captchaSiteKey={captchaKey}
+        captchaProvider={captchaProviderNorm}
+        privacyUrl={privacyUrl}
+      />
 
       <TrustStrip />
 
-
-
-      <div class="apply-body">
-        <div class="apply-layout">
-
-        <div class="apply-layout__main">
-
-          <section class="apply-form-section" id="apply">
-
-            <h2 class="apply-form-section__title">{pageContent.formTitle}</h2>
-
-            <div class="apply-form-card">
-
-              <div id="form-alert" hidden></div>
-
-              <form id="apply-form" novalidate data-office-slug={officeSlug} data-job-slug={jobSlug}>
-
-                <div class="field">
-
-                  <label for="fullName">Name <span class="req">*</span></label>
-
-                  <input id="fullName" name="fullName" type="text" required autocomplete="name" />
-
-                </div>
-
-                <div class="field">
-
-                  <label for="email">Email Address <span class="req">*</span></label>
-
-                  <input id="email" name="email" type="email" required autocomplete="email" inputmode="email" />
-
-                </div>
-
-                <div class="field">
-
-                  <label for="phone">Phone Number (must be text-enabled) <span class="req">*</span></label>
-
-                  <input
-
-                    id="phone"
-
-                    name="phone"
-
-                    type="tel"
-
-                    required
-
-                    autocomplete="tel"
-
-                    inputmode="tel"
-
-                    placeholder="(555) 555-5555"
-
-                  />
-
-                </div>
-
-                {showInterest && (
-
-                  <div class="field">
-
-                    <label for="interest">What are you most interested in? <span class="req">*</span></label>
-
-                    <select id="interest" name="interest" required>
-
-                      <option value="">Select one...</option>
-
-                      {interestOptions.map((opt) => (
-
-                        <option value={opt}>{opt}</option>
-
-                      ))}
-
-                    </select>
-
-                  </div>
-
-                )}
-
-                {showMovingExperience && (
-
-                  <div class="field field-checkbox">
-
-                    <label class="checkbox-label">
-
-                      <input type="checkbox" id="movingExperience" name="movingExperience" value="yes" />
-
-                      <span>Have you worked in the moving industry before?</span>
-
-                    </label>
-
-                    <p class="field-hint">Check here, if YES.</p>
-
-                    {pageContent.trainingNote && (
-
-                      <p class="field-note">{pageContent.trainingNote}</p>
-
-                    )}
-
-                  </div>
-
-                )}
-
-                {formFields.map((f) => (
-
-                  <div class="field">
-
-                    <label for={`cf-${f.key}`}>
-
-                      {f.label}
-
-                      {f.required ? <span class="req">*</span> : null}
-
-                    </label>
-
-                    {f.type === "textarea" ? (
-
-                      <textarea id={`cf-${f.key}`} name={String(f.key)} required={!!f.required}></textarea>
-
-                    ) : (
-
-                      <input id={`cf-${f.key}`} name={String(f.key)} type="text" required={!!f.required} />
-
-                    )}
-
-                  </div>
-
-                ))}
-
-                <div class="field hp" aria-hidden="true">
-
-                  <label for="website">Website</label>
-
-                  <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
-
-                </div>
-
-                {captchaKey && (
-
-                  <div class="field captcha-wrap">
-
-                    <div id="captcha-container" class="g-recaptcha" data-sitekey={captchaKey}></div>
-
-                  </div>
-
-                )}
-
-                <button type="submit" class="btn btn-primary" id="submit-btn">Submit application</button>
-
-                <p class="form-legal">
-
-                  A resume is not required. All fields marked with &apos;*&apos; are required.
-
-                </p>
-
-                <p class="form-legal">
-
-                  By submitting this form, you agree that we can contact you via the methods provided here.
-
-                  For more information, visit our{" "}
-
-                  <a href={privacyUrl} target="_blank" rel="noopener noreferrer">privacy policy</a>.
-
-                </p>
-
-              </form>
-
-            </div>
-
-          </section>
-
-
-
-          {pageContent.videos && pageContent.videos.length > 0 && pageContent.learnSectionTitle && (
-
-            <VideoGallery title={pageContent.learnSectionTitle} videos={pageContent.videos} />
-
-          )}
-
-        </div>
-
-
-
-        {pageContent.jobDetails && (
-
+      {pageContent.videos && pageContent.videos.length > 0 && pageContent.learnSectionTitle && (
+        <VideoGallery title={pageContent.learnSectionTitle} videos={pageContent.videos} />
+      )}
+
+      {pageContent.jobDetails && (
+        <section class="apply-details-section page-wrap">
           <JobDetailsCard details={pageContent.jobDetails} />
-
-        )}
-
-      </div>
-      </div>
-
-
-
-      <section class="apply-social-band">
-
-        <p>Follow us for more moving tips, videos, and more.</p>
-
-        <div class="apply-social-band__links">
-
-          <a href="https://www.facebook.com/baileysmoving" target="_blank" rel="noopener noreferrer">Facebook</a>
-
-          <a href="https://www.instagram.com/baileysmoving" target="_blank" rel="noopener noreferrer">Instagram</a>
-
-          <a href="https://www.youtube.com/@baileysmoving" target="_blank" rel="noopener noreferrer">YouTube</a>
-
-        </div>
-
-      </section>
-
+        </section>
+      )}
     </>
-
   ) : (
-
     <div class="page-wrap">
-
       <p class="lead">Loading position details…</p>
-
     </div>
-
   )}
-
 </BaseLayout>
 
-
-
-{captchaKey && (
-
+{captchaKey && captchaProviderNorm === "recaptcha" && (
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-
 )}
-
-
+{captchaKey && captchaProviderNorm === "turnstile" && (
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+)}
 
 <script>
   import { resolveApiBaseUrl, resolveCaptchaSiteKey } from "../../../lib/api.client.ts";
 
-  const form = document.getElementById("apply-form");
-  const officeSlug = form?.dataset.officeSlug ?? "";
-  const jobSlug = form?.dataset.jobSlug ?? "";
-
+  const form = document.getElementById("apply-form") as HTMLFormElement | null;
   const alertEl = document.getElementById("form-alert");
+  const submitBtn = document.getElementById("submit-btn") as HTMLButtonElement | null;
 
-  const submitBtn = document.getElementById("submit-btn");
-
-
-
-  function showAlert(msg, type) {
-
+  function showAlert(msg: string, type: "error" | "success") {
     if (!alertEl) return;
-
     alertEl.hidden = false;
-
-    alertEl.className = `alert alert-${type}`;
-
+    alertEl.className = `form-alert alert alert-${type}`;
     alertEl.textContent = msg;
-
     alertEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
   }
 
-
-
-  function splitName(full) {
-
-    const parts = String(full || "").trim().split(/\s+/).filter(Boolean);
-
+  function splitName(full: unknown) {
+    const parts = String(full || "")
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
     if (!parts.length) return { firstName: "", lastName: "" };
-
-    if (parts.length === 1) return { firstName: parts[0], lastName: parts[0] };
-
-    return { firstName: parts[0], lastName: parts.slice(1).join(" ") };
-
+    if (parts.length === 1) return { firstName: parts[0]!, lastName: parts[0]! };
+    return { firstName: parts[0]!, lastName: parts.slice(1).join(" ") };
   }
-
-
 
   async function getCaptchaToken() {
     const captchaKey = await resolveCaptchaSiteKey();
     if (!captchaKey) return "dev-bypass";
+    const turnstileEl = form?.querySelector<HTMLElement>(".cf-turnstile");
+    if (turnstileEl && "turnstile" in window) {
+      const w = window as Window & { turnstile?: { getResponse: (el?: HTMLElement) => string } };
+      return w.turnstile?.getResponse(turnstileEl) || "";
+    }
     if (typeof grecaptcha !== "undefined") {
       return grecaptcha.getResponse() || "";
     }
     return "";
   }
 
-
-
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
-
     const api = await resolveApiBaseUrl();
     if (!api) {
       showAlert("Application form is temporarily unavailable. Please try again later.", "error");
@@ -457,107 +176,63 @@ const showMovingExperience = jobSlug === "crew-member" || jobSlug === "driver";
 
     const captchaKey = await resolveCaptchaSiteKey();
     const captchaToken = await getCaptchaToken();
-
     if (captchaKey && !captchaToken) {
       showAlert("Please complete the security check below.", "error");
       return;
     }
 
-    submitBtn.disabled = true;
-
+    if (submitBtn) submitBtn.disabled = true;
     const fd = new FormData(form);
-
     const { firstName, lastName } = splitName(fd.get("fullName"));
-
-    const customFields = {};
+    const customFields: Record<string, string> = {};
 
     for (const [k, v] of fd.entries()) {
-
-      if (
-
-        !["fullName", "email", "phone", "website", "movingExperience"].includes(k)
-
-      ) {
-
+      if (!["fullName", "email", "phone", "website", "movingExperience"].includes(k)) {
         customFields[k] = String(v);
-
       }
-
     }
-
-    if (fd.get("movingExperience")) {
-
-      customFields.movingExperience = "yes";
-
-    }
+    if (fd.get("movingExperience")) customFields.movingExperience = "yes";
+    if (fd.get("interest")) customFields.primaryInterest = String(fd.get("interest"));
 
     const body = {
-
-      officeSlug,
-
-      jobSlug,
-
+      officeSlug: form.dataset.officeSlug,
+      jobSlug: form.dataset.jobSlug,
       firstName,
-
       lastName,
-
       email: fd.get("email"),
-
       phone: fd.get("phone"),
-
       captchaToken,
-
       honeypot: fd.get("website") || "",
-
       customFields,
-
     };
 
     try {
-
       const res = await fetch(`${api}/applications`, {
-
         method: "POST",
-
         headers: { "Content-Type": "application/json" },
-
+        credentials: "include",
         body: JSON.stringify(body),
-
       });
-
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "Submission failed");
 
       form.hidden = true;
-
       if (typeof grecaptcha !== "undefined") grecaptcha.reset();
+      const w = window as Window & { turnstile?: { reset: (el?: HTMLElement) => void } };
+      const turnstileEl = document.querySelector(".cf-turnstile");
+      if (w.turnstile && turnstileEl) w.turnstile.reset(turnstileEl as HTMLElement);
 
       showAlert(
-
         "Thank you! Check your phone and email for instructions. We'll be in touch shortly to discuss your application.",
-
         "success"
-
       );
-
       window.scrollTo({ top: 0, behavior: "smooth" });
-
     } catch (err) {
-
       showAlert(
-
-        err.message || "Oops! Something went wrong. Check all fields and try again.",
-
+        err instanceof Error ? err.message : "Oops! Something went wrong. Check all fields and try again.",
         "error"
-
       );
-
-      submitBtn.disabled = false;
-
+      if (submitBtn) submitBtn.disabled = false;
     }
-
   });
-
 </script>
-

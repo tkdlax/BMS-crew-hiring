@@ -1,0 +1,125 @@
+---
+import type { JobPageContent } from "../../lib/jobPageContent";
+
+interface Props {
+  content: JobPageContent;
+  officeSlug: string;
+  jobSlug: string;
+  captchaSiteKey: string;
+  captchaProvider: "turnstile" | "recaptcha";
+  privacyUrl: string;
+}
+
+const { content, officeSlug, jobSlug, captchaSiteKey, captchaProvider, privacyUrl } = Astro.props;
+
+const interestOptions = content.interestOptions ?? [];
+---
+
+<div class="form-card">
+  <p class="form-card-title">{content.formTitle}</p>
+  {content.formSubtitle && <p class="form-card-sub">{content.formSubtitle}</p>}
+  <div class="form-card-accent" aria-hidden="true"></div>
+
+  <div id="form-alert" class="form-alert" hidden></div>
+
+  <form id="apply-form" class="apply-form" novalidate data-office-slug={officeSlug} data-job-slug={jobSlug}>
+    <div class="form-group">
+      <label class="form-label" for="fullName">
+        Full Name <span class="req">*</span>
+      </label>
+      <input
+        class="form-input"
+        id="fullName"
+        name="fullName"
+        type="text"
+        required
+        autocomplete="name"
+        placeholder="Your first and last name"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="email">
+        Email Address <span class="req">*</span>
+      </label>
+      <input
+        class="form-input"
+        id="email"
+        name="email"
+        type="email"
+        required
+        autocomplete="email"
+        inputmode="email"
+        placeholder="you@example.com"
+      />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label" for="phone">
+        Phone Number <span class="req">*</span>
+      </label>
+      <input
+        class="form-input"
+        id="phone"
+        name="phone"
+        type="tel"
+        required
+        autocomplete="tel"
+        inputmode="tel"
+        placeholder="(555) 555-5555"
+      />
+      <p class="form-hint">Must be text-enabled</p>
+    </div>
+
+    {interestOptions.length > 0 && (
+      <div class="form-group">
+        <label class="form-label" for="interest">
+          What are you most interested in? <span class="req">*</span>
+        </label>
+        <select class="form-select" id="interest" name="interest" required>
+          <option value="" disabled selected>Select one…</option>
+          {interestOptions.map((opt) => (
+            <option value={opt}>{opt}</option>
+          ))}
+        </select>
+      </div>
+    )}
+
+    <div class="checkbox-row">
+      <input type="checkbox" id="movingExperience" name="movingExperience" value="yes" />
+      <div>
+        <label for="movingExperience">I have worked in the moving industry before.</label>
+        {content.trainingNote && <p class="checkbox-note">{content.trainingNote}</p>}
+      </div>
+    </div>
+
+    <div class="field hp" aria-hidden="true">
+      <label for="website">Website</label>
+      <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
+    </div>
+
+    {captchaSiteKey ? (
+      <div class="form-group captcha-wrap">
+        {captchaProvider === "turnstile" ? (
+          <div class="cf-turnstile" data-sitekey={captchaSiteKey} data-theme="light"></div>
+        ) : (
+          <div class="g-recaptcha" data-sitekey={captchaSiteKey}></div>
+        )}
+      </div>
+    ) : (
+      <p class="form-hint form-hint--warn" role="status">
+        Security verification is not configured on this environment. Submissions may be blocked until
+        CAPTCHA keys are set in Webflow Cloud.
+      </p>
+    )}
+
+    <button type="submit" class="btn-submit" id="submit-btn">
+      Apply Now →
+    </button>
+
+    <p class="form-disclaimer">
+      By submitting you agree we may contact you via the info provided. View our{" "}
+      <a href={privacyUrl} target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+    </p>
+  </form>
+</div>

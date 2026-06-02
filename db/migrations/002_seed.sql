@@ -30,31 +30,16 @@ INSERT INTO hire_schedule_config (scope, scope_id, slot_duration_minutes, buffer
 SELECT 'office', @denverId, slot_duration_minutes, buffer_minutes, quiet_hours_start, quiet_hours_end, reminder_offsets_json, token_expiry_days, sms_on_invite
 FROM hire_schedule_config WHERE scope = 'global' AND scope_id IS NULL;
 
--- Jobs
-IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @cosId AND slug = 'driver')
+-- One operations job per office (interest captured on apply form)
+IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @cosId AND slug = 'moving-operations-crew')
 INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
-VALUES (@cosId, 'driver', 'Driver',
-  1,
-  '[{"key":"yearsExperience","label":"Years of driving experience","type":"text","required":true}]',
-  '{"headline":"Drive with BMS — Colorado Springs","description":"Join our Colorado Springs team as a professional driver."}');
+VALUES (@cosId, 'moving-operations-crew', 'Moving Operations Crew', 1, '[]',
+  '{"heroEyebrow":"Work in Colorado Springs, CO","headline":"Get Your Colorado Career On The Move.","formTitle":"Apply to Join Our Colorado Springs Team","interestOptions":["Driver","Mover & Packer","Summer or Temporary Help","I''m new, I want to start a career"]}');
 
-IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @cosId AND slug = 'crew-member')
+IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @denverId AND slug = 'moving-operations-crew')
 INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
-VALUES (@cosId, 'crew-member', 'Crew Member',
-  1, '[]',
-  '{"headline":"Crew Member — Colorado Springs","description":"Help us deliver excellence on every job site."}');
-
-IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @denverId AND slug = 'driver')
-INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
-VALUES (@denverId, 'driver', 'Driver',
-  1, '[]',
-  '{"headline":"Driver — Denver","description":"Join our Denver driving team."}');
-
-IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @denverId AND slug = 'crew-member')
-INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
-VALUES (@denverId, 'crew-member', 'Crew Member',
-  1, '[]',
-  '{"heroEyebrow":"Work in Denver","headline":"Get Your Colorado Career On The Move.","heroLead":"Movers are the core of our company, and our industry. Join the storied history of the men and women who keep our nation moving.","compensation":"Full-time or Seasonal BOE $17 - $25/hr + CASH tips (full-time benefits available).","address":"11755 E Peakview Ave Centennial, CO 80111","formTitle":"Apply to Join Our Denver Team","learnSectionTitle":"Learn About The Job and What It''s Like:","interestOptions":["Driver","Mover & Packer","Summer or Temporary Help","I''m new, I want to start a career"],"trainingNote":"We do not require moving industry experience. Training is provided to all.","videos":[{"title":"Hear From Employees","youtubeId":"1WYvchjYBXU"},{"title":"Hear From A Customer","youtubeId":"-pnkJe0ALAE"},{"title":"Hear From A Master Mover","youtubeId":"7GVmdYHKUE4"},{"title":"Get To Know Us","youtubeId":"LoDlPPyDaKw"}],"jobDetails":{"title":"Moving Operations Crew Positions","compensation":"Full-time or Seasonal | $17-25/hr (DOE)","compensationNote":"(plus benefits for full-time)","location":"11755 E Peakview Ave\nCentennial, CO 80111","requirements":["Must be 17 years or older","Must be capable of heavy lifting over 8-hour days","Must pass background check","Must agree to code of conduct"],"benefits":["Medical/Dental with HSA/FSA","401k with Employer Match","Personal Time Off","CDL Training (if desired)"]}}');
+VALUES (@denverId, 'moving-operations-crew', 'Moving Operations Crew', 1, '[]',
+  '{"heroEyebrow":"Work in Denver · Centennial, CO","headline":"Get Your Colorado Career On The Move.","formTitle":"Apply to Join Our Denver Team","interestOptions":["Driver","Mover & Packer","Summer or Temporary Help","I''m new, I want to start a career"],"videos":[{"title":"Hear From Employees","youtubeId":"1WYvchjYBXU"},{"title":"Hear From A Customer","youtubeId":"-pnkJe0ALAE"}]}');
 
 -- Availability: Mon-Fri 9-17 for each office
 DECLARE @d INT = 1;

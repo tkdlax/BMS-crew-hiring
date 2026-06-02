@@ -16,9 +16,11 @@ export type JobPageContent = {
   headline?: string;
   heroLead?: string;
   compensation?: string;
+  compensationNote?: string;
   address?: string;
   heroImage?: string;
   formTitle?: string;
+  formSubtitle?: string;
   learnSectionTitle?: string;
   interestOptions?: string[];
   trainingNote?: string;
@@ -48,224 +50,91 @@ const CREW_BENEFITS = [
   "CDL Training (if desired)",
 ];
 
-const DEFAULTS: Record<string, Record<string, JobPageContent>> = {
+const STANDARD_INTEREST = [
+  "Driver",
+  "Mover & Packer",
+  "Summer or Temporary Help",
+  "I'm new, I want to start a career",
+];
+
+const SHARED_DETAILS = {
+  title: "Moving Operations Crew",
+  compensation: "Full-time or Seasonal | $17-25/hr (DOE)",
+  compensationNote: "(plus benefits for full-time)",
+  requirements: CREW_REQUIREMENTS,
+  benefits: CREW_BENEFITS,
+};
+
+const OFFICE_DEFAULTS: Record<string, JobPageContent> = {
   denver: {
-    "crew-member": {
-      heroEyebrow: "Work in Denver",
-      headline: "Get Your Colorado Career On The Move.",
-      heroLead:
-        "Movers are the core of our company, and our industry. Join the storied history of the men and women who keep our nation moving.",
-      compensation:
-        "Full-time or Seasonal BOE $17 - $25/hr + CASH tips (full-time benefits available).",
-      address: "11755 E Peakview Ave Centennial, CO 80111",
-      heroImage: BRAND.heroImage,
-      formTitle: "Apply to Join Our Denver Team",
-      learnSectionTitle: "Learn About The Job and What It's Like:",
-      interestOptions: [
-        "Driver",
-        "Mover & Packer",
-        "Summer or Temporary Help",
-        "I'm new, I want to start a career",
-      ],
-      trainingNote:
-        "We do not require moving industry experience. Training is provided to all.",
-      videos: DENVER_VIDEOS,
-      jobDetails: {
-        title: "Moving Operations Crew Positions",
-        compensation: "Full-time or Seasonal | $17-25/hr (DOE)",
-        compensationNote: "(plus benefits for full-time)",
-        location: "11755 E Peakview Ave\nCentennial, CO 80111",
-        requirements: CREW_REQUIREMENTS,
-        benefits: CREW_BENEFITS,
-      },
-      aboutUrl: `${BRAND.mainSite}/about-us`,
-    },
-    driver: {
-      heroEyebrow: "Work in Denver",
-      headline: "Drive Your Colorado Career Forward.",
-      heroLead:
-        "Our drivers are trusted professionals who represent Bailey's on every route. Join a team with decades of experience moving families and businesses.",
-      compensation: "Competitive hourly pay (DOE) + tips where applicable.",
-      address: "11755 E Peakview Ave Centennial, CO 80111",
-      heroImage: BRAND.heroImage,
-      formTitle: "Apply to Join Our Denver Driving Team",
-      learnSectionTitle: "Learn About The Job and What It's Like:",
-      interestOptions: ["Local Driver", "Long Distance / Linehaul", "I'm new, I want to start a career"],
-      trainingNote: "CDL training available for qualified candidates.",
-      videos: DENVER_VIDEOS,
-      jobDetails: {
-        title: "Driver Positions",
-        compensation: "Full-time | DOE",
-        compensationNote: "(plus benefits for full-time)",
-        location: "11755 E Peakview Ave\nCentennial, CO 80111",
-        requirements: [
-          "Valid driver's license (CDL preferred for some roles)",
-          "Clean driving record",
-          "Must pass background check",
-          "Must agree to code of conduct",
-        ],
-        benefits: CREW_BENEFITS,
-      },
-      aboutUrl: `${BRAND.mainSite}/about-us`,
-    },
+    heroEyebrow: "Work in Denver · Centennial, CO",
+    headline: "Get Your Colorado Career On The Move.",
+    heroLead:
+      "Movers are the core of our company, and our industry. Join the storied history of the men and women who keep our nation moving.",
+    compensation: "$17–$25/hr + CASH tips",
+    compensationNote: "Full-time or Seasonal · Benefits available for full-time",
+    address: "11755 E Peakview Ave, Centennial CO 80111",
+    heroImage: BRAND.heroImage,
+    formTitle: "Apply to Join Our Denver Team",
+    formSubtitle: "Takes under 2 minutes — no resume required.",
+    learnSectionTitle: "Learn About The Job and What It's Like:",
+    interestOptions: STANDARD_INTEREST,
+    trainingNote: "We do not require moving industry experience. Training is provided to all.",
+    videos: DENVER_VIDEOS,
+    jobDetails: { ...SHARED_DETAILS, location: "11755 E Peakview Ave\nCentennial, CO 80111" },
+    aboutUrl: `${BRAND.mainSite}/about-us`,
   },
   "colorado-springs": {
-    "crew-member": {
-      heroEyebrow: "Work in Colorado Springs",
-      headline: "Get Your Colorado Career On The Move.",
-      heroLead:
-        "Movers are the core of our company. Join our Colorado Springs team and help families relocate with care.",
-      compensation: "Full-time or Seasonal BOE $17 - $25/hr + CASH tips (full-time benefits available).",
-      address: "Colorado Springs, CO",
-      heroImage: BRAND.heroImage,
-      formTitle: "Apply to Join Our Colorado Springs Team",
-      learnSectionTitle: "Learn About The Job and What It's Like:",
-      interestOptions: [
-        "Driver",
-        "Mover & Packer",
-        "Summer or Temporary Help",
-        "I'm new, I want to start a career",
-      ],
-      trainingNote:
-        "We do not require moving industry experience. Training is provided to all.",
-      videos: DENVER_VIDEOS,
-      jobDetails: {
-        title: "Moving Operations Crew Positions",
-        compensation: "Full-time or Seasonal | $17-25/hr (DOE)",
-        compensationNote: "(plus benefits for full-time)",
-        location: "Colorado Springs, CO",
-        requirements: CREW_REQUIREMENTS,
-        benefits: CREW_BENEFITS,
-      },
-      aboutUrl: `${BRAND.mainSite}/about-us`,
-    },
-    driver: {
-      heroEyebrow: "Work in Colorado Springs",
-      headline: "Drive With Bailey's in Colorado Springs.",
-      heroLead: "Join our professional driving team serving the Pikes Peak region.",
-      compensation: "Competitive hourly pay (DOE).",
-      address: "Colorado Springs, CO",
-      heroImage: BRAND.heroImage,
-      formTitle: "Apply to Join Our Colorado Springs Driving Team",
-      learnSectionTitle: "Learn About The Job and What It's Like:",
-      interestOptions: ["Local Driver", "Long Distance / Linehaul", "I'm new, I want to start a career"],
-      trainingNote: "CDL training available for qualified candidates.",
-      videos: DENVER_VIDEOS,
-      jobDetails: {
-        title: "Driver Positions",
-        compensation: "Full-time | DOE",
-        location: "Colorado Springs, CO",
-        requirements: [
-          "Valid driver's license",
-          "Clean driving record",
-          "Must pass background check",
-        ],
-        benefits: CREW_BENEFITS,
-      },
-      aboutUrl: `${BRAND.mainSite}/about-us`,
-    },
+    heroEyebrow: "Work in Colorado Springs, CO",
+    headline: "Get Your Colorado Career On The Move.",
+    heroLead:
+      "Movers are the core of our company. Join our Colorado Springs team and help families relocate with care.",
+    compensation: "$17–$25/hr + CASH tips",
+    compensationNote: "Full-time or Seasonal · Benefits available for full-time",
+    address: "Colorado Springs, CO",
+    heroImage: BRAND.heroImage,
+    formTitle: "Apply to Join Our Colorado Springs Team",
+    formSubtitle: "Takes under 2 minutes — no resume required.",
+    learnSectionTitle: "Learn About The Job and What It's Like:",
+    interestOptions: STANDARD_INTEREST,
+    trainingNote: "We do not require moving industry experience. Training is provided to all.",
+    videos: DENVER_VIDEOS,
+    jobDetails: { ...SHARED_DETAILS, location: "Colorado Springs, CO" },
+    aboutUrl: `${BRAND.mainSite}/about-us`,
   },
   "grand-junction": {
-    "crew-member": {
-      heroEyebrow: "Work in Grand Junction",
-      headline: "Join Our Grand Junction Moving Team.",
-      heroLead: "Help families and businesses move on Colorado's Western Slope.",
-      compensation: "Full-time or Seasonal BOE $17 - $25/hr + CASH tips (full-time benefits available).",
-      address: "Grand Junction, CO",
-      heroImage: BRAND.heroImage,
-      formTitle: "Apply to Join Our Grand Junction Team",
-      interestOptions: [
-        "Driver",
-        "Mover & Packer",
-        "Summer or Temporary Help",
-        "I'm new, I want to start a career",
-      ],
-      trainingNote:
-        "We do not require moving industry experience. Training is provided to all.",
-      videos: DENVER_VIDEOS,
-      jobDetails: {
-        title: "Moving Operations Crew Positions",
-        compensation: "Full-time or Seasonal | $17-25/hr (DOE)",
-        compensationNote: "(plus benefits for full-time)",
-        location: "Grand Junction, CO",
-        requirements: CREW_REQUIREMENTS,
-        benefits: CREW_BENEFITS,
-      },
-      aboutUrl: `${BRAND.mainSite}/about-us`,
-    },
-    driver: {
-      heroEyebrow: "Work in Grand Junction",
-      headline: "Drive With Bailey's on the Western Slope.",
-      heroLead: "Join our professional driving team in Grand Junction.",
-      address: "Grand Junction, CO",
-      heroImage: BRAND.heroImage,
-      formTitle: "Apply to Join Our Grand Junction Driving Team",
-      interestOptions: ["Local Driver", "Long Distance / Linehaul", "I'm new, I want to start a career"],
-      videos: DENVER_VIDEOS,
-      jobDetails: {
-        title: "Driver Positions",
-        compensation: "Full-time | DOE",
-        location: "Grand Junction, CO",
-        requirements: [
-          "Valid driver's license",
-          "Clean driving record",
-          "Must pass background check",
-        ],
-        benefits: CREW_BENEFITS,
-      },
-      aboutUrl: `${BRAND.mainSite}/about-us`,
-    },
+    heroEyebrow: "Work in Grand Junction, CO",
+    headline: "Join Our Grand Junction Moving Team.",
+    heroLead: "Help families and businesses move on Colorado's Western Slope.",
+    compensation: "$17–$25/hr + CASH tips",
+    compensationNote: "Full-time or Seasonal · Benefits available for full-time",
+    address: "Grand Junction, CO",
+    heroImage: BRAND.heroImage,
+    formTitle: "Apply to Join Our Grand Junction Team",
+    formSubtitle: "Takes under 2 minutes — no resume required.",
+    learnSectionTitle: "Learn About The Job and What It's Like:",
+    interestOptions: STANDARD_INTEREST,
+    trainingNote: "We do not require moving industry experience. Training is provided to all.",
+    videos: DENVER_VIDEOS,
+    jobDetails: { ...SHARED_DETAILS, location: "Grand Junction, CO" },
+    aboutUrl: `${BRAND.mainSite}/about-us`,
   },
   "salt-lake-city": {
-    "crew-member": {
-      heroEyebrow: "Work in Salt Lake City",
-      headline: "Join Our Salt Lake City Moving Team.",
-      heroLead: "Be part of Bailey's operations serving the Wasatch Front.",
-      compensation: "Full-time or Seasonal BOE $17 - $25/hr + CASH tips (full-time benefits available).",
-      address: "Salt Lake City, UT",
-      heroImage: BRAND.heroImage,
-      formTitle: "Apply to Join Our Salt Lake City Team",
-      interestOptions: [
-        "Driver",
-        "Mover & Packer",
-        "Summer or Temporary Help",
-        "I'm new, I want to start a career",
-      ],
-      trainingNote:
-        "We do not require moving industry experience. Training is provided to all.",
-      videos: DENVER_VIDEOS,
-      jobDetails: {
-        title: "Moving Operations Crew Positions",
-        compensation: "Full-time or Seasonal | $17-25/hr (DOE)",
-        compensationNote: "(plus benefits for full-time)",
-        location: "Salt Lake City, UT",
-        requirements: CREW_REQUIREMENTS,
-        benefits: CREW_BENEFITS,
-      },
-      aboutUrl: `${BRAND.mainSite}/about-us`,
-    },
-    driver: {
-      heroEyebrow: "Work in Salt Lake City",
-      headline: "Drive With Bailey's in Utah.",
-      heroLead: "Join our professional driving team in Salt Lake City.",
-      address: "Salt Lake City, UT",
-      heroImage: BRAND.heroImage,
-      formTitle: "Apply to Join Our Salt Lake City Driving Team",
-      interestOptions: ["Local Driver", "Long Distance / Linehaul", "I'm new, I want to start a career"],
-      videos: DENVER_VIDEOS,
-      jobDetails: {
-        title: "Driver Positions",
-        compensation: "Full-time | DOE",
-        location: "Salt Lake City, UT",
-        requirements: [
-          "Valid driver's license",
-          "Clean driving record",
-          "Must pass background check",
-        ],
-        benefits: CREW_BENEFITS,
-      },
-      aboutUrl: `${BRAND.mainSite}/about-us`,
-    },
+    heroEyebrow: "Work in Salt Lake City, UT",
+    headline: "Join Our Salt Lake City Moving Team.",
+    heroLead: "Be part of Bailey's operations serving the Wasatch Front.",
+    compensation: "$17–$25/hr + CASH tips",
+    compensationNote: "Full-time or Seasonal · Benefits available for full-time",
+    address: "Salt Lake City, UT",
+    heroImage: BRAND.heroImage,
+    formTitle: "Apply to Join Our Salt Lake City Team",
+    formSubtitle: "Takes under 2 minutes — no resume required.",
+    learnSectionTitle: "Learn About The Job and What It's Like:",
+    interestOptions: STANDARD_INTEREST,
+    trainingNote: "We do not require moving industry experience. Training is provided to all.",
+    videos: DENVER_VIDEOS,
+    jobDetails: { ...SHARED_DETAILS, location: "Salt Lake City, UT" },
+    aboutUrl: `${BRAND.mainSite}/about-us`,
   },
 };
 
@@ -275,11 +144,11 @@ function pick<T>(api: T | undefined, fallback: T): T {
 
 export function mergeJobPageContent(
   officeSlug: string,
-  jobSlug: string,
+  _jobSlug: string,
   apiContent: Record<string, unknown> | null | undefined,
   meta: { title: string; officeName: string; locationLabel: string }
 ): JobPageContent {
-  const base = DEFAULTS[officeSlug]?.[jobSlug] ?? {};
+  const base = OFFICE_DEFAULTS[officeSlug] ?? {};
   const api = (apiContent ?? {}) as JobPageContent;
 
   const jobDetails = api.jobDetails ?? base.jobDetails;
@@ -299,14 +168,13 @@ export function mergeJobPageContent(
   return {
     heroEyebrow: pick(api.heroEyebrow, base.heroEyebrow ?? meta.officeName),
     headline: pick(api.headline, base.headline ?? meta.title),
-    heroLead: pick(
-      api.heroLead,
-      base.heroLead ?? (api as { description?: string }).description
-    ),
+    heroLead: pick(api.heroLead, base.heroLead ?? (api as { description?: string }).description),
     compensation: pick(api.compensation, base.compensation),
+    compensationNote: pick(api.compensationNote, base.compensationNote),
     address: pick(api.address, base.address ?? meta.locationLabel),
     heroImage: pick(api.heroImage, base.heroImage ?? BRAND.heroImage),
     formTitle: pick(api.formTitle, base.formTitle ?? `Apply — ${meta.title}`),
+    formSubtitle: pick(api.formSubtitle, base.formSubtitle),
     learnSectionTitle: pick(api.learnSectionTitle, base.learnSectionTitle),
     interestOptions: api.interestOptions?.length ? api.interestOptions : base.interestOptions,
     trainingNote: pick(api.trainingNote, base.trainingNote),

@@ -98,7 +98,9 @@ $env:SQL_CONNECTION_STRING="Server=...;Database=...;User Id=...;Password=...;Enc
 npm run db:migrate
 ```
 
-Seed includes offices **colorado-springs** and **denver**, with **driver** and **crew-member** jobs, availability Mon–Fri 9–5, and default email/SMS templates.
+Seed includes four offices, each with one **moving-operations-crew** job (apply form captures “what are you most interested in?”), availability Mon–Fri 9–5, and default email/SMS templates.
+
+**Existing databases:** run migration `005_consolidate_operations_jobs.sql` to retire driver/crew slugs and add the consolidated job per office.
 
 ### 5. Run
 
@@ -116,7 +118,7 @@ npm run dev:web
 |------|-----|
 | Home | http://localhost:4321/hiring/ |
 | Careers | http://localhost:4321/hiring/careers/ |
-| Apply (example) | http://localhost:4321/hiring/apply/denver/crew-member/ |
+| Apply (example) | http://localhost:4321/hiring/apply/denver/moving-operations-crew/ |
 | Admin | http://localhost:4321/hiring/admin/login/ |
 
 ## Applicant URLs (production)

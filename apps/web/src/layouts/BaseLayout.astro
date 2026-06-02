@@ -1,14 +1,19 @@
 ---
 import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
+import { BRAND } from "../constants/brand";
 import { assetUrl } from "../lib/assets.ts";
+
+const privacyUrl = `${BRAND.mainSite}/privacy-policy`;
 
 interface Props {
   title: string;
   bodyClass?: string;
   hideHero?: boolean;
+  /** Apply page uses its own header/footer chrome (mockup layout). */
+  applyChrome?: boolean;
 }
-const { title, bodyClass = "", hideHero = false } = Astro.props;
+const { title, bodyClass = "", hideHero = false, applyChrome = false } = Astro.props;
 ---
 <!doctype html>
 <html lang="en">
@@ -23,10 +28,18 @@ const { title, bodyClass = "", hideHero = false } = Astro.props;
     <link rel="stylesheet" href={assetUrl("styles/applicant.css")} />
   </head>
   <body class={`baileys-hiring ${bodyClass}`}>
-    <SiteHeader />
-    <main class="site-main" data-hide-hero={hideHero ? "true" : "false"}>
+    {!applyChrome && <SiteHeader />}
+    <main class:list={["site-main", applyChrome && "site-main--apply"]} data-hide-hero={hideHero ? "true" : "false"}>
       <slot />
     </main>
-    <SiteFooter />
+    {!applyChrome && <SiteFooter />}
+    {applyChrome && (
+      <footer class="apply-footer">
+        <p>
+          © Bailey&apos;s Moving &amp; Storage · An Agent for Allied Van Lines ·{" "}
+          <a href={privacyUrl}>Privacy</a>
+        </p>
+      </footer>
+    )}
   </body>
 </html>

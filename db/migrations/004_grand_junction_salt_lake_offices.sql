@@ -22,26 +22,16 @@ INSERT INTO hire_schedule_config (scope, scope_id, slot_duration_minutes, buffer
 SELECT 'office', @slcId, slot_duration_minutes, buffer_minutes, quiet_hours_start, quiet_hours_end, reminder_offsets_json, token_expiry_days, sms_on_invite
 FROM hire_schedule_config WHERE scope = 'global' AND scope_id IS NULL;
 
--- Jobs (driver + crew-member per office)
-IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @gjId AND slug = 'driver')
+-- One operations job per office
+IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @gjId AND slug = 'moving-operations-crew')
 INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
-VALUES (@gjId, 'driver', 'Driver', 1, '[]',
-  '{"heroEyebrow":"Work in Grand Junction","headline":"Drive With Bailey''s on the Western Slope.","formTitle":"Apply to Join Our Grand Junction Driving Team"}');
+VALUES (@gjId, 'moving-operations-crew', 'Moving Operations Crew', 1, '[]',
+  '{"heroEyebrow":"Work in Grand Junction, CO","headline":"Join Our Grand Junction Moving Team.","formTitle":"Apply to Join Our Grand Junction Team","interestOptions":["Driver","Mover & Packer","Summer or Temporary Help","I''m new, I want to start a career"]}');
 
-IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @gjId AND slug = 'crew-member')
+IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @slcId AND slug = 'moving-operations-crew')
 INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
-VALUES (@gjId, 'crew-member', 'Crew Member', 1, '[]',
-  '{"heroEyebrow":"Work in Grand Junction","headline":"Join Our Grand Junction Moving Team.","formTitle":"Apply to Join Our Grand Junction Team","trainingNote":"We do not require moving industry experience. Training is provided to all."}');
-
-IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @slcId AND slug = 'driver')
-INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
-VALUES (@slcId, 'driver', 'Driver', 1, '[]',
-  '{"heroEyebrow":"Work in Salt Lake City","headline":"Drive With Bailey''s in Utah.","formTitle":"Apply to Join Our Salt Lake City Driving Team"}');
-
-IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @slcId AND slug = 'crew-member')
-INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
-VALUES (@slcId, 'crew-member', 'Crew Member', 1, '[]',
-  '{"heroEyebrow":"Work in Salt Lake City","headline":"Join Our Salt Lake City Moving Team.","formTitle":"Apply to Join Our Salt Lake City Team","trainingNote":"We do not require moving industry experience. Training is provided to all."}');
+VALUES (@slcId, 'moving-operations-crew', 'Moving Operations Crew', 1, '[]',
+  '{"heroEyebrow":"Work in Salt Lake City, UT","headline":"Join Our Salt Lake City Moving Team.","formTitle":"Apply to Join Our Salt Lake City Team","interestOptions":["Driver","Mover & Packer","Summer or Temporary Help","I''m new, I want to start a career"]}');
 
 -- Availability Mon–Fri 9–17
 DECLARE @d INT = 1;

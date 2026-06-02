@@ -8,20 +8,31 @@ interface Props {
 
 const { title, videos } = Astro.props;
 ---
-<section class="video-section" id="videos">
-  <h2 class="section-title video-section__title">{title}</h2>
-  <div class="video-grid">
+<section class="apply-videos-section" id="videos">
+  <p class="apply-section-eyebrow">On the job</p>
+  <h2 class="apply-section-title">{title}</h2>
+  <p class="apply-section-sub">Short videos from our team and customers.</p>
+  <div class="apply-videos-grid">
     {videos.map((v) => (
-      <article class="video-card">
-        <h3 class="video-card__heading">{v.title}</h3>
-        <div class="video-card__embed">
+      <article class="apply-video-card">
+        <p class="apply-video-card__label">{v.title}</p>
+        <div class="apply-video-embed">
           <iframe
-            src={`https://www.youtube.com/embed/${v.youtubeId}?rel=0&controls=1`}
+            src={`https://www.youtube-nocookie.com/embed/${v.youtubeId}?rel=0&modestbranding=1`}
             title={v.title}
             loading="lazy"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowfullscreen
+            referrerpolicy="strict-origin-when-cross-origin"
           />
+          <a
+            class="apply-video-fallback"
+            href={`https://www.youtube.com/watch?v=${v.youtubeId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Watch on YouTube
+          </a>
         </div>
       </article>
     ))}

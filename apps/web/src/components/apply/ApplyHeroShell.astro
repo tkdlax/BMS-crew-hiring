@@ -1,0 +1,102 @@
+---
+import { BRAND } from "../../constants/brand";
+import { hrefPath } from "../../lib/assets";
+import type { JobPageContent } from "../../lib/jobPageContent";
+import ApplyFormCard from "./ApplyFormCard.astro";
+
+interface Props {
+  content: JobPageContent;
+  officeSlug: string;
+  jobSlug: string;
+  captchaSiteKey: string;
+  captchaProvider: "turnstile" | "recaptcha";
+  privacyUrl: string;
+}
+
+const { content, officeSlug, jobSlug, captchaSiteKey, captchaProvider, privacyUrl } = Astro.props;
+
+const careersUrl = hrefPath("careers/");
+const commuteQuery = content.address
+  ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(content.address.replace(/\n/g, " "))}`
+  : null;
+const heroBg = content.heroImage ? `url('${content.heroImage}')` : undefined;
+---
+
+<header class="apply-mobile-header">
+  <a href={BRAND.mainSite} class="apply-mobile-header__logo-link">
+    <img
+      class="apply-mobile-header__logo"
+      src={BRAND.logoWhite}
+      alt="Bailey's Moving &amp; Storage"
+      width="140"
+      height="32"
+    />
+  </a>
+  <a href={BRAND.phoneHref} class="apply-mobile-header__phone">
+    {BRAND.phone}
+  </a>
+</header>
+
+<div class="apply-hero-bg" style={heroBg ? `--apply-hero-photo: ${heroBg}` : undefined}>
+  <section class="apply-hero">
+    <nav class="apply-hero-nav" aria-label="Apply page">
+      <a href={BRAND.mainSite}>
+        <img class="apply-hero-nav__logo" src={BRAND.logoWhite} alt="Bailey's Moving &amp; Storage" width="160" height="40" />
+      </a>
+      <div class="apply-hero-nav__links">
+        <a class="apply-hero-nav__link" href={careersUrl}>Open Roles</a>
+        <a class="apply-hero-nav__link" href={`${BRAND.mainSite}/careers`}>All Careers</a>
+        <a class="apply-hero-nav__phone" href={BRAND.phoneHref}>{BRAND.phone}</a>
+      </div>
+    </nav>
+
+    <div class="apply-hero-left">
+      {content.heroEyebrow && <p class="apply-hero-eyebrow">{content.heroEyebrow}</p>}
+      <h1 class="apply-hero-headline">{content.headline}</h1>
+      {content.heroLead && <p class="apply-hero-sub">{content.heroLead}</p>}
+
+      <div class="apply-hero-badges">
+        {content.compensation && (
+          <div class="apply-badge">
+            <span class="apply-badge__icon" aria-hidden="true">💵</span>
+            <div class="apply-badge__text">
+              <strong>{content.compensation}</strong>
+              {content.compensationNote && <small>{content.compensationNote}</small>}
+            </div>
+          </div>
+        )}
+        {content.address && (
+          <div class="apply-badge">
+            <span class="apply-badge__icon" aria-hidden="true">📍</span>
+            <div class="apply-badge__text">
+              <strong>{content.address}</strong>
+              {commuteQuery && (
+                <a class="apply-commute-link" href={commuteQuery} target="_blank" rel="noopener noreferrer">
+                  Time your commute →
+                </a>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div class="apply-hero-ctas">
+        <a class="apply-btn apply-btn--orange" href="#videos">See What It&apos;s Like</a>
+        <a class="apply-btn apply-btn--ghost" href={content.aboutUrl ?? `${BRAND.mainSite}/about-us`} target="_blank" rel="noopener">
+          Learn About Bailey&apos;s
+        </a>
+      </div>
+    </div>
+
+    <div class="apply-hero-right">
+      <ApplyFormCard
+        content={content}
+        officeSlug={officeSlug}
+        jobSlug={jobSlug}
+        captchaSiteKey={captchaSiteKey}
+        captchaProvider={captchaProvider}
+        privacyUrl={privacyUrl}
+      />
+    </div>
+  </section>
+</div>

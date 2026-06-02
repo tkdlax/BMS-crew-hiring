@@ -2,7 +2,11 @@ import { config } from "../config.js";
 
 export async function verifyCaptcha(token: string, remoteIp?: string): Promise<boolean> {
   if (!config.captchaSecret) {
-    return process.env.NODE_ENV !== "production";
+    return process.env.NODE_ENV !== "production" && process.env.AZURE_FUNCTIONS_ENVIRONMENT !== "Production";
+  }
+
+  if (!token || token === "dev-bypass") {
+    return false;
   }
 
   if (config.captchaProvider === "turnstile") {
