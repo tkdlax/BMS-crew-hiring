@@ -61,7 +61,17 @@ let job: Record<string, unknown> | null = null;
 let officeLocationLabel = "";
 let loadError = "";
 
-if (api) {
+if (api && officeSlug) {
+  try {
+    const ores = await fetch(`${api}/public/offices/${officeSlug}`);
+    if (ores.ok) {
+      const office = await ores.json();
+      officeLocationLabel = office.locationLabel ? String(office.locationLabel) : "";
+    }
+  } catch {
+    /* job fetch may still supply location */
+  }
+
   try {
     const res = await fetch(`${api}/public/jobs/${officeSlug}/${jobSlug}`);
     if (res.ok) job = await res.json();
@@ -71,34 +81,22 @@ if (api) {
   } catch {
     if (!knownOpsApply) loadError = "Unable to connect. Please try again later.";
   }
-
-  if (!job?.locationLabel && officeSlug && knownOpsApply) {
-    try {
-      const ores = await fetch(`${api}/public/offices/${officeSlug}`);
-      if (ores.ok) {
-        const office = await ores.json();
-        officeLocationLabel = office.locationLabel ? String(office.locationLabel) : "";
-      }
-    } catch {
-      /* use merge fallbacks */
-    }
-  }
 } else if (!knownOpsApply) {
   loadError = "Unable to connect. Please try again later.";
 }
+
+const locationLabel =
+  officeLocationLabel ||
+  (job?.locationLabel ? String(job.locationLabel) : "");
 
 const pageContent =
   officeSlug && jobSlug
     ? mergeJobPageContent(officeSlug, jobSlug, job?.pageContent as Record<string, unknown>, {
         title: job?.title ? String(job.title) : "Moving Operations Crew",
         officeName: job?.officeName ? String(job.officeName) : officeDisplayName(officeSlug),
-        locationLabel: job?.locationLabel
-          ? String(job.locationLabel)
-          : officeLocationLabel,
-        payMinHourly:
-          job?.payMinHourly != null ? Number(job.payMinHourly) : null,
-        payMaxHourly:
-          job?.payMaxHourly != null ? Number(job.payMaxHourly) : null,
+        locationLabel,
+        payMinHourly: job?.payMinHourly != null ? Number(job.payMinHourly) : null,
+        payMaxHourly: job?.payMaxHourly != null ? Number(job.payMaxHourly) : null,
       })
     : null;
 
@@ -157,6 +155,53 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
 
 <script>
   import { resolveApiBaseUrl, resolveCaptchaSiteKey } from "../../../lib/api.client.ts";
+
+  function formatLocationLines(address: string): string[] {
+    const trimmed = address.trim();
+    if (!trimmed) return [];
+    if (trimmed.includes("\n")) return trimmed.split("\n").map((l) => l.trim()).filter(Boolean);
+    const comma = trimmed.indexOf(",");
+    if (comma > 0 && comma < trimmed.length - 1) {
+      return [trimmed.slice(0, comma).trim(), trimmed.slice(comma + 1).trim()];
+    }
+    return [trimmed];
+  }
+
+  async function hydrateOfficeLocation() {
+    const officeSlug = document.querySelector<HTMLElement>("[data-office-slug]")?.dataset.officeSlug;
+    if (!officeSlug) return;
+    const api = await resolveApiBaseUrl();
+    if (!api) return;
+
+    let locationLabel = "";
+    try {
+      const res = await fetch(`${api}/public/offices/${officeSlug}`);
+      if (!res.ok) return;
+      const office = await res.json();
+      locationLabel = String(office.locationLabel ?? "").trim();
+    } catch {
+      return;
+    }
+    if (!locationLabel) return;
+
+    const addressEl = document.querySelector("[data-apply-address]");
+    if (addressEl && addressEl.textContent?.trim() !== locationLabel) {
+      addressEl.textContent = locationLabel;
+    }
+
+    const commute = document.querySelector<HTMLAnchorElement>("[data-apply-commute]");
+    if (commute) {
+      commute.href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(locationLabel)}`;
+    }
+
+    const detailsLoc = document.querySelector("[data-apply-details-location]");
+    if (detailsLoc) {
+      const lines = formatLocationLines(locationLabel);
+      detailsLoc.innerHTML = lines.map((line) => `${line}<br />`).join("");
+    }
+  }
+
+  hydrateOfficeLocation();
 
   const form = document.getElementById("apply-form") as HTMLFormElement | null;
   const alertEl = document.getElementById("form-alert");

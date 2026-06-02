@@ -159,7 +159,7 @@ function resolveAddress(api: JobPageContent, locationLabel: string): string {
   const jobOverride = api.addressOverride && api.address?.trim();
   if (jobOverride) return jobOverride;
   if (office) return office;
-  return api.address?.trim() || "";
+  return "";
 }
 
 function formatLocationDisplay(address: string): string {
@@ -191,6 +191,7 @@ export function mergeJobPageContent(
 
   const address = resolveAddress(api, meta.locationLabel);
   const locationDisplay = formatLocationDisplay(address);
+  const officeAddress = meta.locationLabel?.trim();
 
   const jobDetails = api.jobDetails ?? base.jobDetails;
   const mergedDetails: JobDetailsBlock | undefined = jobDetails
@@ -198,7 +199,9 @@ export function mergeJobPageContent(
         title: pick(api.jobDetails?.title, jobDetails.title),
         compensation: detailsCompensation ?? pick(api.jobDetails?.compensation, jobDetails.compensation),
         compensationNote: pick(api.jobDetails?.compensationNote, jobDetails.compensationNote),
-        location: locationDisplay || pick(api.jobDetails?.location, jobDetails.location),
+        location: officeAddress
+          ? locationDisplay
+          : locationDisplay || pick(api.jobDetails?.location, jobDetails.location),
         requirements: api.jobDetails?.requirements?.length
           ? api.jobDetails.requirements
           : jobDetails.requirements,

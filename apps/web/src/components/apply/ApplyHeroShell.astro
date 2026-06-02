@@ -38,7 +38,7 @@ const heroBg = content.heroImage ? `url('${content.heroImage}')` : undefined;
 </header>
 
 <div class="apply-hero-bg" style={heroBg ? `--apply-hero-photo: ${heroBg}` : undefined}>
-  <section class="apply-hero">
+  <section class="apply-hero" data-office-slug={officeSlug}>
     <nav class="apply-hero-nav" aria-label="Apply page">
       <a href={BRAND.mainSite}>
         <img class="apply-hero-nav__logo" src={BRAND.logoWhite} alt="Bailey's Moving &amp; Storage" width="160" height="40" />
@@ -66,12 +66,18 @@ const heroBg = content.heroImage ? `url('${content.heroImage}')` : undefined;
           </div>
         )}
         {content.address && (
-          <div class="apply-badge">
+          <div class="apply-badge" data-apply-location-badge>
             <span class="apply-badge__icon" aria-hidden="true">📍</span>
             <div class="apply-badge__text">
-              <strong>{content.address}</strong>
+              <strong data-apply-address>{content.address}</strong>
               {commuteQuery && (
-                <a class="apply-commute-link" href={commuteQuery} target="_blank" rel="noopener noreferrer">
+                <a
+                  class="apply-commute-link"
+                  data-apply-commute
+                  href={commuteQuery}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Time your commute →
                 </a>
               )}
