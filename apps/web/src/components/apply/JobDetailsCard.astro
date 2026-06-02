@@ -1,6 +1,5 @@
 ---
 import type { JobDetailsBlock } from "../../lib/jobPageContent";
-import { BRAND } from "../../constants/brand";
 
 interface Props {
   details: JobDetailsBlock;
@@ -45,16 +44,5 @@ const locationLines = details.location.split("\n");
       </ul>
     </>
   )}
-
-  <div class="job-details-card__cta">
-    <h3 class="job-details-card__label">Questions?</h3>
-    <p class="job-details-card__contact">Contact Us Today!</p>
-    <a href={BRAND.phoneHref} class="btn btn-primary job-details-card__phone">
-      {BRAND.phone}
-    </a>
-    <a href={`${BRAND.mainSite}/pricing`} class="job-details-card__link">
-      Explore Pricing Options
-    </a>
-  </div>
   </div>
 </aside>
