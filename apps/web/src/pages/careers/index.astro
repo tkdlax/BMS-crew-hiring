@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import CareersCrosslink from "../../components/CareersCrosslink.astro";
 
 const api = import.meta.env.PUBLIC_API_BASE_URL;
 const base = import.meta.env.BASE_URL;
@@ -21,12 +22,15 @@ try {
   /* dev without API */
 }
 ---
-<BaseLayout title="Open positions">
+<BaseLayout title="Driver & crew openings">
   <section class="page-band">
     <div class="page-band__inner">
-      <p class="eyebrow">Careers</p>
-      <h1>Open positions</h1>
-      <p class="sub">Select a role below to start your application. Most applications take about 3 minutes.</p>
+      <p class="eyebrow">Operations hiring</p>
+      <h1>Driver &amp; crew openings</h1>
+      <p class="sub">
+        Moving operations roles in Colorado — drivers, crew members, and packers.
+        Select a role below to apply; most take about 3 minutes.
+      </p>
     </div>
   </section>
 
@@ -34,13 +38,13 @@ try {
     {openings.length === 0 ? (
       <div class="content-card">
         <p class="lead" style="margin-bottom: 0;">
-          No openings are listed right now. Please check back soon or call us at{" "}
+          No operations openings are listed right now. Please check back soon or call us at{" "}
           <a href="tel:+18882605717" style="color: var(--orange); font-weight: 700;">888-260-5717</a>.
         </p>
       </div>
     ) : (
       <>
-        <p class="section-label">{openings.length} roles available</p>
+        <p class="section-label">{openings.length} operations {openings.length === 1 ? "role" : "roles"} open</p>
         <ul class="job-grid">
           {openings.map((o) => (
             <li>
@@ -55,4 +59,6 @@ try {
       </>
     )}
   </div>
+
+  <CareersCrosslink />
 </BaseLayout>

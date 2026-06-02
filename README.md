@@ -164,7 +164,9 @@ All outbound messages use one pipeline: `sendMessage({ templateKey, channel, con
 |----------|-------------|
 | `SQL_CONNECTION_STRING` | Azure SQL |
 | `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` | Email |
-| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER` | SMS |
+| `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN` | SMS |
+| `TWILIO_FROM_NUMBER_CO`, `TWILIO_FROM_NUMBER_UT` | Regional SMS sender numbers (office slug → region) |
+| `TWILIO_FROM_NUMBER` | Optional fallback if regional number not set |
 | `CAPTCHA_SECRET`, `CAPTCHA_PROVIDER` | `turnstile` or `recaptcha` |
 | `ADMIN_PASSWORD_HASH` | bcrypt hash |
 | `SESSION_SIGNING_SECRET` | JWT signing (32+ chars) |

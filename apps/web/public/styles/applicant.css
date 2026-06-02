@@ -105,7 +105,13 @@ body.page-apply {
   text-decoration: none;
 }
 
-.header-link:hover {
+.header-link--muted {
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+.header-link:hover,
+.header-link--muted:hover {
   color: var(--orange);
 }
 
@@ -1193,6 +1199,76 @@ h2.section-title {
   background: rgba(255, 255, 255, 0.18);
   border-color: var(--white);
   color: var(--white);
+}
+
+/* Operations role list (home) */
+.ops-role-list {
+  list-style: none;
+  margin: 0 0 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.ops-role-list__item {
+  padding: 1rem 1.125rem;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--orange);
+  border-radius: var(--radius-sm);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.ops-role-list__item strong {
+  display: block;
+  color: var(--blue);
+  font-weight: 800;
+  margin-bottom: 0.2rem;
+}
+
+/* Cross-link to full careers page */
+.careers-crosslink {
+  background: var(--page-bg);
+  border-top: 1px solid var(--border);
+  padding: clamp(2rem, 5vw, 3rem) var(--page-gutter);
+}
+
+.careers-crosslink__inner {
+  max-width: 40rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.careers-crosslink__label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--orange);
+  margin-bottom: 0.5rem;
+}
+
+.careers-crosslink__title {
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
+  font-weight: 800;
+  color: var(--blue);
+  margin-bottom: 0.75rem;
+  line-height: 1.25;
+}
+
+.careers-crosslink__text {
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.6;
+  margin-bottom: 1.25rem;
+}
+
+.careers-crosslink__btn {
+  width: 100%;
+  max-width: 22rem;
+  margin: 0 auto;
 }
 
 @media (min-width: 600px) {

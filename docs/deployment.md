@@ -16,7 +16,9 @@
 | `SENDGRID_FROM_EMAIL` | Verified sender |
 | `TWILIO_ACCOUNT_SID` | Twilio SID |
 | `TWILIO_AUTH_TOKEN` | Twilio token |
-| `TWILIO_FROM_NUMBER` | E.164 from number |
+| `TWILIO_FROM_NUMBER_CO` | Colorado SMS from number (E.164) |
+| `TWILIO_FROM_NUMBER_UT` | Utah SMS from number (E.164) |
+| `TWILIO_FROM_NUMBER` | Optional fallback |
 | `CAPTCHA_SECRET` | Turnstile or reCAPTCHA secret |
 | `CAPTCHA_PROVIDER` | `turnstile` or `recaptcha` |
 | `ADMIN_PASSWORD_HASH` | bcrypt hash |

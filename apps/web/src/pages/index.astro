@@ -1,29 +1,31 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import TrustStrip from "../components/TrustStrip.astro";
+import CareersCrosslink from "../components/CareersCrosslink.astro";
 import { BRAND } from "../constants/brand";
 
 const base = import.meta.env.BASE_URL;
 ---
-<BaseLayout title="Careers">
+<BaseLayout title="Operations hiring">
   <section
     class="hero"
     style={`--hero-bg: url('${BRAND.heroImage}')`}
   >
     <div class="hero__inner" style="max-width: 1200px; margin: 0 auto; width: 100%;">
-      <p class="hero__eyebrow">Join our team</p>
-      <h1>Build your career with <span class="accent">Bailey&apos;s</span></h1>
+      <p class="hero__eyebrow">Drivers &amp; moving crew</p>
+      <h1>Join our <span class="accent">operations</span> team</h1>
       <p class="hero__lead">
-        We&apos;ve moved families and businesses across Colorado and Utah for 70+ years.
-        Explore open roles and apply in minutes from your phone.
+        Bailey&apos;s is built by the people on the trucks and on the job site — drivers, movers,
+        and packers who keep families and businesses moving across Colorado and Utah.
+        Apply in minutes from your phone.
       </p>
       <div class="hero__badges">
-        <span class="hero__badge">70+ years</span>
-        <span class="hero__badge">Allied Van Lines agent</span>
-        <span class="hero__badge">4.9★ on Google</span>
+        <span class="hero__badge">Drivers &amp; CDL roles</span>
+        <span class="hero__badge">Crew &amp; packers</span>
+        <span class="hero__badge">Training provided</span>
       </div>
-      <a href={`${base}careers/`} class="btn btn-primary" style="max-width: 20rem;">
-        View open positions →
+      <a href={`${base}careers/`} class="btn btn-primary" style="max-width: 22rem;">
+        View driver &amp; crew openings →
       </a>
     </div>
   </section>
@@ -31,14 +33,25 @@ const base = import.meta.env.BASE_URL;
   <TrustStrip />
 
   <div class="page-wrap">
-    <p class="section-label">Why Bailey&apos;s</p>
-    <h2 class="section-title">A team that moves with you</h2>
+    <p class="section-label">Operations careers</p>
+    <h2 class="section-title">Work in the field, not behind a desk</h2>
     <p class="lead">
-      From drivers to crew members, our people are trained, vetted, and proud of the work.
-      Apply online — we&apos;ll follow up quickly to schedule your interview.
+      We hire for moving operations — the roles that show up, load the truck, and deliver
+      on every promise we make. No moving experience required for most crew positions;
+      we train you. Competitive pay, tips, and full-time benefits where applicable.
     </p>
-    <a href={`${base}careers/`} class="btn btn-secondary" style="width: 100%; max-width: 20rem;">
-      See all open roles
+    <ul class="ops-role-list">
+      <li class="ops-role-list__item">
+        <strong>Drivers</strong> — Local and linehaul routes; CDL training available for qualified candidates.
+      </li>
+      <li class="ops-role-list__item">
+        <strong>Crew members &amp; packers</strong> — On-site moving and packing; seasonal and full-time options.
+      </li>
+    </ul>
+    <a href={`${base}careers/`} class="btn btn-secondary" style="width: 100%; max-width: 22rem;">
+      See open operations roles
     </a>
   </div>
+
+  <CareersCrosslink />
 </BaseLayout>

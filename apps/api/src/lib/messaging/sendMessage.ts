@@ -5,6 +5,7 @@ import { renderTemplate, type MessageChannel, type MessageContext } from "@bms/s
 import { config } from "../../config.js";
 import { getPool, t } from "../../db/pool.js";
 import { resolveTemplate } from "./resolveTemplate.js";
+import { resolveTwilioFromNumber } from "./resolveTwilioFromNumber.js";
 
 export interface SendMessageParams {
   templateKey: string;
@@ -54,10 +55,11 @@ export async function sendMessage(params: SendMessageParams): Promise<void> {
       providerId = res?.headers?.["x-message-id"] ?? null;
     } else {
       if (!params.to.phone) throw new Error("Phone recipient required");
+      const fromNumber = await resolveTwilioFromNumber(params.scope.officeId);
       const client = twilio(config.twilioAccountSid, config.twilioAuthToken);
       const msg = await client.messages.create({
         to: params.to.phone,
-        from: config.twilioFromNumber,
+        from: fromNumber,
         body,
       });
       providerId = msg.sid;

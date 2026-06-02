@@ -157,8 +157,32 @@ CREATE TABLE hire_admin_sessions (
   created_at DATETIME2 NOT NULL DEFAULT SYSUTCDATETIME()
 );
 
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+  WHERE name = 'IX_hire_applications_job' AND object_id = OBJECT_ID('hire_applications')
+)
 CREATE INDEX IX_hire_applications_job ON hire_applications(job_id);
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+  WHERE name = 'IX_hire_applications_status' AND object_id = OBJECT_ID('hire_applications')
+)
 CREATE INDEX IX_hire_applications_status ON hire_applications(status);
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+  WHERE name = 'IX_hire_tokens_token' AND object_id = OBJECT_ID('hire_application_tokens')
+)
 CREATE INDEX IX_hire_tokens_token ON hire_application_tokens(token);
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+  WHERE name = 'IX_hire_bookings_office_time' AND object_id = OBJECT_ID('hire_interview_bookings')
+)
 CREATE INDEX IX_hire_bookings_office_time ON hire_interview_bookings(office_id, starts_at, ends_at);
+
+IF NOT EXISTS (
+  SELECT 1 FROM sys.indexes
+  WHERE name = 'IX_hire_reminder_due' AND object_id = OBJECT_ID('hire_reminder_jobs')
+)
 CREATE INDEX IX_hire_reminder_due ON hire_reminder_jobs(scheduled_for) WHERE sent_at IS NULL;
