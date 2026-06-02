@@ -25,6 +25,11 @@ body.admin-body {
   min-height: 100vh;
 }
 
+html[data-admin-auth="checking"] .admin-nav,
+html[data-admin-auth="checking"] .admin-main {
+  visibility: hidden;
+}
+
 .admin-nav {
   display: flex;
   flex-wrap: wrap;

@@ -5,7 +5,7 @@ import { hrefPath } from "../../lib/assets";
 const api = import.meta.env.PUBLIC_API_BASE_URL;
 const adminHome = hrefPath("admin/");
 ---
-<AdminLayout title="Admin sign in">
+<AdminLayout title="Admin sign in" requireAuth={false} showNav={false}>
   <div class="admin-card" style="max-width: 24rem;">
     <h1>Admin sign in</h1>
     <div id="login-alert" hidden class="alert alert-error" style="display: none;"></div>

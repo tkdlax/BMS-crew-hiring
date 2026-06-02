@@ -1,9 +1,7 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
-import { hrefPath } from "../../../lib/assets";
 
 const api = import.meta.env.PUBLIC_API_BASE_URL;
-const loginPath = hrefPath("admin/login/");
 ---
 <AdminLayout title="Applications">
   <div class="admin-card">
@@ -17,11 +15,7 @@ const loginPath = hrefPath("admin/login/");
   </div>
 </AdminLayout>
 
-<script define:vars={{ api, loginPath }}>
-  async function guard() {
-    const s = await fetch(`${api}/admin/session`, { credentials: "include" }).then((r) => r.json());
-    if (!s.authenticated) location.href = loginPath;
-  }
+<script define:vars={{ api }}>
   async function initFilters() {
     const oRes = await fetch(`${api}/admin/offices`, { credentials: "include" });
     const { offices } = await oRes.json();
@@ -56,7 +50,7 @@ const loginPath = hrefPath("admin/login/");
   }
   document.getElementById("apply-filters")?.addEventListener("click", load);
   (async () => {
-    await guard();
+    await window.adminAuthCheck;
     await initFilters();
     await load();
   })();

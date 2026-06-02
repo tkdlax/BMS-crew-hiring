@@ -1,9 +1,6 @@
 ---
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { hrefPath } from "../../lib/assets";
-
-const api = import.meta.env.PUBLIC_API_BASE_URL;
-const loginPath = hrefPath("admin/login/");
 ---
 <AdminLayout title="Dashboard">
   <div class="admin-card">
@@ -18,11 +15,3 @@ const loginPath = hrefPath("admin/login/");
     </ul>
   </div>
 </AdminLayout>
-
-<script define:vars={{ api, loginPath }}>
-  fetch(`${api}/admin/session`, { credentials: "include" })
-    .then((r) => r.json())
-    .then((d) => {
-      if (!d.authenticated) location.href = loginPath;
-    });
-</script>
