@@ -1,4 +1,4 @@
-/** Display order for operations openings on the careers page. */
+/** Display order for operations openings on the operations page. */
 export const OPERATIONS_OFFICE_ORDER = [
   "denver",
   "colorado-springs",

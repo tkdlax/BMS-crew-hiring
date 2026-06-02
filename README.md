@@ -117,7 +117,7 @@ npm run dev:web
 | Page | URL |
 |------|-----|
 | Home | http://localhost:4321/hiring/ |
-| Careers | http://localhost:4321/hiring/careers/ |
+| Operations | http://localhost:4321/hiring/operations/ |
 | Apply (example) | http://localhost:4321/hiring/apply/denver/moving-operations-crew/ |
 | Admin | http://localhost:4321/hiring/admin/login/ |
 
@@ -125,7 +125,7 @@ npm run dev:web
 
 | Page | Path |
 |------|------|
-| Careers index | `https://{site}.webflow.io/hiring/careers/` |
+| Operations index | `https://{site}.webflow.io/hiring/operations/` |
 | Apply | `https://{site}.webflow.io/hiring/apply/{officeSlug}/{jobSlug}/` |
 | Schedule (from email) | `https://{site}.webflow.io/hiring/schedule/?token={token}` |
 | Admin | `https://{site}.webflow.io/hiring/admin/` |

@@ -8,7 +8,7 @@ export function assetUrl(path: string): string {
   return `${normalizedBase()}${path.replace(/^\//, "")}`;
 }
 
-/** Resolve an in-app route (e.g. careers/ → /hiring/careers/). */
+/** Resolve an in-app route (e.g. operations/ → /hiring/operations/). */
 export function hrefPath(path: string): string {
   return `${normalizedBase()}${path.replace(/^\//, "")}`;
 }

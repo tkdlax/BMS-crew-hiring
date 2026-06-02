@@ -15,7 +15,7 @@ interface Props {
 
 const { content, officeSlug, jobSlug, captchaSiteKey, captchaProvider, privacyUrl } = Astro.props;
 
-const careersUrl = hrefPath("careers/");
+const operationsUrl = hrefPath("operations/");
 const commuteQuery = content.address
   ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(content.address.replace(/\n/g, " "))}`
   : null;
@@ -44,7 +44,7 @@ const heroBg = content.heroImage ? `url('${content.heroImage}')` : undefined;
         <img class="apply-hero-nav__logo" src={BRAND.logoWhite} alt="Bailey's Moving &amp; Storage" width="160" height="40" />
       </a>
       <div class="apply-hero-nav__links">
-        <a class="apply-hero-nav__link" href={careersUrl}>Open Roles</a>
+        <a class="apply-hero-nav__link" href={operationsUrl}>Open Roles</a>
         <a class="apply-hero-nav__link" href={`${BRAND.mainSite}/careers`}>All Careers</a>
         <a class="apply-hero-nav__phone" href={BRAND.phoneHref}>{BRAND.phone}</a>
       </div>

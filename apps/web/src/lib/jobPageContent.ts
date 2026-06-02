@@ -142,6 +142,10 @@ function pick<T>(api: T | undefined, fallback: T): T {
   return api !== undefined && api !== null && api !== "" ? api : fallback;
 }
 
+export function isKnownOperationsOffice(officeSlug: string): boolean {
+  return officeSlug in OFFICE_DEFAULTS;
+}
+
 export function mergeJobPageContent(
   officeSlug: string,
   _jobSlug: string,

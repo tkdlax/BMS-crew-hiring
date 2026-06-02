@@ -33,11 +33,10 @@ const showClientRefresh = !api;
     </div>
   </section>
 
-  <div class="page-wrap careers-by-office" id="careers-list">
-    <p class="section-label" id="careers-summary">
+  <div class="page-wrap careers-by-office" id="operations-list" data-ssr-loaded={api ? "1" : "0"}>
+    <p class="section-label" id="operations-summary">
       {officeGroups.length} {officeGroups.length === 1 ? "office" : "offices"} hiring moving operations crew
     </p>
-    <div id="careers-offices">
     {officeGroups.map((office) => (
       <section class="office-group" id={office.slug}>
         <h2 class="office-group__title">{office.name}</h2>
@@ -57,7 +56,6 @@ const showClientRefresh = !api;
         </ul>
       </section>
     ))}
-    </div>
   </div>
 </BaseLayout>
 
@@ -67,7 +65,7 @@ const showClientRefresh = !api;
     import { groupOpeningsByOffice } from "../../lib/openings.ts";
     import { hrefPath } from "../../lib/assets.ts";
 
-    async function refreshCareersList() {
+    async function refreshOperationsList() {
       const api = await resolveApiBaseUrl();
       if (!api) return;
 
@@ -78,15 +76,15 @@ const showClientRefresh = !api;
       const groups = groupOpeningsByOffice(data.openings ?? []);
       if (!groups.length) return;
 
-      const officesRoot = document.getElementById("careers-offices");
-      const summary = document.getElementById("careers-summary");
-      if (!officesRoot) return;
+      const root = document.getElementById("operations-list");
+      const summary = document.getElementById("operations-summary");
+      if (!root) return;
 
       if (summary) {
         summary.textContent = `${groups.length} ${groups.length === 1 ? "office" : "offices"} hiring moving operations crew`;
       }
 
-      officesRoot.innerHTML = groups
+      root.innerHTML = (summary ? summary.outerHTML : "") + groups
         .map(
           (office) => `
         <section class="office-group" id="${office.slug}">
@@ -110,6 +108,6 @@ const showClientRefresh = !api;
         .join("");
     }
 
-    refreshCareersList();
+    refreshOperationsList();
   </script>
 )}

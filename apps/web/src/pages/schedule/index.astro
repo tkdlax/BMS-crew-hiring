@@ -2,7 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import { hrefPath } from "../../lib/assets";
 
-const careersUrl = hrefPath("careers/");
+const operationsUrl = hrefPath("operations/");
 ---
 <BaseLayout title="Schedule interview" bodyClass="schedule-page">
   <section class="page-band">
@@ -35,7 +35,7 @@ const careersUrl = hrefPath("careers/");
       </div>
       <div id="schedule-error" hidden>
         <p class="alert alert-error" id="error-message"></p>
-        <a href={careersUrl} class="btn btn-secondary" style="margin-top: 1rem;">View operations openings</a>
+        <a href={operationsUrl} class="btn btn-secondary" style="margin-top: 1rem;">View operations openings</a>
       </div>
     </div>
   </div>

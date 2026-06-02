@@ -9,7 +9,8 @@ import TrustStrip from "../../../components/TrustStrip.astro";
 import { BRAND } from "../../../constants/brand";
 import { OPERATIONS_JOB_SLUG, LEGACY_JOB_SLUGS } from "../../../constants/jobs";
 import { OPERATIONS_OFFICE_ORDER } from "../../../constants/offices";
-import { mergeJobPageContent } from "../../../lib/jobPageContent";
+import { isKnownOperationsOffice, mergeJobPageContent } from "../../../lib/jobPageContent";
+import { officeDisplayName } from "../../../lib/openings";
 import {
   getApiBaseUrl,
   getRuntimeApiBaseUrl,
@@ -51,30 +52,38 @@ const captchaProviderNorm =
   captchaProvider === "recaptcha" ? "recaptcha" : ("turnstile" as const);
 
 const privacyUrl = `${BRAND.mainSite}/privacy-policy`;
-const careersUrl = hrefPath("careers/");
+const operationsUrl = hrefPath("operations/");
+
+const knownOpsApply =
+  Boolean(officeSlug && jobSlug === OPERATIONS_JOB_SLUG && isKnownOperationsOffice(officeSlug!));
 
 let job: Record<string, unknown> | null = null;
 let loadError = "";
 
-try {
-  if (api) {
+if (api) {
+  try {
     const res = await fetch(`${api}/public/jobs/${officeSlug}/${jobSlug}`);
     if (res.ok) job = await res.json();
-    else loadError = res.status === 404 ? "This position is not available." : "Unable to load job.";
-  } else {
-    loadError = "Unable to connect. Please try again later.";
+    else if (!knownOpsApply) {
+      loadError = res.status === 404 ? "This position is not available." : "Unable to load job.";
+    }
+  } catch {
+    if (!knownOpsApply) loadError = "Unable to connect. Please try again later.";
   }
-} catch {
+} else if (!knownOpsApply) {
   loadError = "Unable to connect. Please try again later.";
 }
 
-const pageContent = job
-  ? mergeJobPageContent(officeSlug!, jobSlug!, job.pageContent as Record<string, unknown>, {
-      title: String(job.title),
-      officeName: String(job.officeName),
-      locationLabel: String(job.locationLabel),
-    })
-  : null;
+const pageContent =
+  officeSlug && jobSlug
+    ? mergeJobPageContent(officeSlug, jobSlug, job?.pageContent as Record<string, unknown>, {
+        title: job?.title ? String(job.title) : "Moving Operations Crew",
+        officeName: job?.officeName ? String(job.officeName) : officeDisplayName(officeSlug),
+        locationLabel: job?.locationLabel ? String(job.locationLabel) : "",
+      })
+    : null;
+
+const showApply = Boolean(pageContent && (job || knownOpsApply));
 ---
 
 <BaseLayout title={pageContent?.headline ?? "Apply"} bodyClass="page-apply" applyChrome>
@@ -87,10 +96,10 @@ const pageContent = job
         </div>
       </section>
       <div class="page-wrap">
-        <a href={careersUrl} class="btn btn-secondary">Back to operations openings</a>
+        <a href={operationsUrl} class="btn btn-secondary">Back to operations openings</a>
       </div>
     </>
-  ) : job && pageContent ? (
+  ) : showApply && pageContent ? (
     <>
       <ApplyHeroShell
         content={pageContent}
