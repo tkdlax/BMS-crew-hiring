@@ -23,7 +23,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     offices.forEach((o) => {
       oSel.innerHTML += `<option value="${o.id}">${o.name}</option>`;
     });
-    const jRes = await fetch(`${api}/admin/jobs`, { credentials: "include" });
+    const jRes = await fetch(`${api}/jobs`, { credentials: "include" });
+    if (!jRes.ok) return;
     const { jobs } = await jRes.json();
     const jSel = document.getElementById("filter-job");
     jobs.forEach((j) => {
