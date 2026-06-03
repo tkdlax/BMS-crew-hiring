@@ -13,12 +13,12 @@ export async function handleApplications(
   segments: string[]
 ): Promise<HttpResponseInit> {
   if (segments.length === 0 && req.method === "POST") {
-    return submitApplication(req);
+    return submitApplication(req, _ctx);
   }
   return error("Not found", 404);
 }
 
-async function submitApplication(req: HttpRequest): Promise<HttpResponseInit> {
+async function submitApplication(req: HttpRequest, ctx: InvocationContext): Promise<HttpResponseInit> {
   const body = (await req.json()) as unknown;
   const parsed = applicationSubmitSchema.safeParse(body);
   if (!parsed.success) {
@@ -37,7 +37,7 @@ async function submitApplication(req: HttpRequest): Promise<HttpResponseInit> {
     return error("Too many requests. Please try again later.", 429);
   }
 
-  const captchaOk = await verifyCaptcha(data.captchaToken, ip);
+  const captchaOk = await verifyCaptcha(data.captchaToken, ip, ctx);
   if (!captchaOk) {
     return error("CAPTCHA verification failed", 400);
   }

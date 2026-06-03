@@ -301,10 +301,12 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
       );
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
-      showAlert(
-        err instanceof Error ? err.message : "Oops! Something went wrong. Check all fields and try again.",
-        "error"
-      );
+      const msg = err instanceof Error ? err.message : "Oops! Something went wrong. Check all fields and try again.";
+      showAlert(msg, "error");
+      if (typeof grecaptcha !== "undefined") grecaptcha.reset();
+      const w = window as Window & { turnstile?: { reset: (el?: HTMLElement) => void } };
+      const turnstileEl = document.querySelector(".cf-turnstile");
+      if (w.turnstile && turnstileEl) w.turnstile.reset(turnstileEl as HTMLElement);
       if (submitBtn) submitBtn.disabled = false;
     }
   });

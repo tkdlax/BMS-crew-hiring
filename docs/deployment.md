@@ -19,8 +19,9 @@
 | `TWILIO_FROM_NUMBER_CO` | Colorado SMS from number (E.164) |
 | `TWILIO_FROM_NUMBER_UT` | Utah SMS from number (E.164) |
 | `TWILIO_FROM_NUMBER` | Optional fallback |
-| `CAPTCHA_SECRET` | Turnstile or reCAPTCHA secret |
-| `CAPTCHA_PROVIDER` | `turnstile` or `recaptcha` (must match the site key type on Webflow) |
+| `CAPTCHA_SECRET` | Turnstile or reCAPTCHA **secret** key (must pair with site key) |
+| `CAPTCHA_SITE_KEY` | Same site key as Webflow `PUBLIC_CAPTCHA_SITE_KEY` — auto-detects provider on API |
+| `CAPTCHA_PROVIDER` | Optional `turnstile` or `recaptcha` (omit when `CAPTCHA_SITE_KEY` is set) |
 | `ADMIN_PASSWORD_HASH` | bcrypt hash |
 | `SESSION_SIGNING_SECRET` | Random 32+ char string |
 | `ALLOWED_ORIGINS` | Comma-separated site origins, e.g. `https://www.baileysallied.com,https://baileysallied.com,https://baileys-moving-storage.webflow.io` |

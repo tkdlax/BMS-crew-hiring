@@ -1,3 +1,5 @@
+import { resolveCaptchaProvider } from "@bms/shared";
+
 function env(key: string, fallback = ""): string {
   return process.env[key] ?? fallback;
 }
@@ -22,7 +24,10 @@ export const config = {
   /** e.g. CO → +1720..., UT → +1385... from TWILIO_FROM_NUMBER_CO / _UT */
   twilioFromByRegion: envTwilioByRegion(),
   captchaSecret: env("CAPTCHA_SECRET"),
-  captchaProvider: env("CAPTCHA_PROVIDER", "turnstile") as "turnstile" | "recaptcha",
+  captchaProvider: resolveCaptchaProvider(
+    env("CAPTCHA_SITE_KEY") || env("PUBLIC_CAPTCHA_SITE_KEY"),
+    env("CAPTCHA_PROVIDER")
+  ),
   adminPasswordHash: env("ADMIN_PASSWORD_HASH"),
   sessionSigningSecret: env("SESSION_SIGNING_SECRET"),
   allowedOrigins: env("ALLOWED_ORIGINS", "http://localhost:4321")
