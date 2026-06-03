@@ -47,7 +47,7 @@ function mergeConfig(
 ): ConfigRow {
   const d: ConfigRow = {
     slot_duration_minutes: 30,
-    buffer_minutes: 15,
+    buffer_minutes: 0,
     quiet_hours_start: "21:00",
     quiet_hours_end: "08:00",
     reminder_offsets_json: JSON.stringify(DEFAULT_OFFSETS),

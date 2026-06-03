@@ -1,12 +1,13 @@
 ---
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 ---
-<AdminLayout title="Settings">
+<AdminLayout title="Settings" activeNav="settings">
   <div class="admin-card">
     <h1>Global schedule settings</h1>
     <form id="settings-form" class="admin-form">
       <div class="field"><label>Slot duration (minutes)</label><input name="slotDurationMinutes" type="number" min="15" /></div>
-      <div class="field"><label>Buffer between slots (minutes)</label><input name="bufferMinutes" type="number" min="0" /></div>
+      <div class="field"><label>Buffer around booked slots (minutes)</label><input name="bufferMinutes" type="number" min="0" /></div>
+      <p class="admin-hint">Prevents back-to-back bookings overlapping a reserved slot. Does not add gaps between open times on the calendar.</p>
       <div class="field"><label>Booking window (days ahead)</label><input name="bookingWindowDays" type="number" min="1" max="90" /></div>
       <div class="field"><label>Minimum notice (hours)</label><input name="minNoticeHours" type="number" min="0" /></div>
       <div class="field"><label>Quiet hours start (HH:mm)</label><input name="quietHoursStart" /></div>

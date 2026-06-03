@@ -5,24 +5,34 @@ import { hrefPath } from "../../lib/assets";
 const adminHome = hrefPath("admin/");
 ---
 <AdminLayout title="Admin sign in" requireAuth={false} showNav={false}>
-  <div class="admin-card" style="max-width: 24rem;">
-    <h1>Admin sign in</h1>
-    <div id="login-alert" hidden class="alert alert-error" style="display: none;"></div>
-    <form id="login-form" class="admin-form">
-      <div class="field hp" aria-hidden="true">
-        <label for="username">Username</label>
-        <input id="username" name="username" type="text" tabindex="-1" autocomplete="username" />
-      </div>
-      <div class="field hp" aria-hidden="true">
-        <label for="login-website">Website</label>
-        <input id="login-website" name="website" type="text" tabindex="-1" autocomplete="off" />
-      </div>
-      <div class="field">
-        <label for="password">Password</label>
-        <input id="password" name="password" type="password" required autocomplete="current-password" />
-      </div>
-      <button type="submit" class="btn" id="login-submit" disabled>Sign in</button>
-    </form>
+  <div class="admin-login-wrap">
+    <div class="admin-card admin-login-card">
+      <h1>Sign in</h1>
+      <p class="admin-login-lead">Bailey&apos;s operations hiring admin</p>
+      <div id="login-alert" hidden class="alert alert-error"></div>
+      <form id="login-form" class="admin-form">
+        <div class="field">
+          <label for="username">Username</label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            placeholder="admin"
+          />
+          <p class="field-hint">Not used for sign-in — password only.</p>
+        </div>
+        <div class="field hp" aria-hidden="true">
+          <label for="login-website">Website</label>
+          <input id="login-website" name="website" type="text" tabindex="-1" autocomplete="off" />
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required autocomplete="current-password" />
+        </div>
+        <button type="submit" class="btn btn--block" id="login-submit" disabled>Sign in</button>
+      </form>
+    </div>
   </div>
 </AdminLayout>
 
@@ -41,34 +51,45 @@ const adminHome = hrefPath("admin/");
       const form = e.target as HTMLFormElement;
       const fd = new FormData(form);
       const alertEl = document.getElementById("login-alert");
+      const submitBtn = document.getElementById("login-submit") as HTMLButtonElement;
 
-      const decoyUsername = String(fd.get("username") ?? "").trim();
       const honeypot = String(fd.get("website") ?? "").trim();
-      if (decoyUsername || honeypot) {
+      if (honeypot) {
         if (alertEl) {
-          alertEl.style.display = "block";
+          alertEl.hidden = false;
           alertEl.textContent = "Invalid password";
         }
         return;
       }
 
-      const res = await fetch(`${api}/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          password: fd.get("password"),
-          honeypot: "",
-        }),
-      });
-      if (res.ok) {
-        location.href = adminHome;
-        return;
-      }
-      const data = await res.json().catch(() => ({}));
-      if (alertEl) {
-        alertEl.style.display = "block";
-        alertEl.textContent = (data as { error?: string }).error || "Invalid password";
+      submitBtn.disabled = true;
+      try {
+        const res = await fetch(`${api}/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({
+            password: fd.get("password"),
+            username: fd.get("username"),
+            honeypot: "",
+          }),
+        });
+        if (res.ok) {
+          location.href = adminHome;
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        if (alertEl) {
+          alertEl.hidden = false;
+          alertEl.textContent = (data as { error?: string }).error || "Invalid password";
+        }
+      } catch {
+        if (alertEl) {
+          alertEl.hidden = false;
+          alertEl.textContent = "Could not reach the server. Try again in a moment.";
+        }
+      } finally {
+        submitBtn.disabled = false;
       }
     });
   });

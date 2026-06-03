@@ -1,14 +1,17 @@
-/* Admin — Bailey's brand tokens (desktop-first) */
+/* Admin — Calendly-inspired layout with Bailey's brand */
 :root {
   --blue: #1b437b;
   --blue-dark: #143264;
+  --calendly-blue: #006bff;
+  --calendly-blue-soft: #e8f2ff;
   --orange: #ee7b22;
   --orange-dark: #d96a10;
-  --text: #2d3748;
-  --text-light: #718096;
-  --bg-light: #f7f9fc;
-  --border: #e2e8f0;
+  --text: #1a1a1a;
+  --text-light: #666a73;
+  --bg-light: #f8f9fb;
+  --border: #e3e8ee;
   --white: #ffffff;
+  --sidebar-w: 15.5rem;
 }
 
 *,
@@ -25,63 +28,255 @@ body.admin-body {
   min-height: 100vh;
 }
 
-html[data-admin-auth="checking"] .admin-nav,
-html[data-admin-auth="checking"] .admin-main {
+html[data-admin-auth="checking"] .admin-shell {
   visibility: hidden;
 }
 
-.admin-nav {
+.admin-shell {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem 1rem;
-  align-items: center;
-  padding: 0.75rem 1.25rem;
-  background: var(--blue);
-  border-bottom: 2px solid var(--blue-dark);
+  min-height: 100vh;
 }
 
-.admin-nav a {
-  color: rgba(255, 255, 255, 0.9);
+/* —— Sidebar —— */
+.admin-sidebar {
+  width: var(--sidebar-w);
+  flex-shrink: 0;
+  background: var(--white);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 1.25rem 0.75rem;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.admin-sidebar__brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.75rem 1.25rem;
+  font-size: 1.125rem;
+  font-weight: 800;
+  color: var(--calendly-blue);
+  letter-spacing: -0.02em;
+}
+
+.admin-sidebar__brand-mark {
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--calendly-blue), #3d8bfd);
+  flex-shrink: 0;
+}
+
+.admin-sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  flex: 1;
+}
+
+.admin-sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 8px;
+  color: var(--text);
   text-decoration: none;
   font-size: 0.875rem;
   font-weight: 600;
-  padding: 0.5rem 0.75rem;
-  border-radius: 6px;
-}
-
-.admin-nav a:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: var(--orange);
-}
-
-.btn-text {
-  background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.65);
+  background: none;
   cursor: pointer;
-  margin-left: auto;
-  font-size: 0.875rem;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.admin-sidebar__link:hover {
+  background: var(--bg-light);
+}
+
+.admin-sidebar__link.active {
+  background: var(--calendly-blue-soft);
+  color: var(--calendly-blue);
+}
+
+.admin-sidebar__icon {
+  width: 1.125rem;
+  text-align: center;
+  opacity: 0.85;
+  font-size: 1rem;
+}
+
+.admin-sidebar__footer {
+  padding: 0.75rem 0.75rem 0;
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+}
+
+.admin-sidebar__logout {
+  color: var(--text-light);
+  font-weight: 500;
+}
+
+/* —— Main content —— */
+.admin-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-topbar {
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-topbar h1 {
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.admin-topbar__actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 }
 
 .admin-main {
-  max-width: 64rem;
-  margin: 0 auto;
-  padding: 1.5rem 1rem;
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 72rem;
 }
 
+.admin-main--login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: none;
+  padding: 2rem 1rem;
+}
+
+.admin-login-wrap {
+  width: 100%;
+  max-width: 24rem;
+}
+
+.admin-login-card h1 {
+  margin: 0 0 0.25rem;
+}
+
+.admin-login-lead {
+  color: var(--text-light);
+  font-size: 0.9375rem;
+  margin: 0 0 1.25rem;
+}
+
+/* —— Cards & tables —— */
 .admin-card {
   background: var(--white);
-  border-radius: 10px;
-  padding: 1.25rem;
+  border-radius: 12px;
+  padding: 1.25rem 1.5rem;
   margin-bottom: 1rem;
   border: 1px solid var(--border);
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.06);
 }
 
 .admin-card h1,
 .admin-card h2 {
-  color: var(--blue);
-  font-weight: 800;
+  color: var(--text);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.admin-card h1 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+}
+
+.admin-card h2 {
+  font-size: 1rem;
+  margin: 1.25rem 0 0.75rem;
+}
+
+.admin-card > p {
+  color: var(--text-light);
+  margin: 0 0 1rem;
+  font-size: 0.9375rem;
+}
+
+.admin-event-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-event-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.admin-event-row:hover {
+  border-color: #c5d4e8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.admin-event-row__bar {
+  width: 4px;
+  align-self: stretch;
+  border-radius: 4px;
+  background: var(--calendly-blue);
+  flex-shrink: 0;
+}
+
+.admin-event-row__bar--orange {
+  background: var(--orange);
+}
+
+.admin-event-row__bar--green {
+  background: #0bab64;
+}
+
+.admin-event-row__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-event-row__title {
+  font-weight: 700;
+  font-size: 0.9375rem;
+  margin: 0 0 0.25rem;
+}
+
+.admin-event-row__meta {
+  font-size: 0.8125rem;
+  color: var(--text-light);
+  margin: 0;
+}
+
+.admin-event-row__action {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--calendly-blue);
+  white-space: nowrap;
 }
 
 table.data {
@@ -92,7 +287,7 @@ table.data {
 
 table.data th,
 table.data td {
-  padding: 0.625rem 0.75rem;
+  padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--border);
 }
@@ -100,7 +295,10 @@ table.data td {
 table.data th {
   font-weight: 600;
   background: var(--bg-light);
-  color: var(--blue);
+  color: var(--text-light);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .admin-form .field {
@@ -110,27 +308,36 @@ table.data th {
 .admin-form label {
   display: block;
   font-weight: 600;
-  margin-bottom: 0.25rem;
-  font-size: 0.875rem;
+  margin-bottom: 0.35rem;
+  font-size: 0.8125rem;
+  color: var(--text);
+}
+
+.field-hint {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  color: var(--text-light);
 }
 
 .admin-form input,
 .admin-form select,
 .admin-form textarea {
   width: 100%;
-  max-width: 24rem;
-  padding: 0.5rem 0.75rem;
-  font-size: 1rem;
-  border: 1.5px solid var(--border);
-  border-radius: 6px;
+  max-width: 28rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.9375rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
   font-family: inherit;
+  background: var(--white);
 }
 
 .admin-form input:focus,
 .admin-form select:focus,
 .admin-form textarea:focus {
   outline: none;
-  border-color: var(--blue);
+  border-color: var(--calendly-blue);
+  box-shadow: 0 0 0 3px rgba(0, 107, 255, 0.12);
 }
 
 .admin-form textarea {
@@ -139,25 +346,41 @@ table.data th {
 }
 
 .btn {
-  padding: 0.625rem 1.25rem;
-  background: var(--orange);
+  padding: 0.625rem 1.125rem;
+  background: var(--calendly-blue);
   color: var(--white);
   border: none;
-  border-radius: 6px;
+  border-radius: 999px;
   cursor: pointer;
-  font-size: 0.9375rem;
-  font-weight: 800;
-  min-height: 2.75rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  min-height: 2.5rem;
+  font-family: inherit;
 }
 
 .btn:hover {
-  background: var(--orange-dark);
+  background: #005ce6;
+}
+
+.btn--block {
+  width: 100%;
+  max-width: 28rem;
 }
 
 .btn-secondary {
   background: var(--white);
-  color: var(--blue);
-  border: 2px solid var(--blue);
+  color: var(--calendly-blue);
+  border: 1px solid var(--calendly-blue);
+}
+
+.btn-secondary:hover {
+  background: var(--calendly-blue-soft);
+}
+
+.btn-small {
+  padding: 0.375rem 0.875rem;
+  min-height: auto;
+  font-size: 0.8125rem;
 }
 
 .filters {
@@ -169,9 +392,9 @@ table.data th {
 
 .alert {
   padding: 0.875rem 1rem;
-  border-radius: 6px;
+  border-radius: 8px;
   margin-bottom: 1rem;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
 }
 
 .alert-error {
@@ -192,16 +415,16 @@ table.data th {
 
 .admin-edit-panel {
   margin: 1rem 0;
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--bg-light);
 }
 
 .admin-edit-panel h3 {
   margin: 0 0 1rem;
-  font-size: 1rem;
-  color: var(--blue);
+  font-size: 0.9375rem;
+  font-weight: 700;
 }
 
 .table-actions {
@@ -210,13 +433,83 @@ table.data th {
   gap: 0.5rem;
 }
 
-.btn-small {
-  padding: 0.375rem 0.75rem;
-  min-height: auto;
+.admin-hint {
+  color: var(--text-light);
   font-size: 0.8125rem;
 }
 
-@media (max-width: 40rem) {
+.admin-tabs {
+  display: flex;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+}
+
+.admin-tabs__tab {
+  padding: 0.5rem 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-light);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.admin-tabs__tab.active,
+.admin-tabs__tab:hover {
+  color: var(--calendly-blue);
+}
+
+.admin-tabs__tab.active {
+  border-bottom-color: var(--calendly-blue);
+}
+
+@media (max-width: 768px) {
+  .admin-shell {
+    flex-direction: column;
+  }
+
+  .admin-sidebar {
+    width: 100%;
+    height: auto;
+    position: static;
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0.75rem;
+    gap: 0.25rem;
+  }
+
+  .admin-sidebar__brand {
+    width: 100%;
+    padding-bottom: 0.5rem;
+  }
+
+  .admin-sidebar__nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+    width: 100%;
+  }
+
+  .admin-sidebar__link {
+    font-size: 0.8125rem;
+    padding: 0.5rem 0.625rem;
+  }
+
+  .admin-sidebar__footer {
+    width: 100%;
+    border-top: none;
+    margin-top: 0;
+    padding-top: 0;
+  }
+
+  .admin-topbar {
+    padding: 1rem;
+  }
+
+  .admin-main {
+    padding: 1rem;
+  }
+
   table.data {
     display: block;
     overflow-x: auto;

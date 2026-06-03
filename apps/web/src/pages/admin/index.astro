@@ -2,18 +2,57 @@
 import AdminLayout from "../../layouts/AdminLayout.astro";
 import { hrefPath } from "../../lib/assets";
 ---
-<AdminLayout title="Dashboard">
-  <div class="admin-card">
-    <h1>Hiring admin</h1>
-    <p>Manage offices, jobs, applications, templates, and scheduling settings.</p>
-    <ul>
-      <li><a href={hrefPath("admin/offices/")}>Offices</a></li>
-      <li><a href={hrefPath("admin/jobs/")}>Jobs</a></li>
-      <li><a href={hrefPath("admin/applications/")}>Applications</a></li>
-      <li><a href={hrefPath("admin/templates/")}>Message templates</a></li>
-      <li><a href={hrefPath("admin/scheduling/")}>Office scheduling (hours)</a></li>
-      <li><a href={hrefPath("admin/settings/")}>Global schedule &amp; webhooks</a></li>
-      <li><a href={hrefPath("schedule/preview/")} target="_blank" rel="noopener">Schedule calendar preview (test)</a></li>
-    </ul>
+<AdminLayout title="Scheduling" activeNav="scheduling">
+  <div class="admin-tabs">
+    <a class="admin-tabs__tab active" href={hrefPath("admin/")}>Overview</a>
+    <a class="admin-tabs__tab" href={hrefPath("admin/scheduling/")}>Availability</a>
+    <a class="admin-tabs__tab" href={hrefPath("admin/settings/")}>Global settings</a>
+  </div>
+
+  <p class="admin-hint" style="margin-bottom: 1rem">
+    Manage interview scheduling, applications, and notifications for operations hiring.
+  </p>
+
+  <div class="admin-event-list">
+    <a class="admin-event-row" href={hrefPath("admin/scheduling/")}>
+      <span class="admin-event-row__bar"></span>
+      <div class="admin-event-row__body">
+        <p class="admin-event-row__title">Interview availability</p>
+        <p class="admin-event-row__meta">Weekly hours &amp; booking rules per office · 30 min slots</p>
+      </div>
+      <span class="admin-event-row__action">Edit →</span>
+    </a>
+    <a class="admin-event-row" href={hrefPath("admin/applications/")}>
+      <span class="admin-event-row__bar admin-event-row__bar--orange"></span>
+      <div class="admin-event-row__body">
+        <p class="admin-event-row__title">Applications</p>
+        <p class="admin-event-row__meta">Review new applicants and interview status</p>
+      </div>
+      <span class="admin-event-row__action">View →</span>
+    </a>
+    <a class="admin-event-row" href={hrefPath("admin/templates/")}>
+      <span class="admin-event-row__bar admin-event-row__bar--green"></span>
+      <div class="admin-event-row__body">
+        <p class="admin-event-row__title">Email &amp; SMS workflows</p>
+        <p class="admin-event-row__meta">Invite, confirmation, and reminder templates</p>
+      </div>
+      <span class="admin-event-row__action">Edit →</span>
+    </a>
+    <a class="admin-event-row" href={hrefPath("admin/settings/")}>
+      <span class="admin-event-row__bar"></span>
+      <div class="admin-event-row__body">
+        <p class="admin-event-row__title">Webhooks &amp; global schedule</p>
+        <p class="admin-event-row__meta">Manager notifications, slot duration, quiet hours</p>
+      </div>
+      <span class="admin-event-row__action">Configure →</span>
+    </a>
+    <a class="admin-event-row" href={hrefPath("schedule/preview/")} target="_blank" rel="noopener">
+      <span class="admin-event-row__bar admin-event-row__bar--orange"></span>
+      <div class="admin-event-row__body">
+        <p class="admin-event-row__title">Calendar preview</p>
+        <p class="admin-event-row__meta">Test the applicant scheduling experience without applying</p>
+      </div>
+      <span class="admin-event-row__action">Open →</span>
+    </a>
   </div>
 </AdminLayout>

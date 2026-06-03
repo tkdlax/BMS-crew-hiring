@@ -126,7 +126,7 @@ export function generateSlots(
             });
           }
         }
-        slotStartMins += slotDurationMinutes + bufferMinutes;
+        slotStartMins += slotDurationMinutes;
       }
     }
   }

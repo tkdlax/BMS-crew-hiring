@@ -53,8 +53,8 @@ async function adminLogin(req: HttpRequest): Promise<HttpResponseInit> {
   const body = (await req.json()) as unknown;
   const parsed = adminLoginSchema.safeParse(body);
   if (!parsed.success) return error("Invalid request", 400);
-  if (parsed.data.honeypot || parsed.data.username) {
-    return error("Invalid request", 400);
+  if (parsed.data.honeypot) {
+    return error("Invalid password", 401);
   }
   const ok = await verifyAdminPassword(parsed.data.password);
   if (!ok) return error("Invalid password", 401);

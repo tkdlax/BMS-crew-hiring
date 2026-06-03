@@ -5,13 +5,25 @@ interface Props {
   title: string;
   /** When false (e.g. login page), skip session check and redirect to login. */
   requireAuth?: boolean;
-  /** Hide top nav (used on login). */
+  /** Hide sidebar (used on login). */
   showNav?: boolean;
+  /** Highlight active sidebar link. */
+  activeNav?: string;
 }
 
-const { title, requireAuth = true, showNav = requireAuth } = Astro.props;
+const { title, requireAuth = true, showNav = requireAuth, activeNav = "" } = Astro.props;
 const loginPath = hrefPath("admin/login/");
 const adminHome = hrefPath("admin/");
+
+const nav = [
+  { key: "scheduling", href: hrefPath("admin/"), label: "Scheduling", icon: "📅" },
+  { key: "applications", href: hrefPath("admin/applications/"), label: "Applications", icon: "👤" },
+  { key: "availability", href: hrefPath("admin/scheduling/"), label: "Availability", icon: "🕐" },
+  { key: "offices", href: hrefPath("admin/offices/"), label: "Offices", icon: "🏢" },
+  { key: "jobs", href: hrefPath("admin/jobs/"), label: "Jobs", icon: "💼" },
+  { key: "templates", href: hrefPath("admin/templates/"), label: "Workflows", icon: "⚡" },
+  { key: "settings", href: hrefPath("admin/settings/"), label: "Settings", icon: "⚙️" },
+];
 ---
 <!doctype html>
 <html
@@ -24,30 +36,53 @@ const adminHome = hrefPath("admin/");
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title} | Bailey&apos;s Admin</title>
+    <title>{title} | Bailey&apos;s Hiring Admin</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href={assetUrl("styles/admin.css")} />
   </head>
   <body class="admin-body">
-    {showNav && (
-    <nav class="admin-nav">
-      <a href={hrefPath("admin/")}>Dashboard</a>
-      <a href={hrefPath("admin/offices/")}>Offices</a>
-      <a href={hrefPath("admin/jobs/")}>Jobs</a>
-      <a href={hrefPath("admin/applications/")}>Applications</a>
-      <a href={hrefPath("admin/templates/")}>Templates</a>
-      <a href={hrefPath("admin/settings/")}>Settings</a>
-      <button type="button" id="admin-logout" class="btn-text">Log out</button>
-    </nav>
-    )}
-    <main class="admin-main">
-      <div id="admin-config-error" class="admin-card alert alert-error" role="alert" hidden>
-        <strong>API not configured.</strong> Set <code>PUBLIC_API_BASE_URL</code> in Webflow Cloud (e.g.
-        <code>https://&lt;your-function-app&gt;.azurewebsites.net/api</code>) and redeploy.
+    <div class="admin-shell">
+      {showNav && (
+        <aside class="admin-sidebar">
+          <div class="admin-sidebar__brand">
+            <span class="admin-sidebar__brand-mark" aria-hidden="true"></span>
+            Bailey&apos;s Hiring
+          </div>
+          <nav class="admin-sidebar__nav" aria-label="Admin">
+            {nav.map((item) => (
+              <a
+                href={item.href}
+                class:list={["admin-sidebar__link", activeNav === item.key && "active"]}
+                data-nav={item.key}
+              >
+                <span class="admin-sidebar__icon" aria-hidden="true">{item.icon}</span>
+                {item.label}
+              </a>
+            ))}
+          </nav>
+          <div class="admin-sidebar__footer">
+            <button type="button" id="admin-logout" class="admin-sidebar__link admin-sidebar__logout">
+              <span class="admin-sidebar__icon" aria-hidden="true">↩</span>
+              Log out
+            </button>
+          </div>
+        </aside>
+      )}
+      <div class="admin-content">
+        {showNav && (
+          <header class="admin-topbar">
+            <h1>{title}</h1>
+          </header>
+        )}
+        <main class:list={["admin-main", !showNav && "admin-main--login"]}>
+          <div id="admin-config-error" class="admin-card alert alert-error" role="alert" hidden>
+            <strong>API not configured.</strong> Set <code>PUBLIC_API_BASE_URL</code> in Webflow Cloud and redeploy.
+          </div>
+          <slot />
+        </main>
       </div>
-      <slot />
-    </main>
+    </div>
     <script>
       import {
         initAdminLoginRedirect,
@@ -66,11 +101,19 @@ const adminHome = hrefPath("admin/");
         initAdminLoginRedirect(adminHome);
       }
 
+      const path = location.pathname;
+      document.querySelectorAll(".admin-sidebar__link[data-nav]").forEach((el) => {
+        const href = (el as HTMLAnchorElement).getAttribute("href");
+        if (href && path.includes(href.replace(/\/$/, ""))) {
+          el.classList.add("active");
+        }
+      });
+
       document.getElementById("admin-logout")?.addEventListener("click", async () => {
         const api = await resolveAdminApiBaseUrl();
         if (!api) return;
         await fetch(`${api}/logout`, { method: "POST", credentials: "include" });
-        location.href = new URL("admin/login/", document.baseURI).href;
+        location.href = loginPath;
       });
     </script>
   </body>
