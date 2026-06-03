@@ -1,34 +1,27 @@
 import sql from "mssql";
-import type { MessageContext } from "@bms/shared";
 import { config } from "../config.js";
 import { getPool, t } from "../db/pool.js";
 import { generateScheduleToken } from "../lib/tokens.js";
 import { resolveScheduleConfig } from "../lib/resolveConfig.js";
 import { sendMessage } from "../lib/messaging/sendMessage.js";
+import {
+  buildApplicationSubmittedSummary,
+  buildMessageContext,
+  loadApplicationRow,
+} from "../lib/applicationContext.js";
+import { dispatchWebhook } from "../lib/webhooks.js";
 
 export async function processInvite(applicationId: number): Promise<string> {
-  const pool = await getPool();
-  const app = await pool.request().input("id", sql.Int, applicationId).query(`
-    SELECT a.id, a.first_name, a.last_name, a.email, a.phone, a.status,
-           j.id AS job_id, j.title AS job_title, j.slug AS job_slug,
-           o.id AS office_id, o.name AS office_name, o.location_label, o.slug AS office_slug
-    FROM ${t("applications")} a
-    JOIN ${t("jobs")} j ON j.id = a.job_id
-    JOIN ${t("offices")} o ON o.id = j.office_id
-    WHERE a.id = @id
-  `);
-  if (app.recordset.length === 0) throw new Error("Application not found");
-  const row = app.recordset[0] as Record<string, unknown>;
+  const app = await loadApplicationRow(applicationId);
+  if (!app) throw new Error("Application not found");
 
-  const scheduleConfig = await resolveScheduleConfig(
-    row.office_id as number,
-    row.job_id as number
-  );
+  const scheduleConfig = await resolveScheduleConfig(app.officeId, app.jobId);
 
   const token = generateScheduleToken();
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + scheduleConfig.tokenExpiryDays);
 
+  const pool = await getPool();
   await pool
     .request()
     .input("appId", sql.Int, applicationId)
@@ -40,24 +33,14 @@ export async function processInvite(applicationId: number): Promise<string> {
     `);
 
   const scheduleUrl = `${config.publicSiteBaseUrl}/schedule/?token=${token}`;
-  const ctx: MessageContext = {
-    firstName: row.first_name as string,
-    lastName: row.last_name as string,
-    jobTitle: row.job_title as string,
-    officeName: row.office_name as string,
-    officeLocation: row.location_label as string,
-    scheduleUrl,
-  };
-  const scope = {
-    officeId: row.office_id as number,
-    jobId: row.job_id as number,
-  };
+  const ctx = buildMessageContext(app, { scheduleUrl });
+  const scope = { officeId: app.officeId, jobId: app.jobId };
 
   try {
     await sendMessage({
       templateKey: "application_received",
       channel: "email",
-      to: { email: row.email as string },
+      to: { email: app.email },
       context: ctx,
       scope,
       applicationId,
@@ -69,7 +52,7 @@ export async function processInvite(applicationId: number): Promise<string> {
   await sendMessage({
     templateKey: "interview_invite",
     channel: "email",
-    to: { email: row.email as string },
+    to: { email: app.email },
     context: ctx,
     scope,
     applicationId,
@@ -79,7 +62,7 @@ export async function processInvite(applicationId: number): Promise<string> {
     await sendMessage({
       templateKey: "interview_invite",
       channel: "sms",
-      to: { phone: row.phone as string },
+      to: { phone: app.phone },
       context: ctx,
       scope,
       applicationId,
@@ -93,6 +76,31 @@ export async function processInvite(applicationId: number): Promise<string> {
       UPDATE ${t("applications")} SET status = 'invited', updated_at = SYSUTCDATETIME()
       WHERE id = @id
     `);
+
+  await dispatchWebhook("application_submitted", {
+    event: "application_submitted",
+    occurredAt: new Date().toISOString(),
+    summary: buildApplicationSubmittedSummary(app),
+    application: {
+      id: app.applicationId,
+      firstName: app.firstName,
+      lastName: app.lastName,
+      email: app.email,
+      phone: app.phone,
+      primaryInterest: app.primaryInterest,
+      customFields: app.customFields,
+      status: "invited",
+      submittedAt: app.submittedAt,
+    },
+    job: { id: app.jobId, title: app.jobTitle, slug: app.jobSlug },
+    office: {
+      id: app.officeId,
+      name: app.officeName,
+      slug: app.officeSlug,
+      locationLabel: app.officeLocation,
+    },
+    scheduleUrl,
+  });
 
   return scheduleUrl;
 }

@@ -1,5 +1,6 @@
 import sql from "mssql";
 import type { ReminderOffset, ScheduleConfigResolved } from "@bms/shared";
+import { isWebhookEvent } from "@bms/shared";
 import { getPool, t } from "../db/pool.js";
 
 const DEFAULT_OFFSETS: ReminderOffset[] = [
@@ -15,6 +16,10 @@ interface ConfigRow {
   reminder_offsets_json: string;
   token_expiry_days: number;
   sms_on_invite: boolean;
+  booking_window_days?: number;
+  min_notice_hours?: number;
+  webhook_url?: string | null;
+  webhook_events_json?: string | null;
 }
 
 async function fetchConfig(
@@ -28,7 +33,8 @@ async function fetchConfig(
     .input("scopeId", sql.Int, scopeId)
     .query(`
       SELECT slot_duration_minutes, buffer_minutes, quiet_hours_start, quiet_hours_end,
-             reminder_offsets_json, token_expiry_days, sms_on_invite
+             reminder_offsets_json, token_expiry_days, sms_on_invite,
+             booking_window_days, min_notice_hours, webhook_url, webhook_events_json
       FROM ${t("schedule_config")}
       WHERE scope = @scope AND ((@scopeId IS NULL AND scope_id IS NULL) OR scope_id = @scopeId)
     `);
@@ -47,9 +53,21 @@ function mergeConfig(
     reminder_offsets_json: JSON.stringify(DEFAULT_OFFSETS),
     token_expiry_days: 14,
     sms_on_invite: false,
+    booking_window_days: 7,
+    min_notice_hours: 8,
+    webhook_url: null,
+    webhook_events_json: JSON.stringify(["application_submitted", "interview_scheduled"]),
   };
-  const b = { ...d, ...base, ...over };
-  return b;
+  return { ...d, ...base, ...over };
+}
+
+function parseWebhookEvents(json: string | null | undefined): string[] {
+  try {
+    const parsed = JSON.parse(json ?? "[]") as string[];
+    return parsed.filter((e) => isWebhookEvent(e));
+  } catch {
+    return ["application_submitted", "interview_scheduled"];
+  }
 }
 
 export async function resolveScheduleConfig(
@@ -61,16 +79,14 @@ export async function resolveScheduleConfig(
     fetchConfig("office", officeId),
     fetchConfig("job", jobId),
   ]);
-  const merged = mergeConfig(
-    mergeConfig(global, office),
-    job ?? null
-  );
+  const merged = mergeConfig(mergeConfig(global, office), job ?? null);
   let reminderOffsets: ReminderOffset[] = DEFAULT_OFFSETS;
   try {
     reminderOffsets = JSON.parse(merged.reminder_offsets_json) as ReminderOffset[];
   } catch {
     /* use default */
   }
+  const webhookUrl = merged.webhook_url?.trim() || undefined;
   return {
     slotDurationMinutes: merged.slot_duration_minutes,
     bufferMinutes: merged.buffer_minutes,
@@ -79,5 +95,9 @@ export async function resolveScheduleConfig(
     reminderOffsets,
     tokenExpiryDays: merged.token_expiry_days,
     smsOnInvite: merged.sms_on_invite,
+    bookingWindowDays: merged.booking_window_days ?? 7,
+    minNoticeHours: merged.min_notice_hours ?? 8,
+    webhookUrl,
+    webhookEvents: parseWebhookEvents(merged.webhook_events_json),
   };
 }

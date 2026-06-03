@@ -81,6 +81,10 @@ export const scheduleConfigUpsertSchema = z.object({
   reminderOffsetsJson: z.string().optional(),
   tokenExpiryDays: z.number().int().min(1).max(90).optional(),
   smsOnInvite: z.boolean().optional(),
+  bookingWindowDays: z.number().int().min(1).max(90).optional(),
+  minNoticeHours: z.number().int().min(0).max(168).optional(),
+  webhookUrl: z.string().max(2000).nullable().optional(),
+  webhookEventsJson: z.string().optional(),
 });
 
 export type ApplicationSubmit = z.infer<typeof applicationSubmitSchema>;

@@ -1,0 +1,160 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { hrefPath } from "../../../lib/assets";
+
+const previewBase = hrefPath("schedule/preview/");
+---
+<AdminLayout title="Office scheduling">
+  <div class="admin-card">
+    <h1>Office scheduling</h1>
+    <p>Set weekly interview hours and booking rules per office (like Calendly availability).</p>
+    <div class="field">
+      <label for="office-select">Office</label>
+      <select id="office-select"></select>
+    </div>
+    <p>
+      <a id="preview-link" href={`${previewBase}?office=denver`} target="_blank" rel="noopener">Open calendar preview for this office →</a>
+    </p>
+    <h2>Booking rules</h2>
+    <form id="office-config-form" class="admin-form">
+      <div class="field"><label>Days ahead applicants can book</label><input name="bookingWindowDays" type="number" min="1" max="90" /></div>
+      <div class="field"><label>Minimum notice (hours)</label><input name="minNoticeHours" type="number" min="0" /></div>
+      <button type="submit" class="btn btn-secondary">Save booking rules</button>
+    </form>
+    <h2>Weekly hours</h2>
+    <p class="admin-hint">Mon–Fri 10:00–16:00 is typical for Denver. Add one row per day that is open.</p>
+    <div id="rules-list"></div>
+    <h3>Add hours</h3>
+    <form id="rule-form" class="admin-form admin-form--inline">
+      <div class="field"><label>Day</label>
+        <select name="dayOfWeek">
+          <option value="0">Sunday</option>
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+        </select>
+      </div>
+      <div class="field"><label>Start</label><input name="startTime" value="10:00" pattern="\d{2}:\d{2}" /></div>
+      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="\d{2}:\d{2}" /></div>
+      <button type="submit" class="btn">Add</button>
+    </form>
+    <p id="sched-msg"></p>
+  </div>
+</AdminLayout>
+
+<style>
+  .admin-hint { color: var(--text-light); font-size: 0.875rem; }
+  .admin-form--inline { display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end; }
+  .admin-form--inline .field { margin-bottom: 0; }
+</style>
+
+<script define:vars={{ previewBase }}>
+  import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
+
+  const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  let offices = [];
+
+  async function loadOffices(api) {
+    const res = await fetch(`${api}/offices`, { credentials: "include" });
+    const data = await res.json();
+    offices = data.offices;
+    const sel = document.getElementById("office-select");
+    sel.innerHTML = offices.map((o) => `<option value="${o.id}" data-slug="${o.slug}">${o.name}</option>`).join("");
+    sel.addEventListener("change", () => loadOfficeData(api));
+    updatePreviewLink();
+    await loadOfficeData(api);
+  }
+
+  function officeId() {
+    return parseInt(document.getElementById("office-select").value, 10);
+  }
+
+  function updatePreviewLink() {
+    const slug = document.getElementById("office-select").selectedOptions[0]?.dataset.slug || "denver";
+    const link = document.getElementById("preview-link");
+    link.href = `${previewBase}?office=${slug}`;
+  }
+
+  async function loadOfficeData(api) {
+    updatePreviewLink();
+    const id = officeId();
+    const cfgRes = await fetch(`${api}/schedule-config?scope=office&scopeId=${id}`, { credentials: "include" });
+    const { config: c } = await cfgRes.json();
+    const f = document.getElementById("office-config-form");
+    if (c) {
+      f.bookingWindowDays.value = c.booking_window_days ?? 7;
+      f.minNoticeHours.value = c.min_notice_hours ?? 8;
+    }
+    const rulesRes = await fetch(`${api}/availability?scope=office&scopeId=${id}`, { credentials: "include" });
+    const { rules } = await rulesRes.json();
+    const el = document.getElementById("rules-list");
+    if (!rules.length) {
+      el.innerHTML = "<p>No hours yet — add below.</p>";
+      return;
+    }
+    el.innerHTML = `<table class="data"><thead><tr><th>Day</th><th>Start</th><th>End</th><th></th></tr></thead><tbody>${rules
+      .map(
+        (r) =>
+          `<tr><td>${DAY[r.day_of_week]}</td><td>${r.start_time}</td><td>${r.end_time}</td><td><button type="button" class="btn btn-small btn-secondary" data-del="${r.id}">Remove</button></td></tr>`
+      )
+      .join("")}</tbody></table>`;
+    el.querySelectorAll("[data-del]").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        await fetch(`${api}/availability/${btn.getAttribute("data-del")}`, {
+          method: "DELETE",
+          credentials: "include",
+        });
+        loadOfficeData(api);
+      });
+    });
+  }
+
+  document.getElementById("office-config-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const api = await resolveAdminApiBaseUrl();
+    if (!api) return;
+    const fd = new FormData(e.target);
+    await fetch(`${api}/schedule-config`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scope: "office",
+        scopeId: officeId(),
+        bookingWindowDays: parseInt(fd.get("bookingWindowDays"), 10),
+        minNoticeHours: parseInt(fd.get("minNoticeHours"), 10),
+      }),
+    });
+    document.getElementById("sched-msg").textContent = "Booking rules saved.";
+  });
+
+  document.getElementById("rule-form")?.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const api = await resolveAdminApiBaseUrl();
+    if (!api) return;
+    const fd = new FormData(e.target);
+    await fetch(`${api}/availability`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        scope: "office",
+        scopeId: officeId(),
+        dayOfWeek: parseInt(fd.get("dayOfWeek"), 10),
+        startTime: fd.get("startTime"),
+        endTime: fd.get("endTime"),
+      }),
+    });
+    document.getElementById("sched-msg").textContent = "Hours added.";
+    loadOfficeData(api);
+  });
+
+  (async () => {
+    await window.adminAuthCheck;
+    const api = await resolveAdminApiBaseUrl();
+    if (api) await loadOffices(api);
+  })();
+</script>

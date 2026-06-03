@@ -1,9 +1,16 @@
 import sql from "mssql";
-import type { MessageContext } from "@bms/shared";
+import { config } from "../config.js";
 import { getPool, t } from "../db/pool.js";
 import { resolveScheduleConfig } from "../lib/resolveConfig.js";
 import { sendMessage } from "../lib/messaging/sendMessage.js";
-import { formatInterviewTime } from "../lib/slots.js";
+import {
+  buildInterviewScheduledSummary,
+  buildMessageContext,
+  interviewTimeForBooking,
+  loadApplicationRow,
+  getScheduleTokenForApplication,
+} from "../lib/applicationContext.js";
+import { dispatchWebhook } from "../lib/webhooks.js";
 
 export async function confirmBooking(
   applicationId: number,
@@ -14,40 +21,30 @@ export async function confirmBooking(
   applicantTimezone: string,
   officeTimezone: string
 ): Promise<void> {
-  const pool = await getPool();
-  const app = await pool.request().input("id", sql.Int, applicationId).query(`
-    SELECT first_name, last_name, email, phone FROM ${t("applications")} WHERE id = @id
-  `);
-  const job = await pool.request().input("id", sql.Int, jobId).query(`
-    SELECT title FROM ${t("jobs")} WHERE id = @id
-  `);
-  const office = await pool.request().input("id", sql.Int, officeId).query(`
-    SELECT name, location_label FROM ${t("offices")} WHERE id = @id
-  `);
+  const app = await loadApplicationRow(applicationId);
+  if (!app) throw new Error("Application not found");
 
-  const a = app.recordset[0] as Record<string, string>;
-  const j = job.recordset[0] as { title: string };
-  const o = office.recordset[0] as { name: string; location_label: string };
-
-  const interviewTimeLocal = formatInterviewTime(
+  const interviewTimeLocal = interviewTimeForBooking(
     startsAt,
-    applicantTimezone || officeTimezone
+    applicantTimezone,
+    officeTimezone
   );
 
-  const ctx: MessageContext = {
-    firstName: a.first_name,
-    lastName: a.last_name,
-    jobTitle: j.title,
-    officeName: o.name,
-    officeLocation: o.location_label,
+  const scheduleToken = await getScheduleTokenForApplication(applicationId);
+  const confirmationUrl = scheduleToken
+    ? `${config.publicSiteBaseUrl}/schedule/?token=${scheduleToken}`
+    : undefined;
+
+  const ctx = buildMessageContext(app, {
     interviewTimeLocal,
-  };
+    confirmationUrl,
+  });
   const scope = { officeId, jobId };
 
   await sendMessage({
     templateKey: "booking_confirm_email",
     channel: "email",
-    to: { email: a.email },
+    to: { email: app.email },
     context: ctx,
     scope,
     applicationId,
@@ -56,13 +53,14 @@ export async function confirmBooking(
   await sendMessage({
     templateKey: "booking_confirm_sms",
     channel: "sms",
-    to: { phone: a.phone },
+    to: { phone: app.phone },
     context: ctx,
     scope,
     applicationId,
   });
 
   const scheduleConfig = await resolveScheduleConfig(officeId, jobId);
+  const pool = await getPool();
   const booking = await pool
     .request()
     .input("appId", sql.Int, applicationId)
@@ -103,4 +101,36 @@ export async function confirmBooking(
         `);
     }
   }
+
+  await dispatchWebhook("interview_scheduled", {
+    event: "interview_scheduled",
+    occurredAt: new Date().toISOString(),
+    summary: buildInterviewScheduledSummary(app, interviewTimeLocal),
+    application: {
+      id: app.applicationId,
+      firstName: app.firstName,
+      lastName: app.lastName,
+      email: app.email,
+      phone: app.phone,
+      primaryInterest: app.primaryInterest,
+      customFields: app.customFields,
+      status: "scheduled",
+      submittedAt: app.submittedAt,
+    },
+    job: { id: app.jobId, title: app.jobTitle, slug: app.jobSlug },
+    office: {
+      id: app.officeId,
+      name: app.officeName,
+      slug: app.officeSlug,
+      locationLabel: app.officeLocation,
+    },
+    booking: {
+      id: bookingId,
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+      interviewTimeLocal,
+      applicantTimezone,
+    },
+    confirmationUrl,
+  });
 }

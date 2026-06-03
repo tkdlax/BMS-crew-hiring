@@ -1865,6 +1865,13 @@ body.page-apply {
   padding-bottom: 3rem;
 }
 
+.confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
 .apply-footer {
   background: var(--blue-dark);
   color: rgba(255, 255, 255, 0.5);

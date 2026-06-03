@@ -7,19 +7,43 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     <form id="settings-form" class="admin-form">
       <div class="field"><label>Slot duration (minutes)</label><input name="slotDurationMinutes" type="number" min="15" /></div>
       <div class="field"><label>Buffer between slots (minutes)</label><input name="bufferMinutes" type="number" min="0" /></div>
+      <div class="field"><label>Booking window (days ahead)</label><input name="bookingWindowDays" type="number" min="1" max="90" /></div>
+      <div class="field"><label>Minimum notice (hours)</label><input name="minNoticeHours" type="number" min="0" /></div>
       <div class="field"><label>Quiet hours start (HH:mm)</label><input name="quietHoursStart" /></div>
       <div class="field"><label>Quiet hours end (HH:mm)</label><input name="quietHoursEnd" /></div>
       <div class="field"><label>Token expiry (days)</label><input name="tokenExpiryDays" type="number" /></div>
       <div class="field"><label>Reminder offsets (JSON)</label><textarea name="reminderOffsetsJson" rows="4"></textarea></div>
       <div class="field"><label><input type="checkbox" name="smsOnInvite" /> SMS on invite</label></div>
+      <h2>Manager webhooks</h2>
+      <p class="admin-hint">POST JSON to your URL when events occur (e.g. Zapier, Slack). Does not replace applicant email/SMS.</p>
+      <div class="field"><label>Webhook URL</label><input name="webhookUrl" type="url" placeholder="https://hooks.zapier.com/..." /></div>
+      <fieldset class="webhook-events">
+        <legend>Send webhook on</legend>
+        <label><input type="checkbox" name="evt_application_submitted" checked /> New application submitted</label>
+        <label><input type="checkbox" name="evt_interview_scheduled" checked /> Interview scheduled</label>
+      </fieldset>
       <button type="submit" class="btn">Save</button>
     </form>
     <p id="save-msg"></p>
   </div>
 </AdminLayout>
 
+<style>
+  .admin-hint { color: var(--text-light); font-size: 0.875rem; }
+  .webhook-events { border: none; margin: 0 0 1rem; padding: 0; }
+  .webhook-events label { display: block; margin: 0.35rem 0; font-weight: 500; }
+</style>
+
 <script>
   import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
+
+  function parseEvents(json) {
+    try {
+      return JSON.parse(json || "[]");
+    } catch {
+      return [];
+    }
+  }
 
   async function load(api) {
     const res = await fetch(`${api}/schedule-config?scope=global`, { credentials: "include" });
@@ -28,17 +52,27 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     const f = document.getElementById("settings-form");
     f.slotDurationMinutes.value = c.slot_duration_minutes;
     f.bufferMinutes.value = c.buffer_minutes;
+    f.bookingWindowDays.value = c.booking_window_days ?? 7;
+    f.minNoticeHours.value = c.min_notice_hours ?? 8;
     f.quietHoursStart.value = c.quiet_hours_start;
     f.quietHoursEnd.value = c.quiet_hours_end;
     f.tokenExpiryDays.value = c.token_expiry_days;
     f.reminderOffsetsJson.value = c.reminder_offsets_json;
     f.smsOnInvite.checked = c.sms_on_invite;
+    f.webhookUrl.value = c.webhook_url || "";
+    const events = parseEvents(c.webhook_events_json);
+    f.evt_application_submitted.checked = events.includes("application_submitted");
+    f.evt_interview_scheduled.checked = events.includes("interview_scheduled");
   }
+
   document.getElementById("settings-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const api = await resolveAdminApiBaseUrl();
     if (!api) return;
     const fd = new FormData(e.target);
+    const events = [];
+    if (fd.get("evt_application_submitted") === "on") events.push("application_submitted");
+    if (fd.get("evt_interview_scheduled") === "on") events.push("interview_scheduled");
     await fetch(`${api}/schedule-config`, {
       method: "PUT",
       credentials: "include",
@@ -48,15 +82,20 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         scopeId: null,
         slotDurationMinutes: parseInt(fd.get("slotDurationMinutes"), 10),
         bufferMinutes: parseInt(fd.get("bufferMinutes"), 10),
+        bookingWindowDays: parseInt(fd.get("bookingWindowDays"), 10),
+        minNoticeHours: parseInt(fd.get("minNoticeHours"), 10),
         quietHoursStart: fd.get("quietHoursStart"),
         quietHoursEnd: fd.get("quietHoursEnd"),
         tokenExpiryDays: parseInt(fd.get("tokenExpiryDays"), 10),
         reminderOffsetsJson: fd.get("reminderOffsetsJson"),
         smsOnInvite: fd.get("smsOnInvite") === "on",
+        webhookUrl: fd.get("webhookUrl") || null,
+        webhookEventsJson: JSON.stringify(events),
       }),
     });
     document.getElementById("save-msg").textContent = "Saved.";
   });
+
   (async () => {
     await window.adminAuthCheck;
     const api = await resolveAdminApiBaseUrl();

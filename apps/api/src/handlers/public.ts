@@ -2,6 +2,7 @@ import type { HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import sql from "mssql";
 import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
+import { getAvailableSlots } from "../lib/scheduleSlots.js";
 
 export async function handlePublic(
   req: HttpRequest,
@@ -18,7 +19,63 @@ export async function handlePublic(
     const [, officeSlug, jobSlug] = segments;
     return getJob(officeSlug!, jobSlug!);
   }
+  if (segments[0] === "schedule-preview" && segments.length === 2 && req.method === "GET") {
+    const url = new URL(req.url);
+    const jobSlug = url.searchParams.get("job") ?? "moving-operations-crew";
+    return getSchedulePreview(segments[1]!, jobSlug);
+  }
   return error("Not found", 404);
+}
+
+async function getSchedulePreview(
+  officeSlug: string,
+  jobSlug: string
+): Promise<HttpResponseInit> {
+  const pool = await getPool();
+
+  const office = await pool
+    .request()
+    .input("officeSlug", sql.NVarChar, officeSlug)
+    .query(`
+      SELECT id, slug, name, timezone, location_label
+      FROM ${t("offices")} WHERE slug = @officeSlug AND active = 1
+    `);
+  if (office.recordset.length === 0) return error("Office not found", 404);
+  const o = office.recordset[0] as Record<string, unknown>;
+
+  const job = await pool
+    .request()
+    .input("officeId", sql.Int, o.id)
+    .input("jobSlug", sql.NVarChar, jobSlug)
+    .query(`
+      SELECT id, title, slug FROM ${t("jobs")}
+      WHERE office_id = @officeId AND slug = @jobSlug AND active = 1
+    `);
+  if (job.recordset.length === 0) return error("Job not found", 404);
+  const j = job.recordset[0] as Record<string, unknown>;
+
+  const from = new Date().toISOString().slice(0, 10);
+  const to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+  const { slots, config } = await getAvailableSlots(
+    o.id as number,
+    j.id as number,
+    o.timezone as string,
+    from,
+    to
+  );
+
+  return json({
+    preview: true,
+    officeSlug: o.slug,
+    officeName: o.name,
+    officeLocation: o.location_label,
+    jobTitle: j.title,
+    jobSlug: j.slug,
+    slots,
+    slotDurationMinutes: config.slotDurationMinutes,
+    bookingWindowDays: config.bookingWindowDays,
+    minNoticeHours: config.minNoticeHours,
+  });
 }
 
 async function listOpenings(): Promise<HttpResponseInit> {

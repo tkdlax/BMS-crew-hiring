@@ -313,6 +313,8 @@ async function handleScheduleConfig(
   }
   if (req.method === "PUT") {
     const body = scheduleConfigUpsertSchema.parse(await req.json());
+    const webhookUrl =
+      body.webhookUrl === "" || body.webhookUrl === null ? null : body.webhookUrl;
     await pool
       .request()
       .input("scope", sql.NVarChar, body.scope)
@@ -324,6 +326,10 @@ async function handleScheduleConfig(
       .input("reminders", sql.NVarChar, body.reminderOffsetsJson ?? "[]")
       .input("tokenDays", sql.Int, body.tokenExpiryDays ?? 14)
       .input("smsInvite", sql.Bit, body.smsOnInvite ?? false)
+      .input("bookDays", sql.Int, body.bookingWindowDays ?? 7)
+      .input("noticeHrs", sql.Int, body.minNoticeHours ?? 8)
+      .input("webhookUrl", sql.NVarChar, webhookUrl)
+      .input("webhookEvents", sql.NVarChar, body.webhookEventsJson ?? "[]")
       .query(`
         MERGE ${t("schedule_config")} AS target
         USING (SELECT @scope AS scope, @scopeId AS scope_id) AS src
@@ -332,10 +338,14 @@ async function handleScheduleConfig(
           slot_duration_minutes = @slot, buffer_minutes = @buffer,
           quiet_hours_start = @qhStart, quiet_hours_end = @qhEnd,
           reminder_offsets_json = @reminders, token_expiry_days = @tokenDays,
-          sms_on_invite = @smsInvite, updated_at = SYSUTCDATETIME()
+          sms_on_invite = @smsInvite, booking_window_days = @bookDays,
+          min_notice_hours = @noticeHrs, webhook_url = @webhookUrl,
+          webhook_events_json = @webhookEvents, updated_at = SYSUTCDATETIME()
         WHEN NOT MATCHED THEN INSERT (scope, scope_id, slot_duration_minutes, buffer_minutes,
-          quiet_hours_start, quiet_hours_end, reminder_offsets_json, token_expiry_days, sms_on_invite)
-          VALUES (@scope, @scopeId, @slot, @buffer, @qhStart, @qhEnd, @reminders, @tokenDays, @smsInvite);
+          quiet_hours_start, quiet_hours_end, reminder_offsets_json, token_expiry_days, sms_on_invite,
+          booking_window_days, min_notice_hours, webhook_url, webhook_events_json)
+          VALUES (@scope, @scopeId, @slot, @buffer, @qhStart, @qhEnd, @reminders, @tokenDays, @smsInvite,
+            @bookDays, @noticeHrs, @webhookUrl, @webhookEvents);
       `);
     return json({ ok: true });
   }

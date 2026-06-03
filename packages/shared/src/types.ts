@@ -18,6 +18,10 @@ export interface ScheduleConfigResolved {
   reminderOffsets: ReminderOffset[];
   tokenExpiryDays: number;
   smsOnInvite: boolean;
+  bookingWindowDays: number;
+  minNoticeHours: number;
+  webhookUrl?: string;
+  webhookEvents: string[];
 }
 
 export interface ReminderOffset {

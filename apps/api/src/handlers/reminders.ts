@@ -1,6 +1,8 @@
 import sql from "mssql";
 import type { MessageContext } from "@bms/shared";
+import { config as appConfig } from "../config.js";
 import { getPool, t } from "../db/pool.js";
+import { getScheduleTokenForApplication } from "../lib/applicationContext.js";
 import { resolveScheduleConfig } from "../lib/resolveConfig.js";
 import { isInQuietHours, nextAllowedSendTime } from "../lib/quietHours.js";
 import { sendMessage } from "../lib/messaging/sendMessage.js";
@@ -11,7 +13,7 @@ export async function processDueReminders(): Promise<number> {
   const due = await pool.request().query(`
     SELECT rj.id, rj.booking_id, rj.reminder_type, rj.scheduled_for, rj.retry_count,
            b.starts_at, b.applicant_timezone,
-           a.id AS application_id, a.first_name, a.last_name, a.email, a.phone,
+           a.id AS application_id, a.first_name, a.last_name, a.email, a.phone, a.custom_fields,
            j.id AS job_id, j.title AS job_title,
            o.id AS office_id, o.name AS office_name, o.location_label, o.timezone AS office_timezone
     FROM ${t("reminder_jobs")} rj
@@ -26,22 +28,22 @@ export async function processDueReminders(): Promise<number> {
   for (const row of due.recordset as Record<string, unknown>[]) {
     const officeId = row.office_id as number;
     const jobId = row.job_id as number;
-    const config = await resolveScheduleConfig(officeId, jobId);
+    const scheduleConfig = await resolveScheduleConfig(officeId, jobId);
     const now = new Date();
 
     if (
       isInQuietHours(
         now,
         row.office_timezone as string,
-        config.quietHoursStart,
-        config.quietHoursEnd
+        scheduleConfig.quietHoursStart,
+        scheduleConfig.quietHoursEnd
       )
     ) {
       const next = nextAllowedSendTime(
         now,
         row.office_timezone as string,
-        config.quietHoursStart,
-        config.quietHoursEnd
+        scheduleConfig.quietHoursStart,
+        scheduleConfig.quietHoursEnd
       );
       await pool
         .request()
@@ -59,6 +61,22 @@ export async function processDueReminders(): Promise<number> {
       (row.applicant_timezone as string) || (row.office_timezone as string)
     );
 
+    let primaryInterest = "";
+    try {
+      const cf = row.custom_fields
+        ? (JSON.parse(row.custom_fields as string) as Record<string, string>)
+        : {};
+      primaryInterest = cf.primaryInterest?.trim() || cf.interest?.trim() || "";
+    } catch {
+      primaryInterest = "";
+    }
+
+    const appId = row.application_id as number;
+    const scheduleToken = await getScheduleTokenForApplication(appId);
+    const confirmationUrl = scheduleToken
+      ? `${appConfig.publicSiteBaseUrl}/schedule/?token=${scheduleToken}`
+      : "";
+
     const ctx: MessageContext = {
       firstName: row.first_name as string,
       lastName: row.last_name as string,
@@ -66,6 +84,8 @@ export async function processDueReminders(): Promise<number> {
       officeName: row.office_name as string,
       officeLocation: row.location_label as string,
       interviewTimeLocal,
+      primaryInterest: primaryInterest || "Not specified",
+      confirmationUrl,
     };
     const scope = { officeId, jobId };
     const reminderType = row.reminder_type as string;

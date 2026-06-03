@@ -19,11 +19,19 @@ const files = fs
   .filter((f) => f.endsWith(".sql"))
   .sort();
 
+function splitBatches(sqlText) {
+  const parts = sqlText.split(/\r?\n\s*GO\s*\r?\n/i).map((s) => s.trim());
+  return parts.filter(Boolean);
+}
+
 const pool = await sql.connect(conn);
 for (const file of files) {
   const sqlText = fs.readFileSync(path.join(migrationsDir, file), "utf8");
+  const batches = splitBatches(sqlText);
   console.log(`Running ${file}...`);
-  await pool.request().query(sqlText);
+  for (const batch of batches) {
+    await pool.request().query(batch);
+  }
   console.log(`  OK`);
 }
 await pool.close();

@@ -1,0 +1,97 @@
+---
+import BaseLayout from "../../../layouts/BaseLayout.astro";
+import { hrefPath } from "../../../lib/assets";
+
+const operationsUrl = hrefPath("operations/");
+---
+<BaseLayout title="Schedule preview (test)" bodyClass="schedule-page">
+  <section class="page-band">
+    <div class="page-band__inner">
+      <p class="eyebrow">Preview</p>
+      <h1 id="band-title">Schedule calendar preview</h1>
+      <p class="sub" id="band-sub">Test availability without submitting an application.</p>
+    </div>
+  </section>
+
+  <div class="page-wrap page-wrap--narrow">
+    <div class="content-card">
+      <div class="field">
+        <label for="office-select">Office</label>
+        <select id="office-select">
+          <option value="denver">Denver</option>
+          <option value="colorado-springs">Colorado Springs</option>
+          <option value="grand-junction">Grand Junction</option>
+          <option value="salt-lake-city">Salt Lake City</option>
+        </select>
+      </div>
+      <button type="button" class="btn btn-primary" id="load-preview">Load preview slots</button>
+      <p id="preview-meta" class="form-hint" style="margin-top: 1rem"></p>
+      <div id="preview-slots" class="slot-days" style="margin-top: 1.5rem"></div>
+      <p style="margin-top: 1.5rem">
+        <a href={operationsUrl}>← Back to operations openings</a>
+      </p>
+    </div>
+  </div>
+</BaseLayout>
+
+<script>
+  import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
+
+  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  function formatDay(isoDate) {
+    const d = new Date(isoDate + "T12:00:00");
+    return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const officeParam = params.get("office");
+  if (officeParam) {
+    const sel = document.getElementById("office-select") as HTMLSelectElement;
+    if ([...sel.options].some((o) => o.value === officeParam)) sel.value = officeParam;
+  }
+
+  document.getElementById("load-preview")?.addEventListener("click", async () => {
+    const api = await resolveApiBaseUrl();
+    if (!api) {
+      alert("API not configured");
+      return;
+    }
+    const office = (document.getElementById("office-select") as HTMLSelectElement).value;
+    const res = await fetch(`${api}/public/schedule-preview/${office}?job=moving-operations-crew`);
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || "Preview failed");
+      return;
+    }
+    document.getElementById("preview-meta").textContent =
+      `${data.officeName} · ${data.jobTitle} · ${data.slots.length} slots · book up to ${data.bookingWindowDays} days ahead · ${data.minNoticeHours}h notice`;
+    const el = document.getElementById("preview-slots");
+    if (!data.slots.length) {
+      el.innerHTML = "<p>No slots in the next two weeks with current rules.</p>";
+      return;
+    }
+    const byDay = new Map();
+    for (const s of data.slots) {
+      const day = s.startsAt.slice(0, 10);
+      if (!byDay.has(day)) byDay.set(day, []);
+      byDay.get(day).push(s);
+    }
+    el.innerHTML = "";
+    for (const [day, slots] of byDay) {
+      const section = document.createElement("div");
+      section.className = "slot-day";
+      section.innerHTML = `<h2>${formatDay(day)}</h2><div class="slot-list"></div>`;
+      const list = section.querySelector(".slot-list");
+      for (const s of slots) {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "slot-btn";
+        btn.disabled = true;
+        btn.textContent = s.labelLocal;
+        list.appendChild(btn);
+      }
+      el.appendChild(section);
+    }
+  });
+</script>
