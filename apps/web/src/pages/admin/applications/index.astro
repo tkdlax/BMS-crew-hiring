@@ -31,7 +31,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       jSel.innerHTML += `<option value="${j.id}">${j.office_name} — ${j.title}</option>`;
     });
   }
-  async function load() {
+  async function load(api: string) {
     const officeId = document.getElementById("filter-office").value;
     const jobId = document.getElementById("filter-job").value;
     const params = new URLSearchParams();
