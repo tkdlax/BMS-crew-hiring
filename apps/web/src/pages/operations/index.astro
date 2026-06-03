@@ -9,6 +9,7 @@ import {
   staticOperationsOpenings,
 } from "../../lib/openings";
 import { hrefPath } from "../../lib/assets";
+import { PAGE_SEO } from "../../lib/seo";
 
 const api = getRuntimeApiBaseUrl(Astro.locals);
 
@@ -21,7 +22,12 @@ const officeGroups = groupOpeningsByOffice(rawOpenings);
 const showClientRefresh = !api;
 ---
 
-<BaseLayout title="Moving operations crew openings">
+<BaseLayout
+  title={PAGE_SEO.operations.title}
+  description={PAGE_SEO.operations.description}
+  ogImage={PAGE_SEO.operations.ogImage}
+  ogImageAlt="Bailey's crew members lifting equipment on a move"
+>
   <section class="page-band">
     <div class="page-band__inner">
       <p class="eyebrow">Operations hiring</p>

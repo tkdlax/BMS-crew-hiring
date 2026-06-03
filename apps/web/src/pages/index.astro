@@ -4,8 +4,14 @@ import TrustStrip from "../components/TrustStrip.astro";
 import CareersCrosslink from "../components/CareersCrosslink.astro";
 import { BRAND } from "../constants/brand";
 import { hrefPath } from "../lib/assets";
+import { PAGE_SEO } from "../lib/seo";
 ---
-<BaseLayout title="Operations hiring">
+<BaseLayout
+  title={PAGE_SEO.home.title}
+  description={PAGE_SEO.home.description}
+  ogImage={PAGE_SEO.home.ogImage}
+  ogImageAlt="Bailey's mover with furniture in front of an Allied truck"
+>
   <section
     class="hero"
     style={`--hero-bg: url('${BRAND.heroImage}')`}

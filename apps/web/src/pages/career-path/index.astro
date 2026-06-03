@@ -2,23 +2,19 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import CareersCrosslink from "../../components/CareersCrosslink.astro";
 import { BRAND } from "../../constants/brand";
+import { HIRING_IMAGES } from "../../constants/images";
 import { hrefPath } from "../../lib/assets";
+import { PAGE_SEO } from "../../lib/seo";
 
-const IMG = {
-  packers:
-    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6605dcb5b748788aaf20a6cc_Hispanic%20Packers-600x400-9801ebf.webp",
-  driverDolly:
-    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6605a7efe2d41958e9847690_IMG_0760-1201x800-9b9f185.webp",
-  cdlDriver:
-    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6602ef9d0eb8336edd2cd556_CDL%20Driver.webp",
-  tractor:
-    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6602ee5fc199de26ed0e15de_cover.webp",
-  family:
-    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6605dcb4111ed12eea8fac3d_Young%20Family%202-600x427-e582596.webp",
-};
+const IMG = HIRING_IMAGES;
 ---
-
-<BaseLayout title="Your path forward" bodyClass="career-path-page">
+<BaseLayout
+  title={PAGE_SEO.careerPath.title}
+  description={PAGE_SEO.careerPath.description}
+  ogImage={PAGE_SEO.careerPath.ogImage}
+  ogImageAlt="Allied CDL driver in front of a truck"
+  bodyClass="career-path-page"
+>
   <section class="page-band page-band--career">
     <div class="page-band__inner">
       <p class="eyebrow">Career progression</p>
@@ -85,7 +81,7 @@ const IMG = {
         </p>
       </div>
       <figure class="career-step__media">
-        <img src={IMG.driverDolly} alt="Bailey's mover with furniture in front of an Allied truck" width="600" height="400" loading="lazy" />
+        <img src={IMG.heroMover} alt="Bailey's mover with furniture in front of an Allied truck" width="600" height="400" loading="lazy" />
       </figure>
     </section>
 

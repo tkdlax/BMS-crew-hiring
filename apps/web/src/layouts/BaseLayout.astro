@@ -3,25 +3,65 @@ import SiteHeader from "../components/SiteHeader.astro";
 import SiteFooter from "../components/SiteFooter.astro";
 import { BRAND } from "../constants/brand";
 import { assetUrl } from "../lib/assets.ts";
+import { buildPageSeo } from "../lib/seo";
 
 const privacyUrl = `${BRAND.mainSite}/privacy-policy`;
 
 interface Props {
   title: string;
+  description?: string;
+  ogImage?: string;
+  ogImageAlt?: string;
+  noIndex?: boolean;
   bodyClass?: string;
   hideHero?: boolean;
   /** Apply page uses its own header/footer chrome (mockup layout). */
   applyChrome?: boolean;
 }
-const { title, bodyClass = "", hideHero = false, applyChrome = false } = Astro.props;
+
+const {
+  title,
+  description,
+  ogImage,
+  ogImageAlt,
+  noIndex = false,
+  bodyClass = "",
+  hideHero = false,
+  applyChrome = false,
+} = Astro.props;
+
+const seo = buildPageSeo(
+  {
+    title,
+    description,
+    ogImage,
+    ogImageAlt,
+    pathname: Astro.url.pathname,
+    noIndex,
+  },
+  Astro.locals
+);
 ---
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="Apply for driver, crew, and moving operations roles at Bailey's Moving &amp; Storage in Colorado and Utah." />
-    <title>{title} | Bailey&apos;s Operations Hiring</title>
+    <meta name="description" content={seo.description} />
+    <title>{seo.documentTitle}</title>
+    <link rel="canonical" href={seo.canonicalUrl} />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Bailey&apos;s Operations Hiring" />
+    <meta property="og:title" content={seo.ogTitle} />
+    <meta property="og:description" content={seo.description} />
+    <meta property="og:url" content={seo.canonicalUrl} />
+    <meta property="og:image" content={seo.ogImage} />
+    <meta property="og:image:alt" content={seo.ogImageAlt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={seo.ogTitle} />
+    <meta name="twitter:description" content={seo.description} />
+    <meta name="twitter:image" content={seo.ogImage} />
+    {seo.noIndex && <meta name="robots" content="noindex, nofollow" />}
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />

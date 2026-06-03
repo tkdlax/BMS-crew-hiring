@@ -17,6 +17,8 @@ import {
   getRuntimeCaptchaSiteKey,
 } from "../../../lib/api";
 import { hrefPath } from "../../../lib/assets";
+import { ogImageForOffice } from "../../../constants/images";
+import { applyPageSeo } from "../../../lib/seo";
 import { resolveCaptchaProvider } from "../../../lib/captcha";
 
 export async function getStaticPaths() {
@@ -102,9 +104,31 @@ const pageContent =
     : null;
 
 const showApply = Boolean(pageContent && (job || knownOpsApply));
+
+const applySeo = pageContent
+  ? applyPageSeo({
+      headline: pageContent.headline ?? "Apply",
+      heroLead: pageContent.heroLead,
+      officeName:
+        (job?.officeName ? String(job.officeName) : null) ||
+        (officeSlug ? officeDisplayName(officeSlug) : null),
+      ogImage: officeSlug ? ogImageForOffice(officeSlug, pageContent.heroImage) : undefined,
+      pathname: Astro.url.pathname,
+    })
+  : {
+      title: "Apply",
+      pathname: Astro.url.pathname,
+    };
 ---
 
-<BaseLayout title={pageContent?.headline ?? "Apply"} bodyClass="page-apply" applyChrome>
+<BaseLayout
+  title={applySeo.title}
+  description={applySeo.description}
+  ogImage={applySeo.ogImage}
+  ogImageAlt={applySeo.ogImageAlt}
+  bodyClass="page-apply"
+  applyChrome
+>
   {loadError ? (
     <>
       <section class="page-band">

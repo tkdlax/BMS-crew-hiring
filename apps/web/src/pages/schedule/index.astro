@@ -3,10 +3,18 @@ import BaseLayout from "../../layouts/BaseLayout.astro";
 import ScheduleBookingSuccess from "../../components/schedule/ScheduleBookingSuccess.astro";
 import ScheduleConfirmBar from "../../components/schedule/ScheduleConfirmBar.astro";
 import { hrefPath } from "../../lib/assets";
+import { PAGE_SEO } from "../../lib/seo";
 
 const operationsUrl = hrefPath("operations/");
 ---
-<BaseLayout title="Schedule interview" bodyClass="schedule-page schedule-page--calendly">
+<BaseLayout
+  title={PAGE_SEO.schedule.title}
+  description={PAGE_SEO.schedule.description}
+  ogImage={PAGE_SEO.schedule.ogImage}
+  ogImageAlt="Family smiling after a successful Bailey's move"
+  bodyClass="schedule-page schedule-page--calendly"
+  noIndex
+>
   <div class="page-wrap page-wrap--narrow">
     <div id="schedule-root">
       <div class="content-card" id="schedule-loading">
