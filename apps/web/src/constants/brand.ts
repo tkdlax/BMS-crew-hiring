@@ -4,8 +4,10 @@ export const BRAND = {
   mainSite: "https://www.baileysallied.com",
   /** Full company careers page (office, sales, and all other roles). */
   careersPage: "https://www.baileysallied.com/careers",
+  /** Blue + orange — light/white backgrounds (header, preview, operations pages). */
   logo:
-    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/65cff17dd30384397ea96fc7_Bailey%27s%20Moving%20SVG.svg",
+    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/660c5e688a12e469d5905744_Bailey%27s%20Moving%20and%20Storage%20Logo%20Blue%20and%20Orange.webp",
+  /** White + orange — dark/photo backgrounds (apply hero, footer). */
   logoWhite:
     "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/65cff17dd30384397ea96fc7_Bailey%27s%20Moving%20SVG.svg",
   alliedLogo:

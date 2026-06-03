@@ -4,17 +4,17 @@ import { hrefPath } from "../../../lib/assets";
 
 const operationsUrl = hrefPath("operations/");
 ---
-<BaseLayout title="Schedule preview (test)" bodyClass="schedule-page">
+<BaseLayout title="Schedule preview (test)" bodyClass="schedule-page schedule-page--calendly">
   <section class="page-band">
     <div class="page-band__inner">
       <p class="eyebrow">Preview</p>
-      <h1 id="band-title">Schedule calendar preview</h1>
-      <p class="sub" id="band-sub">Test availability without submitting an application.</p>
+      <h1>Schedule calendar preview</h1>
+      <p class="sub">Test availability without submitting an application.</p>
     </div>
   </section>
 
   <div class="page-wrap page-wrap--narrow">
-    <div class="content-card">
+    <div class="content-card" style="margin-bottom: 1rem">
       <div class="field">
         <label for="office-select">Office</label>
         <select id="office-select">
@@ -26,23 +26,42 @@ const operationsUrl = hrefPath("operations/");
       </div>
       <button type="button" class="btn btn-primary" id="load-preview">Load preview slots</button>
       <p id="preview-meta" class="form-hint" style="margin-top: 1rem"></p>
-      <div id="preview-slots" class="slot-days" style="margin-top: 1.5rem"></div>
-      <p style="margin-top: 1.5rem">
-        <a href={operationsUrl}>← Back to operations openings</a>
-      </p>
     </div>
+
+    <div class="schedule-shell" id="preview-shell" hidden>
+      <aside class="schedule-sidebar">
+        <p class="schedule-sidebar__eyebrow">Preview</p>
+        <h1 class="schedule-sidebar__title" id="preview-job-title">Interview scheduling</h1>
+        <p class="schedule-sidebar__job" id="preview-office-name"></p>
+        <p class="schedule-sidebar__location">
+          <span class="schedule-sidebar__location-icon" aria-hidden="true">📍</span>
+          <span id="preview-office-location"></span>
+        </p>
+        <p class="schedule-sidebar__hint">This is what applicants see — without the booking rules line above.</p>
+      </aside>
+      <div class="schedule-picker">
+        <div id="schedule-step-date">
+          <p class="schedule-picker__heading">Select a date</p>
+          <div id="cal-root"></div>
+        </div>
+        <div id="schedule-step-time" hidden>
+          <button type="button" class="cal-back" id="cal-back">← Change date</button>
+          <p class="schedule-picker__heading">Select a time</p>
+          <p class="cal-selected-day" id="cal-selected-day"></p>
+          <div class="slot-list" id="time-slots"></div>
+        </div>
+      </div>
+    </div>
+
+    <p style="margin-top: 1.5rem">
+      <a href={operationsUrl}>← Back to operations openings</a>
+    </p>
   </div>
 </BaseLayout>
 
 <script>
   import { resolveApiBaseUrl } from "../../../lib/api.client.ts";
-
-  const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-  function formatDay(isoDate) {
-    const d = new Date(isoDate + "T12:00:00");
-    return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
-  }
+  import { initCalendlyPicker } from "../../../lib/scheduleCalendar.ts";
 
   const params = new URLSearchParams(window.location.search);
   const officeParam = params.get("office");
@@ -64,34 +83,37 @@ const operationsUrl = hrefPath("operations/");
       alert(data.error || "Preview failed");
       return;
     }
-    document.getElementById("preview-meta").textContent =
+
+    document.getElementById("preview-meta")!.textContent =
       `${data.officeName} · ${data.jobTitle} · ${data.slots.length} slots · book up to ${data.bookingWindowDays} days ahead · ${data.minNoticeHours}h notice`;
-    const el = document.getElementById("preview-slots");
+
+    document.getElementById("preview-job-title")!.textContent = data.jobTitle;
+    document.getElementById("preview-office-name")!.textContent = data.officeName;
+    document.getElementById("preview-office-location")!.textContent =
+      data.officeLocation || data.officeName;
+
+    const shell = document.getElementById("preview-shell")!;
+    shell.hidden = false;
+
     if (!data.slots.length) {
-      el.innerHTML = "<p>No slots in the next two weeks with current rules.</p>";
+      document.getElementById("schedule-step-date")!.innerHTML =
+        "<p>No slots in the next two weeks with current rules.</p>";
       return;
     }
-    const byDay = new Map();
-    for (const s of data.slots) {
-      const day = s.startsAt.slice(0, 10);
-      if (!byDay.has(day)) byDay.set(day, []);
-      byDay.get(day).push(s);
-    }
-    el.innerHTML = "";
-    for (const [day, slots] of byDay) {
-      const section = document.createElement("div");
-      section.className = "slot-day";
-      section.innerHTML = `<h2>${formatDay(day)}</h2><div class="slot-list"></div>`;
-      const list = section.querySelector(".slot-list");
-      for (const s of slots) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "slot-btn";
-        btn.disabled = true;
-        btn.textContent = s.labelLocal;
-        list.appendChild(btn);
-      }
-      el.appendChild(section);
-    }
+
+    initCalendlyPicker({
+      slots: data.slots,
+      calendarEl: document.getElementById("cal-root")!,
+      dateStepEl: document.getElementById("schedule-step-date")!,
+      timeStepEl: document.getElementById("schedule-step-time")!,
+      selectedDayEl: document.getElementById("cal-selected-day")!,
+      timeListEl: document.getElementById("time-slots")!,
+      backBtn: document.getElementById("cal-back") as HTMLButtonElement,
+      readOnly: true,
+    });
   });
+
+  if (officeParam) {
+    document.getElementById("load-preview")?.click();
+  }
 </script>
