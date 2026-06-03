@@ -1,0 +1,27 @@
+---
+import CareerPathCallout from "../CareerPathCallout.astro";
+import VideoGallery from "./VideoGallery.astro";
+import type { JobVideo } from "../../lib/jobPageContent";
+
+interface Props {
+  learnSectionTitle?: string;
+  videos?: JobVideo[];
+}
+
+const { learnSectionTitle, videos } = Astro.props;
+const showVideos = Boolean(videos?.length && learnSectionTitle);
+---
+<section class="apply-learn-section" id="videos">
+  {showVideos ? (
+    <VideoGallery title={learnSectionTitle!} videos={videos!} bare />
+  ) : (
+    <div class="apply-learn-section__intro">
+      <p class="apply-section-eyebrow">Beyond the first day</p>
+      <h2 class="apply-section-title">Build a real career in moving</h2>
+      <p class="apply-section-sub">
+        No experience required to start — but there is a clear path forward if you perform.
+      </p>
+    </div>
+  )}
+  <CareerPathCallout />
+</section>

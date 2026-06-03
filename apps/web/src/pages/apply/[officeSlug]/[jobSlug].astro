@@ -3,7 +3,7 @@ export const prerender = false;
 
 import BaseLayout from "../../../layouts/BaseLayout.astro";
 import ApplyHeroShell from "../../../components/apply/ApplyHeroShell.astro";
-import VideoGallery from "../../../components/apply/VideoGallery.astro";
+import ApplyLearnSection from "../../../components/apply/ApplyLearnSection.astro";
 import JobDetailsCard from "../../../components/apply/JobDetailsCard.astro";
 import TrustStrip from "../../../components/TrustStrip.astro";
 import { BRAND } from "../../../constants/brand";
@@ -154,9 +154,10 @@ const applySeo = pageContent
 
       <TrustStrip />
 
-      {pageContent.videos && pageContent.videos.length > 0 && pageContent.learnSectionTitle && (
-        <VideoGallery title={pageContent.learnSectionTitle} videos={pageContent.videos} />
-      )}
+      <ApplyLearnSection
+        learnSectionTitle={pageContent.learnSectionTitle}
+        videos={pageContent.videos}
+      />
 
       {pageContent.jobDetails && (
         <section class="apply-details-section page-wrap">

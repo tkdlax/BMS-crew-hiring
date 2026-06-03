@@ -4,9 +4,11 @@ import type { JobVideo } from "../../lib/jobPageContent";
 interface Props {
   title: string;
   videos: JobVideo[];
+  /** Omit outer section chrome when nested inside ApplyLearnSection. */
+  bare?: boolean;
 }
 
-const { title, videos } = Astro.props;
+const { title, videos, bare = false } = Astro.props;
 
 function youtubePosterUrl(youtubeId: string) {
   return `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`;
@@ -16,7 +18,7 @@ function youtubePosterFallback(youtubeId: string) {
   return `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`;
 }
 ---
-<section class="apply-videos-section" id="videos">
+<div class:list={[bare ? "apply-videos-block" : "apply-videos-section"]} {...(!bare && { id: "videos" })}>
   <p class="apply-section-eyebrow">On the job</p>
   <h2 class="apply-section-title">{title}</h2>
   <p class="apply-section-sub">Short videos from our team and customers.</p>
@@ -53,7 +55,7 @@ function youtubePosterFallback(youtubeId: string) {
       </article>
     ))}
   </div>
-</section>
+</div>
 
 <script>
   function embedYoutube(container: HTMLElement) {

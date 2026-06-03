@@ -2303,6 +2303,119 @@ body.page-apply {
   padding: 4.5rem var(--page-gutter) 5rem;
 }
 
+.apply-learn-section {
+  background: var(--bg-light);
+  padding: 4.5rem var(--page-gutter) 5rem;
+}
+
+.apply-learn-section__intro {
+  max-width: 40rem;
+  margin: 0 auto 2.5rem;
+}
+
+.apply-videos-block {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.career-path-callout {
+  max-width: 1100px;
+  margin: 3rem auto 0;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.career-path-callout--standalone {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.career-path-callout__inner {
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+  padding: 1.35rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  overflow: hidden;
+}
+
+.career-path-callout__media {
+  margin: 0;
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.career-path-callout__media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.career-path-callout__label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 0.45rem;
+}
+
+.career-path-callout__title {
+  font-size: clamp(1.15rem, 2.8vw, 1.45rem);
+  font-weight: 800;
+  color: var(--blue);
+  line-height: 1.25;
+  margin-bottom: 0.65rem;
+}
+
+.career-path-callout__text {
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.55;
+  margin: 0 0 1.15rem;
+}
+
+.career-path-callout__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.career-path-callout__link:hover {
+  color: var(--orange);
+}
+
+.career-path-callout__link:hover .career-path-callout__arrow {
+  transform: translateX(0.2rem);
+}
+
+.career-path-callout__arrow {
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+
+@media (min-width: 768px) {
+  .career-path-callout__inner {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 1.75rem;
+    padding: 1.5rem 1.75rem;
+  }
+
+  .career-path-callout--standalone .career-path-callout__inner {
+    max-width: 52rem;
+    margin: 0 auto;
+  }
+}
+
 .apply-section-eyebrow {
   font-size: 0.72rem;
   font-weight: 700;

@@ -1,0 +1,44 @@
+---
+import { HIRING_IMAGES } from "../constants/images";
+import { hrefPath } from "../lib/assets";
+
+interface Props {
+  /** When true, the callout provides its own section padding (no video block above). */
+  standalone?: boolean;
+}
+
+const { standalone = false } = Astro.props;
+const careerPathUrl = hrefPath("career-path/");
+---
+<aside
+  class:list={["career-path-callout", standalone && "career-path-callout--standalone"]}
+  aria-labelledby="career-path-callout-title"
+>
+  <div class="career-path-callout__inner">
+    <figure class="career-path-callout__media">
+      <img
+        src={HIRING_IMAGES.cdlDriver}
+        alt=""
+        width="600"
+        height="400"
+        loading="lazy"
+        decoding="async"
+      />
+    </figure>
+    <div class="career-path-callout__content">
+      <p class="career-path-callout__label">Career progression</p>
+      <h3 class="career-path-callout__title" id="career-path-callout-title">
+        Curious where this job can take you?
+      </h3>
+      <p class="career-path-callout__text">
+        Starting as a mover is just the beginning. See the step-by-step path from crew member to
+        team leader and CDL driver — requirements, training, pay tiers, and what it takes to earn
+        each step.
+      </p>
+      <a href={careerPathUrl} class="career-path-callout__link">
+        See career path possibilities
+        <span class="career-path-callout__arrow" aria-hidden="true">→</span>
+      </a>
+    </div>
+  </div>
+</aside>
