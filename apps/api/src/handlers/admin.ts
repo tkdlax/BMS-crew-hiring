@@ -7,6 +7,7 @@ import {
   templateUpsertSchema,
   availabilityRuleSchema,
   scheduleConfigUpsertSchema,
+  officeWebhooksBatchSchema,
 } from "@bms/shared";
 import { config } from "../config.js";
 import { getPool, t } from "../db/pool.js";
@@ -45,6 +46,7 @@ export async function handleAdmin(
   if (segments[0] === "templates") return handleTemplates(req, segments.slice(1));
   if (segments[0] === "availability") return handleAvailability(req, segments.slice(1));
   if (segments[0] === "schedule-config") return handleScheduleConfig(req, segments.slice(1));
+  if (segments[0] === "webhooks") return handleWebhooks(req);
 
   return error("Not found", 404);
 }
@@ -290,6 +292,59 @@ async function handleAvailability(
     return json({ ok: true });
   }
   return error("Not found", 404);
+}
+
+async function handleWebhooks(req: HttpRequest): Promise<HttpResponseInit> {
+  const pool = await getPool();
+  if (req.method === "GET") {
+    const r = await pool.request().query(`
+      SELECT id, slug, name, webhooks_json FROM ${t("offices")} ORDER BY name
+    `);
+    const offices = r.recordset.map((row: Record<string, unknown>) => ({
+      id: row.id,
+      slug: row.slug,
+      name: row.name,
+      webhooks: parseOfficeWebhooksJson(row.webhooks_json as string | null),
+    }));
+    return json({ offices });
+  }
+  if (req.method === "PUT") {
+    const body = officeWebhooksBatchSchema.parse(await req.json());
+    for (const entry of body.offices) {
+      const normalized = normalizeWebhooks(entry.webhooks);
+      await pool
+        .request()
+        .input("id", sql.Int, entry.officeId)
+        .input("json", sql.NVarChar, JSON.stringify(normalized))
+        .query(`
+          UPDATE ${t("offices")} SET webhooks_json = @json, updated_at = SYSUTCDATETIME()
+          WHERE id = @id
+        `);
+    }
+    return json({ ok: true });
+  }
+  return error("Not found", 404);
+}
+
+function parseOfficeWebhooksJson(json: string | null | undefined): Record<string, string> {
+  if (!json?.trim()) return {};
+  try {
+    return JSON.parse(json) as Record<string, string>;
+  } catch {
+    return {};
+  }
+}
+
+function normalizeWebhooks(input: {
+  application_submitted?: string;
+  interview_scheduled?: string;
+}): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const key of ["application_submitted", "interview_scheduled"] as const) {
+    const url = input[key]?.trim();
+    if (url) out[key] = url;
+  }
+  return out;
 }
 
 async function handleScheduleConfig(

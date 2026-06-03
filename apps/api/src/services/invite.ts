@@ -77,7 +77,7 @@ export async function processInvite(applicationId: number): Promise<string> {
       WHERE id = @id
     `);
 
-  await dispatchWebhook("application_submitted", {
+  await dispatchWebhook("application_submitted", app.officeId, {
     event: "application_submitted",
     occurredAt: new Date().toISOString(),
     summary: buildApplicationSubmittedSummary(app),

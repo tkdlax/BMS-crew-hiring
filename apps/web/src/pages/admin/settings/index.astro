@@ -15,65 +15,109 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       <div class="field"><label>Token expiry (days)</label><input name="tokenExpiryDays" type="number" /></div>
       <div class="field"><label>Reminder offsets (JSON)</label><textarea name="reminderOffsetsJson" rows="4"></textarea></div>
       <div class="field"><label><input type="checkbox" name="smsOnInvite" /> SMS on invite</label></div>
-      <h2>Manager webhooks</h2>
-      <p class="admin-hint">POST JSON to your URL when events occur (e.g. Zapier, Slack). Does not replace applicant email/SMS.</p>
-      <div class="field"><label>Webhook URL</label><input name="webhookUrl" type="url" placeholder="https://hooks.zapier.com/..." /></div>
-      <fieldset class="webhook-events">
-        <legend>Send webhook on</legend>
-        <label><input type="checkbox" name="evt_application_submitted" checked /> New application submitted</label>
-        <label><input type="checkbox" name="evt_interview_scheduled" checked /> Interview scheduled</label>
-      </fieldset>
-      <button type="submit" class="btn">Save</button>
+      <button type="submit" class="btn">Save schedule settings</button>
     </form>
-    <p id="save-msg"></p>
+    <p id="save-msg" class="admin-hint"></p>
+  </div>
+
+  <div class="admin-card">
+    <h1>Manager webhooks</h1>
+    <p class="admin-hint">
+      Each office can use different URLs for new applications vs. scheduled interviews (e.g. Zapier, Slack).
+      Leave blank to skip that notification for an office.
+    </p>
+    <div id="webhooks-table">Loading…</div>
+    <button type="button" class="btn" id="save-webhooks" style="margin-top: 1rem">Save webhooks</button>
+    <p id="webhook-msg" class="admin-hint"></p>
   </div>
 </AdminLayout>
 
 <style>
   .admin-hint { color: var(--text-light); font-size: 0.875rem; }
-  .webhook-events { border: none; margin: 0 0 1rem; padding: 0; }
-  .webhook-events label { display: block; margin: 0.35rem 0; font-weight: 500; }
+  .webhook-url-input {
+    width: 100%;
+    min-width: 12rem;
+    padding: 0.5rem 0.625rem;
+    font-size: 0.8125rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+  }
 </style>
 
 <script>
   import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
 
-  function parseEvents(json) {
-    try {
-      return JSON.parse(json || "[]");
-    } catch {
-      return [];
-    }
-  }
+  type OfficeWebhooks = {
+    id: number;
+    name: string;
+    slug: string;
+    webhooks: Record<string, string>;
+  };
 
-  async function load(api) {
+  let officeWebhooks: OfficeWebhooks[] = [];
+
+  async function loadSchedule(api: string) {
     const res = await fetch(`${api}/schedule-config?scope=global`, { credentials: "include" });
     const { config: c } = await res.json();
     if (!c) return;
-    const f = document.getElementById("settings-form");
-    f.slotDurationMinutes.value = c.slot_duration_minutes;
-    f.bufferMinutes.value = c.buffer_minutes;
-    f.bookingWindowDays.value = c.booking_window_days ?? 7;
-    f.minNoticeHours.value = c.min_notice_hours ?? 8;
-    f.quietHoursStart.value = c.quiet_hours_start;
-    f.quietHoursEnd.value = c.quiet_hours_end;
-    f.tokenExpiryDays.value = c.token_expiry_days;
-    f.reminderOffsetsJson.value = c.reminder_offsets_json;
-    f.smsOnInvite.checked = c.sms_on_invite;
-    f.webhookUrl.value = c.webhook_url || "";
-    const events = parseEvents(c.webhook_events_json);
-    f.evt_application_submitted.checked = events.includes("application_submitted");
-    f.evt_interview_scheduled.checked = events.includes("interview_scheduled");
+    const f = document.getElementById("settings-form") as HTMLFormElement;
+    (f.elements.namedItem("slotDurationMinutes") as HTMLInputElement).value = String(
+      c.slot_duration_minutes
+    );
+    (f.elements.namedItem("bufferMinutes") as HTMLInputElement).value = String(c.buffer_minutes);
+    (f.elements.namedItem("bookingWindowDays") as HTMLInputElement).value = String(
+      c.booking_window_days ?? 7
+    );
+    (f.elements.namedItem("minNoticeHours") as HTMLInputElement).value = String(
+      c.min_notice_hours ?? 8
+    );
+    (f.elements.namedItem("quietHoursStart") as HTMLInputElement).value = c.quiet_hours_start;
+    (f.elements.namedItem("quietHoursEnd") as HTMLInputElement).value = c.quiet_hours_end;
+    (f.elements.namedItem("tokenExpiryDays") as HTMLInputElement).value = String(
+      c.token_expiry_days
+    );
+    (f.elements.namedItem("reminderOffsetsJson") as HTMLTextAreaElement).value =
+      c.reminder_offsets_json;
+    (f.elements.namedItem("smsOnInvite") as HTMLInputElement).checked = c.sms_on_invite;
+  }
+
+  function renderWebhooksTable() {
+    const el = document.getElementById("webhooks-table")!;
+    if (!officeWebhooks.length) {
+      el.innerHTML = "<p>No offices found.</p>";
+      return;
+    }
+    el.innerHTML = `<table class="data"><thead><tr><th>Office</th><th>New application submitted</th><th>Interview scheduled</th></tr></thead><tbody>${officeWebhooks
+      .map(
+        (o) => `<tr>
+          <td><strong>${o.name}</strong><br><span class="admin-hint">${o.slug}</span></td>
+          <td><input class="webhook-url-input" type="url" data-office-id="${o.id}" data-event="application_submitted" value="${esc(o.webhooks.application_submitted || "")}" placeholder="https://hooks.zapier.com/..." /></td>
+          <td><input class="webhook-url-input" type="url" data-office-id="${o.id}" data-event="interview_scheduled" value="${esc(o.webhooks.interview_scheduled || "")}" placeholder="https://hooks.zapier.com/..." /></td>
+        </tr>`
+      )
+      .join("")}</tbody></table>`;
+  }
+
+  function esc(s: string) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;");
+  }
+
+  async function loadWebhooks(api: string) {
+    const res = await fetch(`${api}/webhooks`, { credentials: "include" });
+    const data = await res.json();
+    officeWebhooks = data.offices as OfficeWebhooks[];
+    renderWebhooksTable();
   }
 
   document.getElementById("settings-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const api = await resolveAdminApiBaseUrl();
     if (!api) return;
-    const fd = new FormData(e.target);
-    const events = [];
-    if (fd.get("evt_application_submitted") === "on") events.push("application_submitted");
-    if (fd.get("evt_interview_scheduled") === "on") events.push("interview_scheduled");
+    const fd = new FormData(e.target as HTMLFormElement);
     await fetch(`${api}/schedule-config`, {
       method: "PUT",
       credentials: "include",
@@ -81,25 +125,56 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       body: JSON.stringify({
         scope: "global",
         scopeId: null,
-        slotDurationMinutes: parseInt(fd.get("slotDurationMinutes"), 10),
-        bufferMinutes: parseInt(fd.get("bufferMinutes"), 10),
-        bookingWindowDays: parseInt(fd.get("bookingWindowDays"), 10),
-        minNoticeHours: parseInt(fd.get("minNoticeHours"), 10),
+        slotDurationMinutes: parseInt(String(fd.get("slotDurationMinutes")), 10),
+        bufferMinutes: parseInt(String(fd.get("bufferMinutes")), 10),
+        bookingWindowDays: parseInt(String(fd.get("bookingWindowDays")), 10),
+        minNoticeHours: parseInt(String(fd.get("minNoticeHours")), 10),
         quietHoursStart: fd.get("quietHoursStart"),
         quietHoursEnd: fd.get("quietHoursEnd"),
-        tokenExpiryDays: parseInt(fd.get("tokenExpiryDays"), 10),
+        tokenExpiryDays: parseInt(String(fd.get("tokenExpiryDays")), 10),
         reminderOffsetsJson: fd.get("reminderOffsetsJson"),
         smsOnInvite: fd.get("smsOnInvite") === "on",
-        webhookUrl: fd.get("webhookUrl") || null,
-        webhookEventsJson: JSON.stringify(events),
       }),
     });
-    document.getElementById("save-msg").textContent = "Saved.";
+    document.getElementById("save-msg")!.textContent = "Schedule settings saved.";
+  });
+
+  document.getElementById("save-webhooks")?.addEventListener("click", async () => {
+    const api = await resolveAdminApiBaseUrl();
+    if (!api) return;
+    const inputs = document.querySelectorAll(
+      ".webhook-url-input"
+    ) as NodeListOf<HTMLInputElement>;
+    const byOffice = new Map<number, { application_submitted?: string; interview_scheduled?: string }>();
+    inputs.forEach((input) => {
+      const id = parseInt(input.dataset.officeId!, 10);
+      const event = input.dataset.event as "application_submitted" | "interview_scheduled";
+      if (!byOffice.has(id)) byOffice.set(id, {});
+      const entry = byOffice.get(id)!;
+      const val = input.value.trim();
+      if (val) entry[event] = val;
+    });
+    const offices = [...byOffice.entries()].map(([officeId, webhooks]) => ({
+      officeId,
+      webhooks,
+    }));
+    const res = await fetch(`${api}/webhooks`, {
+      method: "PUT",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ offices }),
+    });
+    document.getElementById("webhook-msg")!.textContent = res.ok
+      ? "Webhooks saved."
+      : "Save failed — check URLs and try again.";
+    if (res.ok) loadWebhooks(api);
   });
 
   (async () => {
     await window.adminAuthCheck;
     const api = await resolveAdminApiBaseUrl();
-    if (api) await load(api);
+    if (!api) return;
+    await loadSchedule(api);
+    await loadWebhooks(api);
   })();
 </script>

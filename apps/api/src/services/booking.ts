@@ -102,7 +102,7 @@ export async function confirmBooking(
     }
   }
 
-  await dispatchWebhook("interview_scheduled", {
+  await dispatchWebhook("interview_scheduled", app.officeId, {
     event: "interview_scheduled",
     occurredAt: new Date().toISOString(),
     summary: buildInterviewScheduledSummary(app, interviewTimeLocal),

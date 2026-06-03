@@ -17,6 +17,18 @@ export const bookSlotSchema = z.object({
   applicantTimezone: z.string().min(1).max(64),
 });
 
+export const officeWebhooksUpsertSchema = z.object({
+  officeId: z.number().int().positive(),
+  webhooks: z.object({
+    application_submitted: z.string().max(2000).optional(),
+    interview_scheduled: z.string().max(2000).optional(),
+  }),
+});
+
+export const officeWebhooksBatchSchema = z.object({
+  offices: z.array(officeWebhooksUpsertSchema).min(1),
+});
+
 export const adminLoginSchema = z.object({
   password: z.string().min(1),
   /** Hidden field; bots that fill it are rejected. */

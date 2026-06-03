@@ -4,41 +4,89 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 <AdminLayout title="Workflows" activeNav="templates">
   <div class="admin-card">
     <h1>Message templates</h1>
-    <p>Use placeholders: <code>{'{{firstName}}'}</code>, <code>{'{{lastName}}'}</code>, <code>{'{{email}}'}</code>, <code>{'{{phone}}'}</code>, <code>{'{{primaryInterest}}'}</code>, <code>{'{{jobTitle}}'}</code>, <code>{'{{officeName}}'}</code>, <code>{'{{officeLocation}}'}</code>, <code>{'{{scheduleUrl}}'}</code>, <code>{'{{confirmationUrl}}'}</code>, <code>{'{{interviewTimeLocal}}'}</code>, <code>{'{{submittedAt}}'}</code></p>
+    <p class="admin-hint">
+      Email and SMS sent to applicants. Click <strong>Edit</strong> on a row to load it into the form below.
+      Manager webhooks are configured under <strong>Settings</strong>.
+    </p>
+    <p class="admin-hint">
+      Placeholders:
+      <code>{'{{firstName}}'}</code>, <code>{'{{lastName}}'}</code>, <code>{'{{email}}'}</code>,
+      <code>{'{{phone}}'}</code>, <code>{'{{primaryInterest}}'}</code>, <code>{'{{jobTitle}}'}</code>,
+      <code>{'{{officeName}}'}</code>, <code>{'{{officeLocation}}'}</code>, <code>{'{{scheduleUrl}}'}</code>,
+      <code>{'{{confirmationUrl}}'}</code>, <code>{'{{interviewTimeLocal}}'}</code>, <code>{'{{submittedAt}}'}</code>
+    </p>
     <div id="templates-list">Loading…</div>
-    <h2>Upsert template</h2>
+    <h2 id="tpl-editor-heading">Edit template</h2>
     <form id="tpl-form" class="admin-form">
       <div class="field"><label>Template key</label><input name="templateKey" required placeholder="interview_invite" /></div>
       <div class="field"><label>Channel</label><select name="channel"><option value="email">email</option><option value="sms">sms</option></select></div>
       <div class="field"><label>Scope</label><select name="scope"><option value="global">global</option><option value="office">office</option><option value="job">job</option></select></div>
       <div class="field"><label>Scope ID (office/job id, empty for global)</label><input name="scopeId" type="number" /></div>
       <div class="field"><label>Subject (email only)</label><input name="subject" /></div>
-      <div class="field"><label>Body</label><textarea name="body" required rows="8"></textarea></div>
+      <div class="field"><label>Body</label><textarea name="body" required rows="10"></textarea></div>
       <button type="submit" class="btn">Save template</button>
+      <button type="button" class="btn btn-secondary" id="tpl-reset">Clear form</button>
     </form>
+    <p id="tpl-msg" class="admin-hint"></p>
   </div>
 </AdminLayout>
+
+<style>
+  code { font-size: 0.8125rem; background: var(--bg-light); padding: 0.1rem 0.35rem; border-radius: 4px; }
+</style>
 
 <script>
   import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
 
-  async function load(api) {
+  type TemplateRow = {
+    template_key: string;
+    channel: string;
+    scope: string;
+    scope_id: number | null;
+    subject: string | null;
+    body: string;
+  };
+
+  let templatesCache: TemplateRow[] = [];
+
+  function fillTemplateForm(t: TemplateRow) {
+    const f = document.getElementById("tpl-form") as HTMLFormElement;
+    (f.elements.namedItem("templateKey") as HTMLInputElement).value = t.template_key;
+    (f.elements.namedItem("channel") as HTMLSelectElement).value = t.channel;
+    (f.elements.namedItem("scope") as HTMLSelectElement).value = t.scope;
+    (f.elements.namedItem("scopeId") as HTMLInputElement).value =
+      t.scope_id != null ? String(t.scope_id) : "";
+    (f.elements.namedItem("subject") as HTMLInputElement).value = t.subject || "";
+    (f.elements.namedItem("body") as HTMLTextAreaElement).value = t.body || "";
+    document.getElementById("tpl-editor-heading")!.textContent = `Edit: ${t.template_key} (${t.channel})`;
+    f.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  async function loadTemplates(api: string) {
     const res = await fetch(`${api}/templates`, { credentials: "include" });
     const { templates } = await res.json();
-    document.getElementById("templates-list").innerHTML = `<table class="data"><thead><tr><th>Key</th><th>Channel</th><th>Scope</th><th>Subject</th></tr></thead><tbody>${templates
+    templatesCache = templates as TemplateRow[];
+    const el = document.getElementById("templates-list")!;
+    el.innerHTML = `<table class="data"><thead><tr><th>Key</th><th>Channel</th><th>Scope</th><th>Subject</th><th></th></tr></thead><tbody>${templatesCache
       .map(
-        (t) =>
-          `<tr><td>${t.template_key}</td><td>${t.channel}</td><td>${t.scope}${t.scope_id ? ` #${t.scope_id}` : ""}</td><td>${t.subject || "—"}</td></tr>`
+        (t, i) =>
+          `<tr><td><code>${t.template_key}</code></td><td>${t.channel}</td><td>${t.scope}${t.scope_id ? ` #${t.scope_id}` : ""}</td><td>${t.subject || "—"}</td><td><button type="button" class="btn btn-small btn-secondary" data-edit="${i}">Edit</button></td></tr>`
       )
       .join("")}</tbody></table>`;
+    el.querySelectorAll("[data-edit]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        fillTemplateForm(templatesCache[parseInt(btn.getAttribute("data-edit")!, 10)]!);
+      });
+    });
   }
+
   document.getElementById("tpl-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const api = await resolveAdminApiBaseUrl();
     if (!api) return;
-    const fd = new FormData(e.target);
+    const fd = new FormData(e.target as HTMLFormElement);
     const scopeIdRaw = fd.get("scopeId");
-    await fetch(`${api}/templates`, {
+    const res = await fetch(`${api}/templates`, {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -46,16 +94,30 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         templateKey: fd.get("templateKey"),
         channel: fd.get("channel"),
         scope: fd.get("scope"),
-        scopeId: scopeIdRaw ? parseInt(scopeIdRaw, 10) : null,
+        scopeId: scopeIdRaw ? parseInt(String(scopeIdRaw), 10) : null,
         subject: fd.get("subject") || undefined,
         body: fd.get("body"),
       }),
     });
-    load(api);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      document.getElementById("tpl-msg")!.textContent =
+        (data as { error?: string }).error || "Save failed";
+      return;
+    }
+    document.getElementById("tpl-msg")!.textContent = "Template saved.";
+    loadTemplates(api);
   });
+
+  document.getElementById("tpl-reset")?.addEventListener("click", () => {
+    (document.getElementById("tpl-form") as HTMLFormElement).reset();
+    document.getElementById("tpl-editor-heading")!.textContent = "Edit template";
+    document.getElementById("tpl-msg")!.textContent = "";
+  });
+
   (async () => {
     await window.adminAuthCheck;
     const api = await resolveAdminApiBaseUrl();
-    if (api) await load(api);
+    if (api) await loadTemplates(api);
   })();
 </script>
