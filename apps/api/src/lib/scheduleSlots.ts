@@ -1,7 +1,17 @@
 import sql from "mssql";
+import { addLocalDays, formatLocalDateKey } from "./timezone.js";
 import { getPool, t } from "../db/pool.js";
 import { resolveScheduleConfig } from "./resolveConfig.js";
 import { generateSlots, type AvailabilityRule } from "./slots.js";
+
+export function getOfficeDateRange(
+  officeTimezone: string,
+  daysAhead: number
+): { from: string; to: string } {
+  const from = formatLocalDateKey(new Date(), officeTimezone);
+  const to = addLocalDays(from, daysAhead, officeTimezone);
+  return { from, to };
+}
 
 export async function getAvailabilityRules(
   officeId: number,

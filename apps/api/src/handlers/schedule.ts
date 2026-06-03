@@ -3,7 +3,7 @@ import sql from "mssql";
 import { bookSlotSchema } from "@bms/shared";
 import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
-import { getAvailableSlots } from "../lib/scheduleSlots.js";
+import { getAvailableSlots, getOfficeDateRange } from "../lib/scheduleSlots.js";
 import { formatInterviewTime } from "../lib/slots.js";
 import { confirmBooking } from "../services/booking.js";
 
@@ -48,11 +48,12 @@ export async function handleSchedule(
   }
   if (segments[1] === "slots" && req.method === "GET") {
     const url = new URL(req.url);
-    const from = url.searchParams.get("from") ?? new Date().toISOString().slice(0, 10);
-    const to =
-      url.searchParams.get("to") ??
-      new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-    return getSlots(token, from, to);
+    const row = await fetchTokenRow(token);
+    if (!row) return error("Not found", 404);
+    const range = getOfficeDateRange(row.office_timezone as string, 14);
+    const from = url.searchParams.get("from") ?? range.from;
+    const to = url.searchParams.get("to") ?? range.to;
+    return getSlots(token, from, to, row);
   }
   if (segments[1] === "book" && req.method === "POST") {
     return bookSlot(token, req);
@@ -97,6 +98,7 @@ async function getScheduleContext(token: string): Promise<HttpResponseInit> {
     jobTitle: row.job_title,
     officeName: row.office_name,
     officeLocation: row.location_label,
+    officeTimezone: row.office_timezone,
     status: row.status,
   });
 }
@@ -104,29 +106,31 @@ async function getScheduleContext(token: string): Promise<HttpResponseInit> {
 async function getSlots(
   token: string,
   from: string,
-  to: string
+  to: string,
+  row?: TokenRow | null
 ): Promise<HttpResponseInit> {
-  const row = await fetchTokenRow(token);
-  if (!row) return error("Not found", 404);
-  if (new Date(row.expires_at as string) < new Date()) {
+  const resolved = row ?? (await fetchTokenRow(token));
+  if (!resolved) return error("Not found", 404);
+  if (new Date(resolved.expires_at as string) < new Date()) {
     return error("This scheduling link has expired", 410);
   }
-  if (row.used_at) {
+  if (resolved.used_at) {
     return error("Interview already scheduled — use this link to confirm attendance", 409);
   }
 
-  const officeId = row.office_id as number;
-  const jobId = row.job_id as number;
+  const officeId = resolved.office_id as number;
+  const jobId = resolved.job_id as number;
   const { slots, config } = await getAvailableSlots(
     officeId,
     jobId,
-    row.office_timezone as string,
+    resolved.office_timezone as string,
     from,
     to
   );
 
   return json({
     slots,
+    officeTimezone: resolved.office_timezone,
     slotDurationMinutes: config.slotDurationMinutes,
     bookingWindowDays: config.bookingWindowDays,
     minNoticeHours: config.minNoticeHours,

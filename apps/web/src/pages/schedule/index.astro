@@ -13,23 +13,24 @@ const operationsUrl = hrefPath("operations/");
 
       <div class="schedule-shell" id="schedule-book" hidden>
         <aside class="schedule-sidebar">
-          <p class="schedule-sidebar__eyebrow">Interview</p>
+          <p class="schedule-sidebar__eyebrow">Interview scheduling</p>
           <h1 class="schedule-sidebar__title" id="sidebar-greeting">Schedule your interview</h1>
           <p class="schedule-sidebar__job" id="sidebar-job"></p>
+          <p class="schedule-sidebar__interview" id="sidebar-interview"></p>
           <p class="schedule-sidebar__location">
             <span class="schedule-sidebar__location-icon" aria-hidden="true">📍</span>
             <span id="sidebar-location"></span>
           </p>
-          <p class="schedule-sidebar__hint" id="sidebar-hint">Pick a date, then choose a time that works for you.</p>
+          <p class="schedule-sidebar__hint" id="sidebar-hint">Choose a date, then pick a time for your in-person interview.</p>
+          <p class="schedule-sidebar__tz" id="sidebar-tz" hidden></p>
         </aside>
         <div class="schedule-picker">
           <div id="schedule-step-date">
-            <p class="schedule-picker__heading">Select a date</p>
             <div id="cal-root"></div>
           </div>
           <div id="schedule-step-time" hidden>
             <button type="button" class="cal-back" id="cal-back">← Change date</button>
-            <p class="schedule-picker__heading">Select a time</p>
+            <p class="schedule-picker__heading">Select a time for your interview</p>
             <p class="cal-selected-day" id="cal-selected-day"></p>
             <div class="slot-list" id="time-slots"></div>
           </div>
@@ -74,7 +75,7 @@ const operationsUrl = hrefPath("operations/");
 
 <script>
   import { resolveApiBaseUrl } from "../../lib/api.client.ts";
-  import { initCalendlyPicker } from "../../lib/scheduleCalendar.ts";
+  import { formatTimezoneLabel, initCalendlyPicker } from "../../lib/scheduleCalendar.ts";
 
   function resolveToken() {
     const params = new URLSearchParams(window.location.search);
@@ -115,15 +116,22 @@ const operationsUrl = hrefPath("operations/");
     jobTitle: string;
     officeName: string;
     officeLocation: string;
+    officeTimezone?: string;
     hint?: string;
     title?: string;
   }) {
     const greeting = document.getElementById("sidebar-greeting")!;
     greeting.textContent = ctx.title ?? (ctx.firstName ? `Hi, ${ctx.firstName}` : "Schedule your interview");
-    document.getElementById("sidebar-job")!.textContent = ctx.jobTitle;
-    document.getElementById("sidebar-location")!.textContent =
-      `${ctx.officeName} — ${ctx.officeLocation}`;
+    document.getElementById("sidebar-job")!.textContent = `Interview for: ${ctx.jobTitle}`;
+    document.getElementById("sidebar-interview")!.textContent =
+      `You're scheduling an in-person interview at our ${ctx.officeName} office.`;
+    document.getElementById("sidebar-location")!.textContent = ctx.officeLocation;
     if (ctx.hint) document.getElementById("sidebar-hint")!.textContent = ctx.hint;
+    if (ctx.officeTimezone) {
+      const tzEl = document.getElementById("sidebar-tz")!;
+      tzEl.hidden = false;
+      tzEl.textContent = `All times shown in ${formatTimezoneLabel(ctx.officeTimezone)}.`;
+    }
   }
 
   if (!token) {
@@ -169,12 +177,11 @@ const operationsUrl = hrefPath("operations/");
       jobTitle: ctx.jobTitle,
       officeName: ctx.officeName,
       officeLocation: ctx.officeLocation,
-      hint: "Pick a date, then choose a time for your in-person interview.",
+      officeTimezone: ctx.officeTimezone,
+      hint: "Choose a date, then select a time for your interview.",
     });
 
-    const from = new Date().toISOString().slice(0, 10);
-    const to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
-    const slotsRes = await fetch(`${apiBase}/schedule/${token}/slots?from=${from}&to=${to}`);
+    const slotsRes = await fetch(`${apiBase}/schedule/${token}/slots`);
     if (!slotsRes.ok) {
       showError("Could not load available times.");
       return;
@@ -199,6 +206,8 @@ const operationsUrl = hrefPath("operations/");
       selectedDayEl: document.getElementById("cal-selected-day")!,
       timeListEl: document.getElementById("time-slots")!,
       backBtn: document.getElementById("cal-back") as HTMLButtonElement,
+      dateHeading: "Select a date for your interview",
+      timeHeading: "Select a time for your interview",
       onTimeSelect: (start) => {
         selectedSlot = start;
         confirmBtn.disabled = false;

@@ -1,3 +1,10 @@
+import {
+  addLocalDays,
+  formatLocalDateKey,
+  getLocalDayOfWeek,
+  localTimeToUtc,
+} from "./timezone.js";
+
 export interface AvailabilityRule {
   dayOfWeek: number;
   startTime: string;
@@ -12,6 +19,11 @@ export interface BookedInterval {
 export interface SlotResult {
   startsAt: string;
   endsAt: string;
+  /** Office-local calendar date (YYYY-MM-DD). */
+  localDate: string;
+  /** Time only in office timezone, e.g. "10:00 AM MT". */
+  labelTime: string;
+  /** @deprecated Prefer labelTime — full datetime string in office TZ. */
   labelLocal: string;
 }
 
@@ -24,8 +36,38 @@ function addMinutes(date: Date, mins: number): Date {
   return new Date(date.getTime() + mins * 60 * 1000);
 }
 
-function startOfDayUtc(dateStr: string): Date {
-  return new Date(`${dateStr}T00:00:00.000Z`);
+function formatTimeOnly(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+    timeZoneName: "short",
+  }).format(date);
+}
+
+function formatLocal(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(date);
+}
+
+function iterateLocalDates(
+  fromDate: string,
+  toDate: string,
+  timeZone: string
+): string[] {
+  const dates: string[] = [];
+  let cursor = fromDate;
+  while (cursor <= toDate) {
+    dates.push(cursor);
+    cursor = addLocalDays(cursor, 1, timeZone);
+  }
+  return dates;
 }
 
 export function generateSlots(
@@ -40,56 +82,56 @@ export function generateSlots(
 ): SlotResult[] {
   const slots: SlotResult[] = [];
   const exceptionSet = new Set(exceptions);
-  let cursor = startOfDayUtc(fromDate);
-  const end = startOfDayUtc(toDate);
-  end.setUTCDate(end.getUTCDate() + 1);
+  const now = new Date();
 
-  while (cursor < end) {
-    const dateStr = cursor.toISOString().slice(0, 10);
-    if (!exceptionSet.has(dateStr)) {
-      const dow = cursor.getUTCDay();
-      for (const rule of rules) {
-        if (rule.dayOfWeek !== dow) continue;
-        const startMins = parseTime(rule.startTime);
-        const endMins = parseTime(rule.endTime);
-        let slotStartMins = startMins;
-        while (slotStartMins + slotDurationMinutes <= endMins) {
-          const slotStart = new Date(cursor);
-          slotStart.setUTCHours(0, slotStartMins, 0, 0);
-          const slotEnd = addMinutes(slotStart, slotDurationMinutes);
+  for (const dateStr of iterateLocalDates(fromDate, toDate, officeTimezone)) {
+    if (exceptionSet.has(dateStr)) continue;
 
-          if (slotStart > new Date()) {
-            const bufferedStart = addMinutes(slotStart, -bufferMinutes);
-            const bufferedEnd = addMinutes(slotEnd, bufferMinutes);
-            const overlaps = booked.some(
-              (b) => bufferedStart < b.endsAt && bufferedEnd > b.startsAt
-            );
-            if (!overlaps) {
-              slots.push({
-                startsAt: slotStart.toISOString(),
-                endsAt: slotEnd.toISOString(),
-                labelLocal: formatLocal(slotStart, officeTimezone),
-              });
-            }
+    const dow = getLocalDayOfWeek(dateStr, officeTimezone);
+    const [year, month, day] = dateStr.split("-").map(Number);
+
+    for (const rule of rules) {
+      if (rule.dayOfWeek !== dow) continue;
+
+      const startMins = parseTime(rule.startTime);
+      const endMins = parseTime(rule.endTime);
+      let slotStartMins = startMins;
+
+      while (slotStartMins + slotDurationMinutes <= endMins) {
+        const hour = Math.floor(slotStartMins / 60);
+        const minute = slotStartMins % 60;
+        const slotStart = localTimeToUtc(
+          year!,
+          month!,
+          day!,
+          hour,
+          minute,
+          officeTimezone
+        );
+        const slotEnd = addMinutes(slotStart, slotDurationMinutes);
+
+        if (slotStart > now) {
+          const bufferedStart = addMinutes(slotStart, -bufferMinutes);
+          const bufferedEnd = addMinutes(slotEnd, bufferMinutes);
+          const overlaps = booked.some(
+            (b) => bufferedStart < b.endsAt && bufferedEnd > b.startsAt
+          );
+          if (!overlaps) {
+            slots.push({
+              startsAt: slotStart.toISOString(),
+              endsAt: slotEnd.toISOString(),
+              localDate: dateStr,
+              labelTime: formatTimeOnly(slotStart, officeTimezone),
+              labelLocal: formatLocal(slotStart, officeTimezone),
+            });
           }
-          slotStartMins += slotDurationMinutes + bufferMinutes;
         }
+        slotStartMins += slotDurationMinutes + bufferMinutes;
       }
     }
-    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
-  return slots;
-}
 
-function formatLocal(date: Date, timeZone: string): string {
-  return new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(date);
+  return slots;
 }
 
 export function formatInterviewTime(

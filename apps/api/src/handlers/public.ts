@@ -2,7 +2,7 @@ import type { HttpRequest, HttpResponseInit, InvocationContext } from "@azure/fu
 import sql from "mssql";
 import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
-import { getAvailableSlots } from "../lib/scheduleSlots.js";
+import { getAvailableSlots, getOfficeDateRange } from "../lib/scheduleSlots.js";
 
 export async function handlePublic(
   req: HttpRequest,
@@ -54,8 +54,7 @@ async function getSchedulePreview(
   if (job.recordset.length === 0) return error("Job not found", 404);
   const j = job.recordset[0] as Record<string, unknown>;
 
-  const from = new Date().toISOString().slice(0, 10);
-  const to = new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10);
+  const { from, to } = getOfficeDateRange(o.timezone as string, 14);
   const { slots, config } = await getAvailableSlots(
     o.id as number,
     j.id as number,
@@ -69,6 +68,7 @@ async function getSchedulePreview(
     officeSlug: o.slug,
     officeName: o.name,
     officeLocation: o.location_label,
+    officeTimezone: o.timezone,
     jobTitle: j.title,
     jobSlug: j.slug,
     slots,

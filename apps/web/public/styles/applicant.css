@@ -545,6 +545,7 @@ h2.section-title {
 
 /* —— Schedule (Calendly-style) —— */
 .schedule-page .page-wrap--narrow {
+  max-width: 52rem;
   padding-bottom: 6rem;
 }
 
@@ -564,8 +565,8 @@ h2.section-title {
 
 @media (min-width: 768px) {
   .schedule-shell {
-    grid-template-columns: minmax(240px, 320px) 1fr;
-    min-height: 28rem;
+    grid-template-columns: minmax(260px, 34%) minmax(0, 1fr);
+    min-height: 26rem;
   }
 }
 
@@ -626,6 +627,21 @@ h2.section-title {
 .schedule-sidebar__hint {
   font-size: 0.8125rem;
   color: var(--text-light);
+  line-height: 1.5;
+}
+
+.schedule-sidebar__interview {
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--text);
+  margin-bottom: 0.75rem;
+}
+
+.schedule-sidebar__tz {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  margin-top: 0.75rem;
+  font-style: italic;
 }
 
 .schedule-picker {
@@ -768,24 +784,31 @@ h2.section-title {
 }
 
 .slot-list {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
+}
+
+@media (min-width: 480px) {
+  .slot-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .slot-btn {
   width: 100%;
-  min-height: var(--touch);
-  padding: 0.875rem 1rem;
+  min-height: 2.75rem;
+  padding: 0.625rem 0.5rem;
   text-align: center;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
   color: var(--blue);
   background: var(--white);
   border: 2px solid var(--blue);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .slot-btn:hover {

@@ -1,20 +1,45 @@
-export type ScheduleSlot = { startsAt: string; labelLocal: string };
+export type ScheduleSlot = {
+  startsAt: string;
+  labelLocal?: string;
+  labelTime?: string;
+  localDate?: string;
+};
 
 const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+export function slotDayKey(slot: ScheduleSlot): string {
+  return slot.localDate ?? slot.startsAt.slice(0, 10);
+}
+
+export function slotTimeLabel(slot: ScheduleSlot): string {
+  if (slot.labelTime) return slot.labelTime;
+  if (slot.labelLocal) {
+    const parts = slot.labelLocal.split(", ");
+    return parts[parts.length - 1] ?? slot.labelLocal;
+  }
+  return slot.startsAt;
+}
 
 export function groupSlotsByDay(slots: ScheduleSlot[]): Map<string, ScheduleSlot[]> {
   const map = new Map<string, ScheduleSlot[]>();
   for (const s of slots) {
-    const day = s.startsAt.slice(0, 10);
+    const day = slotDayKey(s);
     if (!map.has(day)) map.set(day, []);
     map.get(day)!.push(s);
   }
   return map;
 }
 
+/** Format an office-local YYYY-MM-DD for display (weekday is stable at UTC noon). */
 export function formatDayLong(isoDate: string): string {
-  const d = new Date(isoDate + "T12:00:00");
-  return d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const dt = new Date(Date.UTC(y!, m! - 1, d!, 12, 0, 0));
+  return dt.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 export function formatMonthYear(year: number, month: number): string {
@@ -28,18 +53,6 @@ function parseDay(iso: string): { y: number; m: number; d: number } {
 
 function isoFromParts(y: number, m: number, d: number): string {
   return `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
-}
-
-function monthHasAvailability(
-  year: number,
-  month: number,
-  available: Set<string>
-): boolean {
-  for (const day of available) {
-    const { y, m } = parseDay(day);
-    if (y === year && m === month) return true;
-  }
-  return false;
 }
 
 function firstAvailableMonth(available: Set<string>): { year: number; month: number } {
@@ -62,6 +75,8 @@ export type CalendlyPickerOptions = {
   backBtn: HTMLButtonElement;
   onTimeSelect?: (startsAt: string) => void;
   readOnly?: boolean;
+  dateHeading?: string;
+  timeHeading?: string;
 };
 
 export function initCalendlyPicker(opts: CalendlyPickerOptions): void {
@@ -70,6 +85,9 @@ export function initCalendlyPicker(opts: CalendlyPickerOptions): void {
   let { year: viewYear, month: viewMonth } = firstAvailableMonth(available);
   let selectedDay: string | null = null;
   let selectedStart: string | null = null;
+
+  const dateHeading = opts.dateHeading ?? "Select a date for your interview";
+  const timeHeading = opts.timeHeading ?? "Select a time for your interview";
 
   function showDateStep() {
     opts.dateStepEl.hidden = false;
@@ -84,7 +102,7 @@ export function initCalendlyPicker(opts: CalendlyPickerOptions): void {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "slot-btn";
-      btn.textContent = s.labelLocal;
+      btn.textContent = slotTimeLabel(s);
       btn.dataset.start = s.startsAt;
       if (opts.readOnly) {
         btn.disabled = true;
@@ -123,11 +141,10 @@ export function initCalendlyPicker(opts: CalendlyPickerOptions): void {
     nav.append(prev, label, next);
     opts.calendarEl.appendChild(nav);
 
-    const canPrev = monthHasAvailability(viewYear, viewMonth - 1 < 0 ? 11 : viewMonth - 1, available) ||
-      [...available].some((d) => {
-        const { y, m } = parseDay(d);
-        return y < viewYear || (y === viewYear && m < viewMonth);
-      });
+    const canPrev = [...available].some((d) => {
+      const { y, m } = parseDay(d);
+      return y < viewYear || (y === viewYear && m < viewMonth);
+    });
     const canNext = [...available].some((d) => {
       const { y, m } = parseDay(d);
       return y > viewYear || (y === viewYear && m > viewMonth);
@@ -153,6 +170,11 @@ export function initCalendlyPicker(opts: CalendlyPickerOptions): void {
       }
       renderCalendar();
     });
+
+    const heading = document.createElement("p");
+    heading.className = "schedule-picker__heading";
+    heading.textContent = dateHeading;
+    opts.calendarEl.appendChild(heading);
 
     const grid = document.createElement("div");
     grid.className = "cal-grid";
@@ -190,6 +212,17 @@ export function initCalendlyPicker(opts: CalendlyPickerOptions): void {
     opts.calendarEl.appendChild(grid);
   }
 
+  const timeHeadingEl = opts.timeStepEl.querySelector(".schedule-picker__heading");
+  if (timeHeadingEl) timeHeadingEl.textContent = timeHeading;
+
   opts.backBtn.addEventListener("click", showDateStep);
   renderCalendar();
+}
+
+export function formatTimezoneLabel(timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    timeZoneName: "long",
+  }).formatToParts(new Date());
+  return parts.find((p) => p.type === "timeZoneName")?.value ?? timeZone;
 }
