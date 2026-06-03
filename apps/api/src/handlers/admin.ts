@@ -78,22 +78,25 @@ async function handleOffices(
   }
   if (segments.length === 0 && req.method === "POST") {
     const body = officeUpsertSchema.parse(await req.json());
+    const locationNotes = body.locationNotes?.trim() || null;
     await pool
       .request()
       .input("slug", sql.NVarChar, body.slug)
       .input("name", sql.NVarChar, body.name)
       .input("tz", sql.NVarChar, body.timezone)
       .input("loc", sql.NVarChar, body.locationLabel)
+      .input("locNotes", sql.NVarChar, locationNotes)
       .input("active", sql.Bit, body.active ?? true)
       .query(`
-        INSERT INTO ${t("offices")} (slug, name, timezone, location_label, active)
-        VALUES (@slug, @name, @tz, @loc, @active)
+        INSERT INTO ${t("offices")} (slug, name, timezone, location_label, location_notes, active)
+        VALUES (@slug, @name, @tz, @loc, @locNotes, @active)
       `);
     return json({ ok: true }, 201);
   }
   const id = parseInt(segments[0]!, 10);
   if (segments.length === 1 && req.method === "PUT") {
     const body = officeUpsertSchema.parse(await req.json());
+    const locationNotes = body.locationNotes?.trim() || null;
     await pool
       .request()
       .input("id", sql.Int, id)
@@ -101,10 +104,11 @@ async function handleOffices(
       .input("name", sql.NVarChar, body.name)
       .input("tz", sql.NVarChar, body.timezone)
       .input("loc", sql.NVarChar, body.locationLabel)
+      .input("locNotes", sql.NVarChar, locationNotes)
       .input("active", sql.Bit, body.active ?? true)
       .query(`
         UPDATE ${t("offices")} SET slug=@slug, name=@name, timezone=@tz,
-          location_label=@loc, active=@active, updated_at=SYSUTCDATETIME()
+          location_label=@loc, location_notes=@locNotes, active=@active, updated_at=SYSUTCDATETIME()
         WHERE id=@id
       `);
     return json({ ok: true });
@@ -368,38 +372,53 @@ async function handleScheduleConfig(
   }
   if (req.method === "PUT") {
     const body = scheduleConfigUpsertSchema.parse(await req.json());
+    const existing = (
+      await pool
+        .request()
+        .input("scope", sql.NVarChar, body.scope)
+        .input("scopeId", sql.Int, body.scopeId)
+        .query(`
+          SELECT * FROM ${t("schedule_config")}
+          WHERE scope = @scope AND ((@scopeId IS NULL AND scope_id IS NULL) OR scope_id = @scopeId)
+        `)
+    ).recordset[0] as Record<string, unknown> | undefined;
     const webhookUrl =
-      body.webhookUrl === "" || body.webhookUrl === null ? null : body.webhookUrl;
+      body.webhookUrl !== undefined
+        ? body.webhookUrl === "" || body.webhookUrl === null
+          ? null
+          : body.webhookUrl
+        : (existing?.webhook_url as string | null | undefined) ?? null;
     await pool
       .request()
       .input("scope", sql.NVarChar, body.scope)
       .input("scopeId", sql.Int, body.scopeId)
-      .input("slot", sql.Int, body.slotDurationMinutes ?? 30)
-      .input("buffer", sql.Int, body.bufferMinutes ?? 15)
-      .input("qhStart", sql.NVarChar, body.quietHoursStart ?? "21:00")
-      .input("qhEnd", sql.NVarChar, body.quietHoursEnd ?? "08:00")
-      .input("reminders", sql.NVarChar, body.reminderOffsetsJson ?? "[]")
-      .input("tokenDays", sql.Int, body.tokenExpiryDays ?? 14)
-      .input("smsInvite", sql.Bit, body.smsOnInvite ?? false)
-      .input("bookDays", sql.Int, body.bookingWindowDays ?? 7)
-      .input("noticeHrs", sql.Int, body.minNoticeHours ?? 8)
+      .input("slot", sql.Int, body.slotDurationMinutes ?? (existing?.slot_duration_minutes as number) ?? 30)
+      .input("buffer", sql.Int, body.bufferMinutes ?? (existing?.buffer_minutes as number) ?? 15)
+      .input("slotCap", sql.Int, body.slotCapacity ?? (existing?.slot_capacity as number) ?? 2)
+      .input("qhStart", sql.NVarChar, body.quietHoursStart ?? (existing?.quiet_hours_start as string) ?? "21:00")
+      .input("qhEnd", sql.NVarChar, body.quietHoursEnd ?? (existing?.quiet_hours_end as string) ?? "08:00")
+      .input("reminders", sql.NVarChar, body.reminderOffsetsJson ?? (existing?.reminder_offsets_json as string) ?? "[]")
+      .input("tokenDays", sql.Int, body.tokenExpiryDays ?? (existing?.token_expiry_days as number) ?? 14)
+      .input("smsInvite", sql.Bit, body.smsOnInvite ?? (existing?.sms_on_invite as boolean) ?? false)
+      .input("bookDays", sql.Int, body.bookingWindowDays ?? (existing?.booking_window_days as number) ?? 7)
+      .input("noticeHrs", sql.Int, body.minNoticeHours ?? (existing?.min_notice_hours as number) ?? 8)
       .input("webhookUrl", sql.NVarChar, webhookUrl)
-      .input("webhookEvents", sql.NVarChar, body.webhookEventsJson ?? "[]")
+      .input("webhookEvents", sql.NVarChar, body.webhookEventsJson ?? (existing?.webhook_events_json as string) ?? "[]")
       .query(`
         MERGE ${t("schedule_config")} AS target
         USING (SELECT @scope AS scope, @scopeId AS scope_id) AS src
         ON target.scope = src.scope AND ((target.scope_id IS NULL AND src.scope_id IS NULL) OR target.scope_id = src.scope_id)
         WHEN MATCHED THEN UPDATE SET
-          slot_duration_minutes = @slot, buffer_minutes = @buffer,
+          slot_duration_minutes = @slot, buffer_minutes = @buffer, slot_capacity = @slotCap,
           quiet_hours_start = @qhStart, quiet_hours_end = @qhEnd,
           reminder_offsets_json = @reminders, token_expiry_days = @tokenDays,
           sms_on_invite = @smsInvite, booking_window_days = @bookDays,
           min_notice_hours = @noticeHrs, webhook_url = @webhookUrl,
           webhook_events_json = @webhookEvents, updated_at = SYSUTCDATETIME()
-        WHEN NOT MATCHED THEN INSERT (scope, scope_id, slot_duration_minutes, buffer_minutes,
+        WHEN NOT MATCHED THEN INSERT (scope, scope_id, slot_duration_minutes, buffer_minutes, slot_capacity,
           quiet_hours_start, quiet_hours_end, reminder_offsets_json, token_expiry_days, sms_on_invite,
           booking_window_days, min_notice_hours, webhook_url, webhook_events_json)
-          VALUES (@scope, @scopeId, @slot, @buffer, @qhStart, @qhEnd, @reminders, @tokenDays, @smsInvite,
+          VALUES (@scope, @scopeId, @slot, @buffer, @slotCap, @qhStart, @qhEnd, @reminders, @tokenDays, @smsInvite,
             @bookDays, @noticeHrs, @webhookUrl, @webhookEvents);
       `);
     return json({ ok: true });

@@ -33,11 +33,11 @@ describe("generateSlots", () => {
     expect(slots[0].localDate).toBe("2030-01-09");
   });
 
-  it("excludes booked intervals", () => {
+  it("excludes booked intervals when capacity is 1", () => {
     const rules = [{ dayOfWeek: 0, startTime: "09:00", endTime: "11:00" }];
     const from = "2030-01-06";
     const to = "2030-01-06";
-    const slotsUtc = generateSlots(from, to, rules, [], [], 30, 0, "UTC");
+    const slotsUtc = generateSlots(from, to, rules, [], [], 30, 0, "UTC", 1);
     const firstStart = slotsUtc[0]?.startsAt;
     expect(firstStart).toBeTruthy();
     const booked = [
@@ -46,8 +46,31 @@ describe("generateSlots", () => {
         endsAt: new Date(new Date(firstStart).getTime() + 30 * 60 * 1000),
       },
     ];
-    const slots = generateSlots(from, to, rules, [], booked, 30, 0, "UTC");
+    const slots = generateSlots(from, to, rules, [], booked, 30, 0, "UTC", 1);
     const hasSame = slots.some((s) => s.startsAt === firstStart);
     expect(hasSame).toBe(false);
+  });
+
+  it("allows a second booking at the same time when capacity is 2", () => {
+    const rules = [{ dayOfWeek: 0, startTime: "09:00", endTime: "11:00" }];
+    const from = "2030-01-06";
+    const to = "2030-01-06";
+    const slotsUtc = generateSlots(from, to, rules, [], [], 30, 0, "UTC", 2);
+    const firstStart = slotsUtc[0]?.startsAt;
+    const booked = [
+      {
+        startsAt: new Date(firstStart),
+        endsAt: new Date(new Date(firstStart).getTime() + 30 * 60 * 1000),
+      },
+    ];
+    const slots = generateSlots(from, to, rules, [], booked, 30, 0, "UTC", 2);
+    expect(slots.some((s) => s.startsAt === firstStart)).toBe(true);
+
+    booked.push({
+      startsAt: new Date(firstStart),
+      endsAt: new Date(new Date(firstStart).getTime() + 30 * 60 * 1000),
+    });
+    const full = generateSlots(from, to, rules, [], booked, 30, 0, "UTC", 2);
+    expect(full.some((s) => s.startsAt === firstStart)).toBe(false);
   });
 });

@@ -96,7 +96,8 @@ export async function getAvailableSlots(
     })),
     config.slotDurationMinutes,
     config.bufferMinutes,
-    officeTimezone
+    officeTimezone,
+    config.slotCapacity
   );
 
   const now = Date.now();

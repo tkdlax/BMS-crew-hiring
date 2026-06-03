@@ -174,10 +174,11 @@ async function bookSlot(
       .input("start", sql.DateTime2, startsAt)
       .input("end", sql.DateTime2, endsAt)
       .query(`
-        SELECT id FROM ${t("interview_bookings")}
+        SELECT COUNT(*) AS cnt FROM ${t("interview_bookings")} WITH (UPDLOCK, HOLDLOCK)
         WHERE office_id = @officeId AND starts_at < @end AND ends_at > @start
       `);
-    if (overlap.recordset.length > 0) {
+    const bookedCount = (overlap.recordset[0] as { cnt: number }).cnt;
+    if (bookedCount >= config.slotCapacity) {
       await tx.rollback();
       return error("That time slot is no longer available", 409);
     }

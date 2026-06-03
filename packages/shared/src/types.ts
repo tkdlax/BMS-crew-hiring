@@ -13,6 +13,7 @@ export type MessageChannel = "email" | "sms";
 export interface ScheduleConfigResolved {
   slotDurationMinutes: number;
   bufferMinutes: number;
+  slotCapacity: number;
   quietHoursStart: string;
   quietHoursEnd: string;
   reminderOffsets: ReminderOffset[];
@@ -36,6 +37,8 @@ export interface MessageContext {
   jobTitle: string;
   officeName: string;
   officeLocation: string;
+  /** Arrival / check-in instructions from office config ({{locationNotes}}). */
+  locationNotes?: string;
   scheduleUrl?: string;
   interviewTimeLocal?: string;
   [key: string]: string | undefined;

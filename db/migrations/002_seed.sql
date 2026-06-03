@@ -39,7 +39,7 @@ VALUES (@cosId, 'moving-operations-crew', 'Moving Operations Crew', 1, '[]',
 IF NOT EXISTS (SELECT 1 FROM hire_jobs WHERE office_id = @denverId AND slug = 'moving-operations-crew')
 INSERT INTO hire_jobs (office_id, slug, title, active, form_fields, page_content)
 VALUES (@denverId, 'moving-operations-crew', 'Moving Operations Crew', 1, '[]',
-  '{"heroEyebrow":"Work in Denver · Centennial, CO","headline":"Get Your Colorado Career On The Move.","formTitle":"Apply to Join Our Denver Team","interestOptions":["Driver","Mover & Packer","Summer or Temporary Help","I''m new, I want to start a career"],"videos":[{"title":"Hear From Employees","youtubeId":"1WYvchjYBXU"},{"title":"Hear From A Customer","youtubeId":"-pnkJe0ALAE"}]}');
+  '{"heroEyebrow":"Work in Denver · Centennial, CO","headline":"Get Your Colorado Career On The Move.","formTitle":"Apply to Join Our Denver Team","interestOptions":["Driver","Mover & Packer","Summer or Temporary Help","I''m new, I want to start a career"],"videos":[{"title":"Hear From Employees","youtubeId":"1WYvchjYBXU"},{"title":"Hear From A Customer","youtubeId":"-pnkJe0ALAE"},{"title":"Hear From A Master Mover","youtubeId":"7GVmdYHKUE4"},{"title":"Get To Know Us","youtubeId":"LoDlPPyDaKw"}]}');
 
 -- Availability: Mon-Fri 9-17 for each office
 DECLARE @d INT = 1;

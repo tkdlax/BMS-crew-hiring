@@ -4,7 +4,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 <AdminLayout title="Offices" activeNav="offices">
   <div class="admin-card">
     <h1>Offices</h1>
-    <p class="admin-hint">Location / address is shown on apply pages and scheduling emails. Edit any office below.</p>
+    <p class="admin-hint">Location / address is shown on apply pages. Location notes are included in emails and texts via <code>{'{{locationNotes}}'}</code>.</p>
     <div id="offices-table">Loading…</div>
     <div id="office-edit-host"></div>
     <h2>Add office</h2>
@@ -13,6 +13,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       <div class="field"><label>Name</label><input name="name" required /></div>
       <div class="field"><label>Timezone (IANA)</label><input name="timezone" value="America/Denver" required /></div>
       <div class="field"><label>Address / location</label><input name="locationLabel" required placeholder="11755 E Peakview Ave, Centennial, CO 80111" /></div>
+      <div class="field"><label>Location notes (optional)</label><textarea name="locationNotes" rows="3" placeholder="Enter through the side door and ask for Sarah at the front desk."></textarea></div>
       <button type="submit" class="btn">Create office</button>
     </form>
   </div>
@@ -59,6 +60,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           <div class="field"><label>Name</label><input name="name" required value="${esc(o.name)}" /></div>
           <div class="field"><label>Timezone (IANA)</label><input name="timezone" required value="${esc(o.timezone)}" /></div>
           <div class="field"><label>Address / location</label><input name="locationLabel" required value="${esc(o.location_label)}" /></div>
+          <div class="field"><label>Location notes (optional)</label><textarea name="locationNotes" rows="3" placeholder="Enter through the side door and ask for Sarah at the front desk.">${esc(o.location_notes || "")}</textarea></div>
           <div class="field"><label><input type="checkbox" name="active" ${o.active ? "checked" : ""} /> Active</label></div>
           <div class="table-actions">
             <button type="submit" class="btn">Save changes</button>
@@ -85,6 +87,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           name: fd.get("name"),
           timezone: fd.get("timezone"),
           locationLabel: fd.get("locationLabel"),
+          locationNotes: fd.get("locationNotes") || null,
           active: fd.get("active") === "on",
         }),
       });
@@ -124,6 +127,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         name: fd.get("name"),
         timezone: fd.get("timezone"),
         locationLabel: fd.get("locationLabel"),
+        locationNotes: fd.get("locationNotes") || null,
         active: true,
       }),
     });

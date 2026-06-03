@@ -1,6 +1,6 @@
 import sql from "mssql";
 import type { ReminderOffset, ScheduleConfigResolved } from "@bms/shared";
-import { isWebhookEvent } from "@bms/shared";
+import { DEFAULT_SLOT_CAPACITY, isWebhookEvent } from "@bms/shared";
 import { getPool, t } from "../db/pool.js";
 
 const DEFAULT_OFFSETS: ReminderOffset[] = [
@@ -11,6 +11,7 @@ const DEFAULT_OFFSETS: ReminderOffset[] = [
 interface ConfigRow {
   slot_duration_minutes: number;
   buffer_minutes: number;
+  slot_capacity?: number;
   quiet_hours_start: string;
   quiet_hours_end: string;
   reminder_offsets_json: string;
@@ -32,7 +33,7 @@ async function fetchConfig(
     .input("scope", sql.NVarChar, scope)
     .input("scopeId", sql.Int, scopeId)
     .query(`
-      SELECT slot_duration_minutes, buffer_minutes, quiet_hours_start, quiet_hours_end,
+      SELECT slot_duration_minutes, buffer_minutes, slot_capacity, quiet_hours_start, quiet_hours_end,
              reminder_offsets_json, token_expiry_days, sms_on_invite,
              booking_window_days, min_notice_hours, webhook_url, webhook_events_json
       FROM ${t("schedule_config")}
@@ -48,6 +49,7 @@ function mergeConfig(
   const d: ConfigRow = {
     slot_duration_minutes: 30,
     buffer_minutes: 0,
+    slot_capacity: DEFAULT_SLOT_CAPACITY,
     quiet_hours_start: "21:00",
     quiet_hours_end: "08:00",
     reminder_offsets_json: JSON.stringify(DEFAULT_OFFSETS),
@@ -90,11 +92,14 @@ export async function resolveScheduleConfig(
   return {
     slotDurationMinutes: merged.slot_duration_minutes,
     bufferMinutes: merged.buffer_minutes,
+    slotCapacity: merged.slot_capacity ?? DEFAULT_SLOT_CAPACITY,
     quietHoursStart: merged.quiet_hours_start,
     quietHoursEnd: merged.quiet_hours_end,
     reminderOffsets,
     tokenExpiryDays: merged.token_expiry_days,
-    smsOnInvite: merged.sms_on_invite,
+    smsOnInvite: !!(
+      global?.sms_on_invite || office?.sms_on_invite || job?.sms_on_invite
+    ),
     bookingWindowDays: merged.booking_window_days ?? 7,
     minNoticeHours: merged.min_notice_hours ?? 8,
     webhookUrl,

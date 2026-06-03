@@ -15,7 +15,7 @@ export async function processDueReminders(): Promise<number> {
            b.starts_at, b.applicant_timezone,
            a.id AS application_id, a.first_name, a.last_name, a.email, a.phone, a.custom_fields,
            j.id AS job_id, j.title AS job_title,
-           o.id AS office_id, o.name AS office_name, o.location_label, o.timezone AS office_timezone
+           o.id AS office_id, o.name AS office_name, o.location_label, o.location_notes, o.timezone AS office_timezone
     FROM ${t("reminder_jobs")} rj
     JOIN ${t("interview_bookings")} b ON b.id = rj.booking_id
     JOIN ${t("applications")} a ON a.id = b.application_id
@@ -83,6 +83,7 @@ export async function processDueReminders(): Promise<number> {
       jobTitle: row.job_title as string,
       officeName: row.office_name as string,
       officeLocation: row.location_label as string,
+      locationNotes: (row.location_notes as string | null) ?? "",
       interviewTimeLocal,
       primaryInterest: primaryInterest || "Not specified",
       confirmationUrl,

@@ -48,6 +48,7 @@ export const officeUpsertSchema = z.object({
   name: z.string().min(1).max(200),
   timezone: z.string().min(1).max(64),
   locationLabel: z.string().min(1).max(500),
+  locationNotes: z.string().max(4000).nullable().optional(),
   active: z.boolean().optional(),
 });
 
@@ -94,6 +95,7 @@ export const scheduleConfigUpsertSchema = z.object({
   scopeId: z.number().int().positive().nullable(),
   slotDurationMinutes: z.number().int().min(15).max(240).optional(),
   bufferMinutes: z.number().int().min(0).max(120).optional(),
+  slotCapacity: z.number().int().min(1).max(10).optional(),
   quietHoursStart: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   quietHoursEnd: z.string().regex(/^\d{2}:\d{2}$/).optional(),
   reminderOffsetsJson: z.string().optional(),

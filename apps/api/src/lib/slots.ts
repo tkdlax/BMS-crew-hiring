@@ -4,6 +4,7 @@ import {
   getLocalDayOfWeek,
   localTimeToUtc,
 } from "./timezone.js";
+import { DEFAULT_SLOT_CAPACITY } from "@bms/shared";
 
 export interface AvailabilityRule {
   dayOfWeek: number;
@@ -70,6 +71,47 @@ function iterateLocalDates(
   return dates;
 }
 
+function countOverlapping(
+  rangeStart: Date,
+  rangeEnd: Date,
+  booked: BookedInterval[]
+): number {
+  return booked.filter((b) => rangeStart < b.endsAt && rangeEnd > b.startsAt).length;
+}
+
+function isSameSlot(
+  slotStart: Date,
+  slotEnd: Date,
+  booking: BookedInterval
+): boolean {
+  return (
+    slotStart.getTime() === booking.startsAt.getTime() &&
+    slotEnd.getTime() === booking.endsAt.getTime()
+  );
+}
+
+function slotIsAvailable(
+  slotStart: Date,
+  slotEnd: Date,
+  booked: BookedInterval[],
+  bufferMinutes: number,
+  slotCapacity: number
+): boolean {
+  const exactCount = countOverlapping(slotStart, slotEnd, booked);
+  if (exactCount >= slotCapacity) return false;
+  if (bufferMinutes <= 0) return true;
+
+  const bufferedStart = addMinutes(slotStart, -bufferMinutes);
+  const bufferedEnd = addMinutes(slotEnd, bufferMinutes);
+
+  for (const b of booked) {
+    if (!(bufferedStart < b.endsAt && bufferedEnd > b.startsAt)) continue;
+    if (isSameSlot(slotStart, slotEnd, b) && exactCount < slotCapacity) continue;
+    return false;
+  }
+  return true;
+}
+
 export function generateSlots(
   fromDate: string,
   toDate: string,
@@ -78,7 +120,8 @@ export function generateSlots(
   booked: BookedInterval[],
   slotDurationMinutes: number,
   bufferMinutes: number,
-  officeTimezone: string
+  officeTimezone: string,
+  slotCapacity: number = DEFAULT_SLOT_CAPACITY
 ): SlotResult[] {
   const slots: SlotResult[] = [];
   const exceptionSet = new Set(exceptions);
@@ -111,12 +154,15 @@ export function generateSlots(
         const slotEnd = addMinutes(slotStart, slotDurationMinutes);
 
         if (slotStart > now) {
-          const bufferedStart = addMinutes(slotStart, -bufferMinutes);
-          const bufferedEnd = addMinutes(slotEnd, bufferMinutes);
-          const overlaps = booked.some(
-            (b) => bufferedStart < b.endsAt && bufferedEnd > b.startsAt
-          );
-          if (!overlaps) {
+          if (
+            slotIsAvailable(
+              slotStart,
+              slotEnd,
+              booked,
+              bufferMinutes,
+              slotCapacity
+            )
+          ) {
             slots.push({
               startsAt: slotStart.toISOString(),
               endsAt: slotEnd.toISOString(),

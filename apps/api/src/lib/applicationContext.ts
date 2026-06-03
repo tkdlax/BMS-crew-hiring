@@ -20,6 +20,7 @@ export type ApplicationRow = {
   officeName: string;
   officeSlug: string;
   officeLocation: string;
+  officeLocationNotes: string;
   officeTimezone: string;
 };
 
@@ -32,7 +33,7 @@ export async function loadApplicationRow(
            a.custom_fields, a.created_at,
            j.id AS job_id, j.title AS job_title, j.slug AS job_slug,
            o.id AS office_id, o.name AS office_name, o.slug AS office_slug,
-           o.location_label, o.timezone AS office_timezone
+           o.location_label, o.location_notes, o.timezone AS office_timezone
     FROM ${t("applications")} a
     JOIN ${t("jobs")} j ON j.id = a.job_id
     JOIN ${t("offices")} o ON o.id = j.office_id
@@ -70,6 +71,7 @@ export async function loadApplicationRow(
     officeName: row.office_name as string,
     officeSlug: row.office_slug as string,
     officeLocation: row.location_label as string,
+    officeLocationNotes: (row.location_notes as string | null) ?? "",
     officeTimezone: row.office_timezone as string,
   };
 }
@@ -86,6 +88,7 @@ export function buildMessageContext(
     jobTitle: app.jobTitle,
     officeName: app.officeName,
     officeLocation: app.officeLocation,
+    locationNotes: app.officeLocationNotes,
     primaryInterest: app.primaryInterest || "Not specified",
     submittedAt: app.submittedAt,
     ...extras,
