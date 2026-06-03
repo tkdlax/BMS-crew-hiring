@@ -98,20 +98,20 @@ const interestOptions = content.interestOptions ?? [];
       <input id="website" name="website" type="text" tabindex="-1" autocomplete="off" />
     </div>
 
-    {captchaSiteKey ? (
-      <div class="form-group captcha-wrap" data-captcha-provider={captchaProvider}>
-        {captchaProvider === "turnstile" ? (
-          <div class="cf-turnstile" data-sitekey={captchaSiteKey} data-theme="light"></div>
-        ) : (
-          <div id="recaptcha-root" data-sitekey={captchaSiteKey}></div>
-        )}
-      </div>
+    <div class="form-group captcha-wrap" data-captcha-provider={captchaProvider}>
+    {captchaProvider === "turnstile" ? (
+      captchaSiteKey ? (
+        <div class="cf-turnstile" data-sitekey={captchaSiteKey} data-theme="light"></div>
+      ) : (
+        <p class="form-hint form-hint--warn" role="status">
+          Security verification is not configured on this environment. Submissions may be blocked until
+          CAPTCHA keys are set in Webflow Cloud.
+        </p>
+      )
     ) : (
-      <p class="form-hint form-hint--warn" role="status">
-        Security verification is not configured on this environment. Submissions may be blocked until
-        CAPTCHA keys are set in Webflow Cloud.
-      </p>
+      <div id="recaptcha-root" class="recaptcha-mount"></div>
     )}
+    </div>
 
     <button type="submit" class="btn-submit" id="submit-btn">
       Apply Now →

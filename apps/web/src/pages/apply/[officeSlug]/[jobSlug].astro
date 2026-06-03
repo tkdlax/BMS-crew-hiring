@@ -147,15 +147,13 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
   )}
 </BaseLayout>
 
-{captchaKey && captchaProviderNorm === "recaptcha" && (
-  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
-)}
 {captchaKey && captchaProviderNorm === "turnstile" && (
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 )}
 
 <script>
-  import { resolveCaptchaProviderFromConfig, resolveCaptchaSiteKey, resolveHireApiBaseUrl } from "../../../lib/api.client.ts";
+  import { resolveApiBaseUrl, resolveCaptchaProviderFromConfig, resolveCaptchaSiteKey, resolveHireApiBaseUrl } from "../../../lib/api.client.ts";
+  import { renderRecaptchaWidget, waitForGrecaptcha } from "../../../lib/recaptcha.client.ts";
 
   function formatLocationLines(address: string): string[] {
     const trimmed = address.trim();
@@ -239,28 +237,54 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
     if (w.turnstile && turnstileEl) w.turnstile.reset(turnstileEl as HTMLElement);
   }
 
+  async function ensureRecaptchaMount(): Promise<HTMLElement | null> {
+    let mount = document.getElementById("recaptcha-root");
+    if (mount) return mount;
+
+    const provider = await resolveCaptchaProviderFromConfig();
+    if (provider !== "recaptcha" || !form) return null;
+
+    let wrap = form.querySelector(".captcha-wrap");
+    if (!wrap) {
+      wrap = document.createElement("div");
+      wrap.className = "form-group captcha-wrap";
+      wrap.setAttribute("data-captcha-provider", "recaptcha");
+      submitBtn?.parentNode?.insertBefore(wrap, submitBtn);
+    }
+
+    mount = document.createElement("div");
+    mount.id = "recaptcha-root";
+    mount.className = "recaptcha-mount";
+    wrap.appendChild(mount);
+    return mount;
+  }
+
   async function initRecaptchaWidget() {
     const captchaKey = await resolveCaptchaSiteKey();
     const provider = await resolveCaptchaProviderFromConfig();
-    if (!captchaKey || provider !== "recaptcha" || typeof grecaptcha === "undefined") return;
+    if (!captchaKey || provider !== "recaptcha") return;
 
-    await new Promise<void>((resolve) => grecaptcha.ready(() => resolve()));
-    const mount = document.getElementById("recaptcha-root");
+    const mount = await ensureRecaptchaMount();
     if (!mount || mount.dataset.rendered === "true") return;
 
-    recaptchaWidgetId = grecaptcha.render(mount, {
-      sitekey: captchaKey,
-      callback: (token: string) => {
-        recaptchaToken = token;
-      },
-      "expired-callback": () => {
-        recaptchaToken = "";
-      },
-      "error-callback": () => {
-        recaptchaToken = "";
-      },
-    });
-    mount.dataset.rendered = "true";
+    try {
+      recaptchaWidgetId = await renderRecaptchaWidget({
+        mount,
+        sitekey: captchaKey,
+        onToken: (token) => {
+          recaptchaToken = token;
+        },
+        onExpire: () => {
+          recaptchaToken = "";
+        },
+        onError: () => {
+          recaptchaToken = "";
+        },
+      });
+      mount.dataset.rendered = "true";
+    } catch {
+      showAlert("Security verification failed to load. Please refresh the page.", "error");
+    }
   }
 
   initRecaptchaWidget();
@@ -271,10 +295,9 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
     const provider = await resolveCaptchaProviderFromConfig();
     if (provider === "recaptcha") {
       if (recaptchaToken) return recaptchaToken;
-      if (typeof grecaptcha !== "undefined" && recaptchaWidgetId != null) {
-        return new Promise<string>((resolve) => {
-          grecaptcha.ready(() => resolve(grecaptcha.getResponse(recaptchaWidgetId!) || recaptchaToken || ""));
-        });
+      if (recaptchaWidgetId != null && typeof grecaptcha !== "undefined") {
+        const grecaptcha = await waitForGrecaptcha();
+        return grecaptcha.getResponse(recaptchaWidgetId) || recaptchaToken || "";
       }
       return "";
     }
