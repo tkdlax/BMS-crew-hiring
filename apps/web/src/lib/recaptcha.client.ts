@@ -1,4 +1,5 @@
-const RECAPTCHA_SCRIPT_SRC = "https://www.google.com/recaptcha/api.js?render=explicit";
+/** Standard reCAPTCHA v2 checkbox — auto-renders elements with class g-recaptcha + data-sitekey. */
+const RECAPTCHA_SCRIPT_SRC = "https://www.google.com/recaptcha/api.js";
 
 declare global {
   interface GRecaptcha {
@@ -54,13 +55,51 @@ export type RecaptchaWidgetOptions = {
   onError?: () => void;
 };
 
-export async function renderRecaptchaWidget(options: RecaptchaWidgetOptions): Promise<number> {
+/** Wait until Google injects the widget iframe, or render explicitly as fallback. */
+export async function mountRecaptchaWidget(options: RecaptchaWidgetOptions): Promise<number | null> {
+  const { mount, sitekey, onToken, onExpire, onError } = options;
+
+  mount.classList.add("g-recaptcha");
+  mount.dataset.sitekey = sitekey;
+
   await ensureRecaptchaScript();
   const grecaptcha = await waitForGrecaptcha();
-  return grecaptcha.render(options.mount, {
-    sitekey: options.sitekey,
-    callback: options.onToken,
-    "expired-callback": options.onExpire,
-    "error-callback": options.onError,
+
+  try {
+    await waitForRecaptchaIframe(mount, 3000);
+    return null;
+  } catch {
+    /* auto-render did not populate — render explicitly below */
+  }
+
+  if (mount.dataset.rendered === "true") {
+    return null;
+  }
+
+  const widgetId = grecaptcha.render(mount, {
+    sitekey,
+    callback: onToken,
+    "expired-callback": onExpire,
+    "error-callback": onError,
+  });
+  mount.dataset.rendered = "true";
+  return widgetId;
+}
+
+export function waitForRecaptchaIframe(mount: HTMLElement, timeoutMs = 10000): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const deadline = Date.now() + timeoutMs;
+    const poll = () => {
+      if (mount.querySelector("iframe")) {
+        resolve();
+        return;
+      }
+      if (Date.now() > deadline) {
+        reject(new Error("reCAPTCHA widget did not appear"));
+        return;
+      }
+      setTimeout(poll, 100);
+    };
+    poll();
   });
 }

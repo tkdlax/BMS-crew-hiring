@@ -147,13 +147,16 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
   )}
 </BaseLayout>
 
+{captchaProviderNorm === "recaptcha" && (
+  <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+)}
 {captchaKey && captchaProviderNorm === "turnstile" && (
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 )}
 
 <script>
   import { resolveApiBaseUrl, resolveCaptchaProviderFromConfig, resolveCaptchaSiteKey, resolveHireApiBaseUrl } from "../../../lib/api.client.ts";
-  import { renderRecaptchaWidget, waitForGrecaptcha } from "../../../lib/recaptcha.client.ts";
+  import { mountRecaptchaWidget, waitForGrecaptcha } from "../../../lib/recaptcha.client.ts";
 
   function formatLocationLines(address: string): string[] {
     const trimmed = address.trim();
@@ -260,15 +263,18 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
   }
 
   async function initRecaptchaWidget() {
-    const captchaKey = await resolveCaptchaSiteKey();
-    const provider = await resolveCaptchaProviderFromConfig();
-    if (!captchaKey || provider !== "recaptcha") return;
-
     const mount = await ensureRecaptchaMount();
     if (!mount || mount.dataset.rendered === "true") return;
 
+    const captchaKey =
+      mount.dataset.sitekey?.trim() || (await resolveCaptchaSiteKey());
+    const provider = await resolveCaptchaProviderFromConfig();
+    if (!captchaKey || provider !== "recaptcha") return;
+
+    mount.dataset.sitekey = captchaKey;
+
     try {
-      recaptchaWidgetId = await renderRecaptchaWidget({
+      const widgetId = await mountRecaptchaWidget({
         mount,
         sitekey: captchaKey,
         onToken: (token) => {
@@ -281,6 +287,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
           recaptchaToken = "";
         },
       });
+      if (widgetId != null) recaptchaWidgetId = widgetId;
       mount.dataset.rendered = "true";
     } catch {
       showAlert("Security verification failed to load. Please refresh the page.", "error");

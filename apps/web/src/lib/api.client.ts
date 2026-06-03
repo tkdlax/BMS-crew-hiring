@@ -23,27 +23,34 @@ async function loadPublicConfig(): Promise<PublicConfig> {
 
   const buildApi = getApiBaseUrl();
   const buildCaptcha = import.meta.env.PUBLIC_CAPTCHA_SITE_KEY?.trim() ?? "";
-  if (buildApi) {
-    cachedConfig = { apiBaseUrl: buildApi, captchaSiteKey: buildCaptcha };
-    return cachedConfig;
+
+  // On Webflow Cloud the API URL may be baked at build time while CAPTCHA keys are runtime-only.
+  // Always prefer /api/public-config in the browser when available.
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch(getPublicConfigUrl());
+      if (res.ok) {
+        const data = (await res.json()) as PublicConfig;
+        const captchaSiteKey = data.captchaSiteKey?.trim() || buildCaptcha;
+        cachedConfig = {
+          apiBaseUrl: normalizeApiBaseUrl(data.apiBaseUrl) || buildApi,
+          captchaSiteKey,
+          captchaProvider:
+            data.captchaProvider ??
+            resolveCaptchaProvider(captchaSiteKey, import.meta.env.PUBLIC_CAPTCHA_PROVIDER),
+        };
+        return cachedConfig;
+      }
+    } catch {
+      /* fall through to build-time values */
+    }
   }
 
-  try {
-    const res = await fetch(getPublicConfigUrl());
-    if (!res.ok) throw new Error(`config ${res.status}`);
-    const data = (await res.json()) as PublicConfig;
-    const captchaSiteKey = data.captchaSiteKey?.trim() ?? "";
-    cachedConfig = {
-      apiBaseUrl: normalizeApiBaseUrl(data.apiBaseUrl),
-      captchaSiteKey,
-      captchaProvider:
-        data.captchaProvider ??
-        resolveCaptchaProvider(captchaSiteKey, import.meta.env.PUBLIC_CAPTCHA_PROVIDER),
-    };
-  } catch {
-    cachedConfig = { apiBaseUrl: "", captchaSiteKey: "", captchaProvider: "turnstile" };
-  }
-
+  cachedConfig = {
+    apiBaseUrl: buildApi,
+    captchaSiteKey: buildCaptcha,
+    captchaProvider: resolveCaptchaProvider(buildCaptcha, import.meta.env.PUBLIC_CAPTCHA_PROVIDER),
+  };
   return cachedConfig;
 }
 

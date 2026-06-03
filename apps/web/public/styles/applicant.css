@@ -1925,6 +1925,10 @@ body.page-apply {
   min-height: 4rem;
 }
 
+.recaptcha-mount {
+  min-height: 4.875rem;
+}
+
 .btn-submit {
   display: block;
   width: 100%;

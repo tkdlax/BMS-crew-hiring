@@ -109,7 +109,11 @@ const interestOptions = content.interestOptions ?? [];
         </p>
       )
     ) : (
-      <div id="recaptcha-root" class="recaptcha-mount"></div>
+      <div
+        id="recaptcha-root"
+        class="g-recaptcha recaptcha-mount"
+        data-sitekey={captchaSiteKey || undefined}
+      ></div>
     )}
     </div>
 
