@@ -1731,14 +1731,25 @@ h2.section-title {
   margin-bottom: 0;
 }
 
+.career-path__future {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.career-path__future-grid {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
 .career-destinations {
   display: grid;
   gap: 1rem;
-  margin-top: 1rem;
 }
 
-.career-step__content .career-destinations {
-  grid-template-columns: 1fr;
+.career-path__future-grid .career-destinations {
+  margin-top: 0;
 }
 
 .career-destination__title {
@@ -1780,8 +1791,9 @@ h2.section-title {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .career-destinations {
-    grid-template-columns: repeat(2, 1fr);
+  .career-path__future-grid {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 2rem;
   }
 }
 
