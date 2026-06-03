@@ -156,7 +156,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
 
 <script>
   import { resolveApiBaseUrl, resolveCaptchaProviderFromConfig, resolveCaptchaSiteKey, resolveHireApiBaseUrl } from "../../../lib/api.client.ts";
-  import { mountRecaptchaWidget, waitForGrecaptcha } from "../../../lib/recaptcha.client.ts";
+  import { getRecaptchaResponse, mountRecaptchaWidget } from "../../../lib/recaptcha.client.ts";
 
   function formatLocationLines(address: string): string[] {
     const trimmed = address.trim();
@@ -232,8 +232,9 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
 
   function resetCaptchaWidgets() {
     recaptchaToken = "";
-    if (typeof grecaptcha !== "undefined" && recaptchaWidgetId != null) {
-      grecaptcha.reset(recaptchaWidgetId);
+    if (typeof grecaptcha !== "undefined") {
+      if (recaptchaWidgetId != null) grecaptcha.reset(recaptchaWidgetId);
+      else grecaptcha.reset();
     }
     const w = window as Window & { turnstile?: { reset: (el?: HTMLElement) => void } };
     const turnstileEl = document.querySelector(".cf-turnstile");
@@ -301,12 +302,8 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
     if (!captchaKey) return "dev-bypass";
     const provider = await resolveCaptchaProviderFromConfig();
     if (provider === "recaptcha") {
-      if (recaptchaToken) return recaptchaToken;
-      if (recaptchaWidgetId != null && typeof grecaptcha !== "undefined") {
-        const grecaptcha = await waitForGrecaptcha();
-        return grecaptcha.getResponse(recaptchaWidgetId) || recaptchaToken || "";
-      }
-      return "";
+      const mount = document.getElementById("recaptcha-root");
+      return getRecaptchaResponse(mount, recaptchaWidgetId, recaptchaToken);
     }
     const turnstileEl = form?.querySelector<HTMLElement>(".cf-turnstile");
     if (turnstileEl && "turnstile" in window) {

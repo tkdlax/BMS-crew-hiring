@@ -55,6 +55,33 @@ export type RecaptchaWidgetOptions = {
   onError?: () => void;
 };
 
+export function readRecaptchaWidgetId(mount: HTMLElement | null): number | null {
+  if (!mount) return null;
+  const raw = mount.getAttribute("data-widget-id");
+  if (!raw) return null;
+  const id = Number(raw);
+  return Number.isFinite(id) ? id : null;
+}
+
+export async function getRecaptchaResponse(
+  mount: HTMLElement | null,
+  widgetId: number | null,
+  storedToken = ""
+): Promise<string> {
+  if (storedToken) return storedToken;
+  if (typeof grecaptcha === "undefined") return "";
+
+  const grecaptchaApi = await waitForGrecaptcha();
+  const resolvedId = widgetId ?? readRecaptchaWidgetId(mount);
+
+  if (resolvedId != null) {
+    const byId = grecaptchaApi.getResponse(resolvedId);
+    if (byId) return byId;
+  }
+
+  return grecaptchaApi.getResponse() || "";
+}
+
 /** Wait until Google injects the widget iframe, or render explicitly as fallback. */
 export async function mountRecaptchaWidget(options: RecaptchaWidgetOptions): Promise<number | null> {
   const { mount, sitekey, onToken, onExpire, onError } = options;
@@ -63,20 +90,20 @@ export async function mountRecaptchaWidget(options: RecaptchaWidgetOptions): Pro
   mount.dataset.sitekey = sitekey;
 
   await ensureRecaptchaScript();
-  const grecaptcha = await waitForGrecaptcha();
+  const grecaptchaApi = await waitForGrecaptcha();
 
   try {
     await waitForRecaptchaIframe(mount, 3000);
-    return null;
+    return readRecaptchaWidgetId(mount);
   } catch {
     /* auto-render did not populate — render explicitly below */
   }
 
   if (mount.dataset.rendered === "true") {
-    return null;
+    return readRecaptchaWidgetId(mount);
   }
 
-  const widgetId = grecaptcha.render(mount, {
+  const widgetId = grecaptchaApi.render(mount, {
     sitekey,
     callback: onToken,
     "expired-callback": onExpire,
