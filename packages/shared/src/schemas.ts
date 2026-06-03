@@ -8,6 +8,8 @@ export const applicationSubmitSchema = z.object({
   email: z.string().email().max(255),
   phone: z.string().min(10).max(20),
   captchaToken: z.string().min(1),
+  /** Widget type used in the browser; server picks the verify endpoint. */
+  captchaProvider: z.enum(["turnstile", "recaptcha"]).optional(),
   honeypot: z.string().max(0).optional(),
   customFields: z.record(z.string()).optional(),
 });

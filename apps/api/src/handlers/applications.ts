@@ -37,7 +37,7 @@ async function submitApplication(req: HttpRequest, ctx: InvocationContext): Prom
     return error("Too many requests. Please try again later.", 429);
   }
 
-  const captchaOk = await verifyCaptcha(data.captchaToken, ip, ctx);
+  const captchaOk = await verifyCaptcha(data.captchaToken, ip, ctx, data.captchaProvider);
   if (!captchaOk) {
     return error("CAPTCHA verification failed", 400);
   }

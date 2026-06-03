@@ -1,13 +1,16 @@
 import type { InvocationContext } from "@azure/functions";
+import type { CaptchaProvider } from "@bms/shared";
 import { resolveCaptchaProvider } from "@bms/shared";
 import { config } from "../config.js";
 
 export async function verifyCaptcha(
   token: string,
   remoteIp?: string,
-  ctx?: InvocationContext
+  ctx?: InvocationContext,
+  providerOverride?: CaptchaProvider
 ): Promise<boolean> {
   if (!config.captchaSecret) {
+    ctx?.warn("CAPTCHA_SECRET is not configured");
     return process.env.NODE_ENV !== "production" && process.env.AZURE_FUNCTIONS_ENVIRONMENT !== "Production";
   }
 
@@ -15,7 +18,7 @@ export async function verifyCaptcha(
     return false;
   }
 
-  const provider = config.captchaProvider;
+  const provider = providerOverride ?? config.captchaProvider;
 
   if (provider === "turnstile") {
     const body = new URLSearchParams({
@@ -29,7 +32,7 @@ export async function verifyCaptcha(
     );
     const data = (await res.json()) as { success?: boolean; "error-codes"?: string[] };
     if (!data.success) {
-      ctx?.warn("Turnstile verification failed", data["error-codes"] ?? []);
+      ctx?.warn("Turnstile verification failed", { codes: data["error-codes"] ?? [], provider });
     }
     return !!data.success;
   }
@@ -45,7 +48,7 @@ export async function verifyCaptcha(
   });
   const data = (await res.json()) as { success?: boolean; "error-codes"?: string[] };
   if (!data.success) {
-    ctx?.warn("reCAPTCHA verification failed", data["error-codes"] ?? []);
+    ctx?.warn("reCAPTCHA verification failed", { codes: data["error-codes"] ?? [], provider });
   }
   return !!data.success;
 }

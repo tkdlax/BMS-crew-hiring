@@ -58,7 +58,7 @@
 
 - `ADMIN_PASSWORD_HASH` in Azure is a **bcrypt hash**, not the password you type. Use the original plaintext password that was hashed (local dev without a hash uses `password`).
 - `ALLOWED_ORIGINS` on the Function App must list every browser origin that calls the API (www and non-www). `PUBLIC_SITE_BASE_URL` adds its origin automatically.
-- In the Azure Portal → Function App → **API** → **CORS**: either add the same origins there **or** leave the platform list empty so the app sets headers (avoid conflicting `*` with credentialed requests).
+- In the Azure Portal → Function App → **API** → **CORS**: **leave the allowed-origins list empty** so the app sets headers (recommended). If you add origins here, **do not** enable **Access-Control-Allow-Credentials** unless you need credentialed cross-origin calls directly to Azure — admin and apply already use same-origin Webflow proxies (`/hiring/api/admin/*`, `/hiring/api/hire/*`).
 - After changing API CORS or session cookie settings, redeploy the Function App.
 
 ## Staging checklist

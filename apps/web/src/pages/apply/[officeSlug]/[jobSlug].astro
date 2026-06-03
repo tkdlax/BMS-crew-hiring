@@ -155,7 +155,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
 )}
 
 <script>
-  import { resolveCaptchaSiteKey, resolveHireApiBaseUrl } from "../../../lib/api.client.ts";
+  import { resolveCaptchaProviderFromConfig, resolveCaptchaSiteKey, resolveHireApiBaseUrl } from "../../../lib/api.client.ts";
 
   function formatLocationLines(address: string): string[] {
     const trimmed = address.trim();
@@ -250,6 +250,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
 
     const captchaKey = await resolveCaptchaSiteKey();
     const captchaToken = await getCaptchaToken();
+    const captchaProvider = await resolveCaptchaProviderFromConfig();
     if (captchaKey && !captchaToken) {
       showAlert("Please complete the security check below.", "error");
       return;
@@ -276,6 +277,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
       email: fd.get("email"),
       phone: fd.get("phone"),
       captchaToken,
+      captchaProvider: captchaKey ? captchaProvider : undefined,
       honeypot: fd.get("website") || "",
       customFields,
     };
