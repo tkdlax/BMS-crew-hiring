@@ -49,6 +49,8 @@
 
    **Admin UI** calls same-origin `/hiring/api/admin/*` (Webflow Worker proxy to Azure) so login is not blocked by cross-origin CORS.
 
+   **Apply and schedule POSTs** use same-origin `/hiring/api/hire/*` for the same reason (Azure often answers OPTIONS without CORS headers even when `ALLOWED_ORIGINS` is set).
+
 5. Publish the main Webflow site after Cloud environment is created.
 
 ### Admin login

@@ -70,6 +70,20 @@ export function getAdminApiBaseUrl(): string {
   return `${withSlash}api/admin`;
 }
 
+/** Same-origin applicant API (proxied to Azure — avoids cross-origin preflight on POST). */
+export function getHireApiBaseUrl(): string {
+  const base = import.meta.env.BASE_URL || "/";
+  const withSlash = base.endsWith("/") ? base : `${base}/`;
+  return `${withSlash}api/hire`;
+}
+
+/** Resolves when the Azure backend is configured; returns the browser-facing hire base URL. */
+export async function resolveHireApiBaseUrl(): Promise<string> {
+  const azure = await resolveApiBaseUrl();
+  if (!azure) return "";
+  return getHireApiBaseUrl();
+}
+
 /** Resolves when the Azure backend is configured; returns the browser-facing admin base URL. */
 export async function resolveAdminApiBaseUrl(): Promise<string> {
   const azure = await resolveApiBaseUrl();

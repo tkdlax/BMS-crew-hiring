@@ -74,7 +74,7 @@ const operationsUrl = hrefPath("operations/");
 </BaseLayout>
 
 <script>
-  import { resolveApiBaseUrl } from "../../lib/api.client.ts";
+  import { resolveApiBaseUrl, resolveHireApiBaseUrl } from "../../lib/api.client.ts";
   import { formatTimezoneLabel, initCalendlyPicker } from "../../lib/scheduleCalendar.ts";
 
   function resolveToken() {
@@ -233,7 +233,7 @@ const operationsUrl = hrefPath("operations/");
   }
 
   document.getElementById("confirm-yes")?.addEventListener("click", async () => {
-    const apiBase = await resolveApiBaseUrl();
+    const apiBase = await resolveHireApiBaseUrl();
     if (!apiBase) return;
     try {
       await submitAttendance(apiBase, true);
@@ -243,7 +243,7 @@ const operationsUrl = hrefPath("operations/");
   });
 
   document.getElementById("confirm-no")?.addEventListener("click", async () => {
-    const apiBase = await resolveApiBaseUrl();
+    const apiBase = await resolveHireApiBaseUrl();
     if (!apiBase) return;
     try {
       await submitAttendance(apiBase, false);
@@ -254,14 +254,13 @@ const operationsUrl = hrefPath("operations/");
 
   confirmBtn?.addEventListener("click", async () => {
     if (!selectedSlot || !token) return;
-    const api = await resolveApiBaseUrl();
+    const api = await resolveHireApiBaseUrl();
     if (!api) return;
     confirmBtn.disabled = true;
     try {
       const res = await fetch(`${api}/schedule/${token}/book`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ slotStart: selectedSlot, applicantTimezone: tz }),
       });
       const data = await res.json();

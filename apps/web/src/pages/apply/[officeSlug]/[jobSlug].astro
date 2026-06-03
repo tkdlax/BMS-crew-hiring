@@ -155,7 +155,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
 )}
 
 <script>
-  import { resolveApiBaseUrl, resolveCaptchaSiteKey } from "../../../lib/api.client.ts";
+  import { resolveCaptchaSiteKey, resolveHireApiBaseUrl } from "../../../lib/api.client.ts";
 
   function formatLocationLines(address: string): string[] {
     const trimmed = address.trim();
@@ -242,7 +242,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
 
   form?.addEventListener("submit", async (e) => {
     e.preventDefault();
-    const api = await resolveApiBaseUrl();
+    const api = await resolveHireApiBaseUrl();
     if (!api) {
       showAlert("Application form is temporarily unavailable. Please try again later.", "error");
       return;
@@ -284,7 +284,6 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
       const res = await fetch(`${api}/applications`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify(body),
       });
       const data = await res.json();
