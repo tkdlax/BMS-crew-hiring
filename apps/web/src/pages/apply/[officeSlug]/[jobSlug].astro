@@ -342,13 +342,20 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
     if (fd.get("movingExperience")) customFields.movingExperience = "yes";
     if (fd.get("interest")) customFields.primaryInterest = String(fd.get("interest"));
 
+    const email = String(fd.get("email") ?? "").trim();
+    const phone = String(fd.get("phone") ?? "").trim();
+    if (!email) {
+      showAlert("Please enter your email address.", "error");
+      return;
+    }
+
     const body = {
       officeSlug: form.dataset.officeSlug,
       jobSlug: form.dataset.jobSlug,
       firstName,
       lastName,
-      email: fd.get("email"),
-      phone: fd.get("phone"),
+      email,
+      phone,
       captchaToken,
       captchaProvider: captchaKey ? captchaProvider : undefined,
       honeypot: fd.get("website") || "",

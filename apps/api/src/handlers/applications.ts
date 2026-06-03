@@ -1,6 +1,6 @@
 import type { HttpRequest, HttpResponseInit, InvocationContext } from "@azure/functions";
 import sql from "mssql";
-import { applicationSubmitSchema } from "@bms/shared";
+import { applicationSubmitSchema, zodFirstErrorMessage } from "@bms/shared";
 import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
 import { verifyCaptcha, captchaFailureMessage } from "../lib/captcha.js";
@@ -22,7 +22,7 @@ async function submitApplication(req: HttpRequest, ctx: InvocationContext): Prom
   const body = (await req.json()) as unknown;
   const parsed = applicationSubmitSchema.safeParse(body);
   if (!parsed.success) {
-    return error(parsed.error.message, 400);
+    return error(zodFirstErrorMessage(parsed.error), 400);
   }
   const data = parsed.data;
 

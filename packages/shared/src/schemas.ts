@@ -1,12 +1,16 @@
 import { z } from "zod";
 
+function trimString(val: unknown): unknown {
+  return typeof val === "string" ? val.trim() : val;
+}
+
 export const applicationSubmitSchema = z.object({
   officeSlug: z.string().min(1).max(100),
   jobSlug: z.string().min(1).max(100),
-  firstName: z.string().min(1).max(100),
-  lastName: z.string().min(1).max(100),
-  email: z.string().email().max(255),
-  phone: z.string().min(10).max(20),
+  firstName: z.preprocess(trimString, z.string().min(1).max(100)),
+  lastName: z.preprocess(trimString, z.string().min(1).max(100)),
+  email: z.preprocess(trimString, z.string().min(1).email().max(255)),
+  phone: z.preprocess(trimString, z.string().min(10).max(20)),
   captchaToken: z.string().min(1),
   /** Widget type used in the browser; server picks the verify endpoint. */
   captchaProvider: z.enum(["turnstile", "recaptcha"]).optional(),
