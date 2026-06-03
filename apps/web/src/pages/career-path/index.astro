@@ -1,0 +1,252 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import CareersCrosslink from "../../components/CareersCrosslink.astro";
+import { BRAND } from "../../constants/brand";
+import { hrefPath } from "../../lib/assets";
+
+const IMG = {
+  packers:
+    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6605dcb5b748788aaf20a6cc_Hispanic%20Packers-600x400-9801ebf.webp",
+  driverDolly:
+    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6605a7efe2d41958e9847690_IMG_0760-1201x800-9b9f185.webp",
+  cdlDriver:
+    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6602ef9d0eb8336edd2cd556_CDL%20Driver.webp",
+  tractor:
+    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6602ee5fc199de26ed0e15de_cover.webp",
+  family:
+    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6605dcb4111ed12eea8fac3d_Young%20Family%202-600x427-e582596.webp",
+};
+---
+
+<BaseLayout title="Your path forward" bodyClass="career-path-page">
+  <section class="page-band page-band--career">
+    <div class="page-band__inner">
+      <p class="eyebrow">Career progression</p>
+      <h1>Your path forward at Bailey&apos;s</h1>
+      <p class="sub">
+        Moving is hard work — but if you do it well, there&apos;s real opportunity here. Not just a
+        job, but a career that rewards performance and grows as you grow.
+      </p>
+    </div>
+  </section>
+
+  <div class="page-wrap career-path">
+    <section class="career-path__intro content-card">
+      <p class="section-label">The roadmap</p>
+      <h2 class="section-title">From crew member to team leader to CDL driver</h2>
+      <p class="lead career-path__lead">
+        This page explains exactly how to advance — and what it takes at every step. The path is
+        clear, the standards are fair, and the opportunity is real. You have to earn it.
+      </p>
+      <p class="lead">
+        <strong>Who this is for:</strong> If you&apos;re starting as a mover and wondering
+        what&apos;s ahead, this is your roadmap.
+      </p>
+    </section>
+
+    <section class="career-step" id="step-requirements">
+      <div class="career-step__content">
+        <p class="career-step__label">Step 1</p>
+        <h2 class="career-step__title">Meet the requirements</h2>
+        <p class="lead">
+          Before you can lead a crew or drive a truck, you need to clear three basic requirements.
+        </p>
+
+        <h3 class="career-step__subtitle">Clean driving record</h3>
+        <p class="career-step__text">
+          We&apos;ll pull your Motor Vehicle Record (MVR). Here&apos;s what we&apos;re looking for:
+        </p>
+        <ul class="career-list">
+          <li>No points on your license in the last 3–5 years</li>
+          <li>No accidents in the last 3–5 years</li>
+          <li>No traffic tickets or moving violations in the last 2 years</li>
+          <li>No major violations (DUI, hit-and-run, etc.) in the last 10+ years</li>
+        </ul>
+
+        <h3 class="career-step__subtitle">Drug test</h3>
+        <p class="career-step__text">
+          You&apos;ll need to pass a standard DOT drug screening. We test for marijuana, cocaine,
+          opiates, amphetamines and methamphetamines, and phencyclidine (PCP).
+          <a
+            href="https://www.fmcsa.dot.gov/regulations/drug-alcohol-testing/which-substances-are-tested"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="career-inline-link"
+          >Learn more about DOT drug testing →</a>
+        </p>
+
+        <h3 class="career-step__subtitle">Background check</h3>
+        <p class="career-step__text">
+          We run a background screening that meets state, federal, and insurance requirements.
+          We&apos;re looking for serious disqualifying offenses — violent felonies, theft, or fraud
+          that would make it inappropriate to work inside customers&apos; homes or operate a company
+          vehicle. If you have questions about your background, talk to your manager before starting
+          the process.
+        </p>
+      </div>
+      <figure class="career-step__media">
+        <img src={IMG.driverDolly} alt="Bailey's mover with furniture in front of an Allied truck" width="600" height="400" loading="lazy" />
+      </figure>
+    </section>
+
+    <section class="career-step career-step--reverse" id="step-skills">
+      <div class="career-step__content">
+        <p class="career-step__label">Step 2</p>
+        <h2 class="career-step__title">Prove your skills as a mover</h2>
+        <p class="lead">
+          You can&apos;t lead a crew if you can&apos;t do the job yourself. Before a leadership role,
+          you need to show you&apos;re skilled enough to train others.
+        </p>
+        <p class="career-step__text">That means being genuinely good at:</p>
+        <ul class="career-list">
+          <li>Loading and unloading trucks</li>
+          <li>Packing and protecting items</li>
+          <li>Working efficiently as part of a team</li>
+        </ul>
+        <p class="career-step__text">
+          For most people, reaching this level takes <strong>2–4 years</strong> of consistent work.
+          Push hard, stay coachable, and it can happen faster. Operations leadership will confirm
+          your readiness through a skills evaluation or your track record on the job.
+        </p>
+        <blockquote class="career-callout">
+          <strong>Not there yet?</strong> That&apos;s fine. Keep building experience as a mover
+          first. A stronger foundation makes you a better leader.
+        </blockquote>
+      </div>
+      <figure class="career-step__media">
+        <img src={IMG.packers} alt="Two crew members lifting a walkboard on a move" width="600" height="400" loading="lazy" />
+      </figure>
+    </section>
+
+    <section class="career-step" id="step-lead">
+      <div class="career-step__content">
+        <p class="career-step__label">Step 3</p>
+        <h2 class="career-step__title">Lead your first move</h2>
+        <p class="lead">
+          Once you&apos;re ready, operations will train you to run a moving job from start to finish.
+          Your job is to consistently deliver <strong>five key outcomes</strong> on every move:
+        </p>
+        <ol class="career-outcomes">
+          <li><strong>Start and finish on time.</strong> Every job. Every time.</li>
+          <li><strong>Hit productivity targets.</strong> Every crew member meets minimum standards for loading, unloading, and/or packing.</li>
+          <li><strong>Lead with confidence.</strong> Your team and customer are comfortable with your communication and decisions.</li>
+          <li><strong>Complete your paperwork.</strong> Return with organized, complete, signed documents — nothing missing.</li>
+          <li><strong>Earn a 5-star move.</strong> Work good enough for a 5-star review, whether the customer leaves one or not.</li>
+        </ol>
+      </div>
+      <figure class="career-step__media">
+        <img src={IMG.family} alt="Young family smiling after a successful move" width="600" height="427" loading="lazy" />
+      </figure>
+    </section>
+
+    <section class="career-step career-step--reverse" id="step-drive">
+      <div class="career-step__content">
+        <p class="career-step__label">Step 4</p>
+        <h2 class="career-step__title">Get behind the wheel</h2>
+        <p class="lead">
+          Driving the truck is a big step. It comes with dedicated training and a formal road test.
+        </p>
+
+        <h3 class="career-step__subtitle">Training</h3>
+        <p class="career-step__text">
+          You&apos;ll complete the <strong>Smith System Driver Training</strong> — a nationally
+          recognized, safety-focused program used across the trucking and moving industry.
+        </p>
+
+        <h3 class="career-step__subtitle">Road test</h3>
+        <p class="career-step__text">
+          You&apos;ll take a practical road test with operations leadership and/or the safety
+          director before you&apos;re cleared to drive on jobs.
+        </p>
+
+        <h3 class="career-step__subtitle">Five driving standards</h3>
+        <p class="career-step__text">Once you&apos;re driving, you&apos;re held to these on every job:</p>
+        <ol class="career-outcomes">
+          <li><strong>Zero at-fault accidents.</strong> Always.</li>
+          <li><strong>Maintain a passing Samara safe-driving score.</strong> Consistently.</li>
+          <li><strong>Know your vehicle.</strong> Operate equipment and perform basic maintenance checks.</li>
+          <li><strong>DOT paperwork, every time.</strong> Pre- and post-trip inspections and required logs — without exception.</li>
+          <li><strong>Everyone feels safe.</strong> Your crew and the company trust you behind the wheel.</li>
+        </ol>
+      </div>
+      <figure class="career-step__media career-step__media--stack">
+        <img src={IMG.cdlDriver} alt="Allied CDL driver" width="600" height="400" loading="lazy" />
+        <img src={IMG.tractor} alt="Allied tractor and trailer on the road" width="600" height="400" loading="lazy" />
+      </figure>
+    </section>
+
+    <section class="content-card career-path__pay" id="pay">
+      <p class="section-label">Compensation</p>
+      <h2 class="section-title">How pay progresses</h2>
+      <p class="lead">
+        When you complete Steps 1–4, you unlock a higher pay tier. From there, consistent
+        performance moves you up again.
+      </p>
+      <div class="career-pay-tiers">
+        <article class="career-pay-tier">
+          <h3 class="career-pay-tier__name">Qualified</h3>
+          <p class="career-pay-tier__desc">
+            You&apos;ve met all requirements and are newly in the role — or you&apos;re experienced
+            but still building consistency.
+          </p>
+        </article>
+        <article class="career-pay-tier">
+          <h3 class="career-pay-tier__name">Established</h3>
+          <p class="career-pay-tier__desc">
+            You&apos;ve hit all 10 key outcomes on at least 90% of your jobs for a minimum of
+            <strong>6 continuous months</strong>.
+          </p>
+        </article>
+        <article class="career-pay-tier">
+          <h3 class="career-pay-tier__name">Experienced</h3>
+          <p class="career-pay-tier__desc">
+            You&apos;ve hit all 10 key outcomes on at least 90% of your jobs for a minimum of
+            <strong>24 continuous months</strong>.
+          </p>
+        </article>
+      </div>
+      <p class="career-step__text career-path__pay-note">
+        Each tier pays more than the last. Talk to your manager for current pay rates — they vary by
+        location.
+      </p>
+    </section>
+
+    <section class="career-path__future" id="future">
+      <p class="section-label">What&apos;s next</p>
+      <h2 class="section-title">Where this can take you</h2>
+      <p class="lead">The Moving Team Leader role is a foundation, not a ceiling.</p>
+      <div class="career-destinations">
+        <article class="career-destination content-card">
+          <h3 class="career-destination__title">CDL-A driver</h3>
+          <p class="career-destination__text">
+            Drivers who perform well and show consistency can earn a CDL-A license to operate larger
+            equipment. This opens the door to significantly higher pay. Ask your manager for current
+            CDL-A pay ranges at your location.
+          </p>
+        </article>
+        <article class="career-destination content-card">
+          <h3 class="career-destination__title">Owner-operator</h3>
+          <p class="career-destination__text">
+            For those who want full control of their income, we offer an owner-operator path.
+            Earnings vary based on commitment and effort, but owner-operators typically earn
+            <strong>$100,000–$200,000 per year</strong> — and can earn more.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="content-card career-path__cta">
+      <h2 class="section-title">Ready to take the next step?</h2>
+      <p class="lead">
+        Talk to your manager about where you stand and what comes next — or apply to join our
+        operations team and start the path from day one.
+      </p>
+      <div class="home-cta-row">
+        <a href={hrefPath("operations/")} class="btn btn-primary">See open operations roles</a>
+        <a href={BRAND.phoneHref} class="btn btn-secondary">Call {BRAND.phone}</a>
+      </div>
+    </section>
+  </div>
+
+  <CareersCrosslink />
+</BaseLayout>

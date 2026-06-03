@@ -1551,6 +1551,246 @@ h2.section-title {
   margin-bottom: 0.2rem;
 }
 
+/* —— Home CTA row —— */
+.home-cta-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 36rem;
+}
+
+.home-cta-row .btn {
+  width: 100%;
+  text-align: center;
+}
+
+@media (min-width: 640px) {
+  .home-cta-row {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
+
+  .home-cta-row .btn {
+    flex: 1 1 14rem;
+    width: auto;
+  }
+}
+
+/* —— Career path page —— */
+.career-path-page .page-band--career {
+  padding: clamp(1.75rem, 4vw, 2.5rem) var(--page-gutter);
+}
+
+.career-path {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 5vw, 3rem);
+}
+
+.career-path__intro {
+  margin-top: -0.5rem;
+}
+
+.career-path__lead {
+  margin-bottom: 1rem;
+}
+
+.career-step {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.career-step__label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--orange);
+  margin-bottom: 0.35rem;
+}
+
+.career-step__title {
+  font-size: clamp(1.25rem, 3.5vw, 1.65rem);
+  font-weight: 800;
+  color: var(--blue);
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+}
+
+.career-step__subtitle {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--blue);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.career-step__text {
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.55;
+  margin-bottom: 0.75rem;
+}
+
+.career-list,
+.career-outcomes {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  color: var(--text-light);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+.career-list li,
+.career-outcomes li {
+  margin-bottom: 0.45rem;
+}
+
+.career-outcomes li strong {
+  color: var(--text);
+}
+
+.career-callout {
+  margin: 1.25rem 0 0;
+  padding: 1rem 1.15rem;
+  border-left: 4px solid var(--orange);
+  background: var(--bg-light);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.5;
+}
+
+.career-callout strong {
+  color: var(--blue);
+}
+
+.career-inline-link {
+  display: inline-block;
+  margin-top: 0.35rem;
+  font-weight: 600;
+  color: var(--blue);
+  text-decoration: none;
+}
+
+.career-inline-link:hover {
+  color: var(--orange);
+  text-decoration: underline;
+}
+
+.career-step__media {
+  margin: 0;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
+}
+
+.career-step__media img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+}
+
+.career-step__media--stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  box-shadow: none;
+  border: none;
+  overflow: visible;
+}
+
+.career-step__media--stack img {
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  border: 1px solid var(--border);
+}
+
+.career-pay-tiers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.25rem 0 1rem;
+}
+
+.career-pay-tier {
+  padding: 1rem 1.15rem;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.career-pay-tier__name {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--blue);
+  margin-bottom: 0.35rem;
+}
+
+.career-pay-tier__desc {
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.career-path__pay-note {
+  margin-bottom: 0;
+}
+
+.career-destinations {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.career-destination__title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--blue);
+  margin-bottom: 0.5rem;
+}
+
+.career-destination__text {
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.career-path__cta .home-cta-row {
+  max-width: none;
+  margin-top: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .career-step {
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .career-step--reverse .career-step__content {
+    order: 2;
+  }
+
+  .career-step--reverse .career-step__media {
+    order: 1;
+  }
+
+  .career-pay-tiers {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .career-destinations {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* Cross-link to full careers page */
 .careers-crosslink {
   background: var(--page-bg);
