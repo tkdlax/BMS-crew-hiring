@@ -5,6 +5,10 @@ import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
 import { getAvailableSlots, getOfficeDateRange } from "../lib/scheduleSlots.js";
 import { formatInterviewTime } from "../lib/slots.js";
+import {
+  interviewTimeForBooking,
+  loadApplicationRow,
+} from "../lib/applicationContext.js";
 import { confirmBooking } from "../services/booking.js";
 
 type TokenRow = Record<string, unknown>;
@@ -15,7 +19,7 @@ async function fetchTokenRow(token: string): Promise<TokenRow | null> {
     SELECT tok.id AS token_id, tok.expires_at, tok.used_at,
            a.id AS application_id, a.first_name, a.last_name, a.status,
            j.id AS job_id, j.title AS job_title,
-           o.id AS office_id, o.name AS office_name, o.location_label, o.timezone AS office_timezone
+           o.id AS office_id, o.name AS office_name, o.location_label, o.location_notes, o.timezone AS office_timezone
     FROM ${t("application_tokens")} tok
     JOIN ${t("applications")} a ON a.id = tok.application_id
     JOIN ${t("jobs")} j ON j.id = a.job_id
@@ -79,14 +83,18 @@ async function getScheduleContext(token: string): Promise<HttpResponseInit> {
     const tz = (booking.applicant_timezone as string) || (row.office_timezone as string);
     const startsAt = new Date(booking.starts_at as string);
     const interviewTimeLocal = formatInterviewTime(startsAt, tz);
+    const app = await loadApplicationRow(row.application_id as number);
     return json({
       mode: "confirm_attendance",
       firstName: row.first_name,
       jobTitle: row.job_title,
       officeName: row.office_name,
       officeLocation: row.location_label,
+      locationNotes: (row.location_notes as string | null) ?? "",
       interviewTimeLocal,
       startsAt: startsAt.toISOString(),
+      endsAt: new Date(booking.ends_at as string).toISOString(),
+      primaryInterest: app?.primaryInterest || undefined,
       attendanceStatus: booking.attendance_status ?? null,
       attendanceConfirmedAt: booking.attendance_confirmed_at ?? null,
     });
@@ -225,7 +233,28 @@ async function bookSlot(
     row.office_timezone as string
   );
 
-  return json({ status: "scheduled", startsAt: startsAt.toISOString() });
+  const app = await loadApplicationRow(applicationId);
+  if (!app) return json({ status: "scheduled", startsAt: startsAt.toISOString() });
+
+  const interviewTimeLocal = interviewTimeForBooking(
+    startsAt,
+    parsed.data.applicantTimezone,
+    row.office_timezone as string
+  );
+
+  return json({
+    status: "scheduled",
+    startsAt: startsAt.toISOString(),
+    endsAt: endsAt.toISOString(),
+    firstName: app.firstName,
+    lastName: app.lastName,
+    jobTitle: app.jobTitle,
+    officeName: app.officeName,
+    officeLocation: app.officeLocation,
+    locationNotes: app.officeLocationNotes || undefined,
+    interviewTimeLocal,
+    primaryInterest: app.primaryInterest || undefined,
+  });
 }
 
 async function confirmAttendance(

@@ -1,5 +1,7 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import ScheduleBookingSuccess from "../../components/schedule/ScheduleBookingSuccess.astro";
+import ScheduleConfirmBar from "../../components/schedule/ScheduleConfirmBar.astro";
 import { hrefPath } from "../../lib/assets";
 
 const operationsUrl = hrefPath("operations/");
@@ -41,9 +43,15 @@ const operationsUrl = hrefPath("operations/");
       <div class="content-card" id="schedule-confirm" hidden>
         <p class="section-label">Confirm attendance</p>
         <h2 class="section-title" id="confirm-title">Will you attend your interview?</h2>
-        <p class="lead" id="confirm-job"></p>
-        <p class="lead" id="confirm-when"></p>
-        <p class="lead" id="confirm-location"></p>
+        <p class="lead schedule-success__intro" id="confirm-intro">
+          Please confirm you can make your scheduled interview.
+        </p>
+        <div class="schedule-confirmation-details" id="confirm-details" hidden></div>
+        <div class="schedule-success__actions">
+          <button type="button" class="btn btn-secondary" id="confirm-calendar" hidden>
+            Add to calendar
+          </button>
+        </div>
         <div class="confirm-actions">
           <button type="button" class="btn btn-primary" id="confirm-yes">Yes, I will attend</button>
           <button type="button" class="btn btn-secondary" id="confirm-no">I need to reschedule</button>
@@ -51,13 +59,7 @@ const operationsUrl = hrefPath("operations/");
         <p id="confirm-result" class="lead" hidden></p>
       </div>
 
-      <div class="content-card" id="schedule-done" hidden>
-        <p class="section-label">Confirmed</p>
-        <h2 class="section-title">You&apos;re all set!</h2>
-        <p class="lead">
-          Your interview is confirmed. Check your email and text for details. We look forward to meeting you.
-        </p>
-      </div>
+      <ScheduleBookingSuccess />
 
       <div class="content-card" id="schedule-error" hidden>
         <p class="alert alert-error" id="error-message"></p>
@@ -66,16 +68,18 @@ const operationsUrl = hrefPath("operations/");
     </div>
   </div>
 
-  <div class="schedule-bar" id="schedule-bar" hidden>
-    <button type="button" class="btn btn-primary" id="confirm-btn" disabled>
-      Confirm interview time
-    </button>
-  </div>
+  <ScheduleConfirmBar buttonId="confirm-btn" />
 </BaseLayout>
 
 <script>
   import { resolveApiBaseUrl, resolveHireApiBaseUrl } from "../../lib/api.client.ts";
   import { formatTimezoneLabel, initCalendlyPicker } from "../../lib/scheduleCalendar.ts";
+  import {
+    populateConfirmationDetails,
+    renderScheduleConfirmation,
+    wireCalendarDownload,
+    type ScheduleConfirmationDetails,
+  } from "../../lib/scheduleConfirmation.ts";
 
   function resolveToken() {
     const params = new URLSearchParams(window.location.search);
@@ -109,6 +113,12 @@ const operationsUrl = hrefPath("operations/");
     errBlock!.hidden = false;
     document.getElementById("error-message")!.textContent = msg;
     bar!.hidden = true;
+  }
+
+  function scrollToBlock(el: HTMLElement) {
+    requestAnimationFrame(() => {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   }
 
   function setSidebar(ctx: {
@@ -159,9 +169,22 @@ const operationsUrl = hrefPath("operations/");
       loading!.hidden = true;
       confirmBlock!.hidden = false;
       bar!.hidden = true;
-      document.getElementById("confirm-job")!.textContent = `${ctx.jobTitle} at ${ctx.officeName}`;
-      document.getElementById("confirm-when")!.textContent = `When: ${ctx.interviewTimeLocal}`;
-      document.getElementById("confirm-location")!.textContent = `Where: ${ctx.officeLocation}`;
+      const details: ScheduleConfirmationDetails = {
+        firstName: ctx.firstName ?? "",
+        jobTitle: ctx.jobTitle,
+        officeName: ctx.officeName,
+        officeLocation: ctx.officeLocation,
+        locationNotes: ctx.locationNotes,
+        interviewTimeLocal: ctx.interviewTimeLocal,
+        primaryInterest: ctx.primaryInterest,
+        startsAt: ctx.startsAt,
+        endsAt: ctx.endsAt,
+      };
+      populateConfirmationDetails(document.getElementById("confirm-details")!, details);
+      wireCalendarDownload(
+        document.getElementById("confirm-calendar") as HTMLButtonElement,
+        details
+      );
       if (ctx.attendanceStatus === "confirmed") {
         document.getElementById("confirm-title")!.textContent = "You're confirmed";
         (document.querySelector(".confirm-actions") as HTMLElement).hidden = true;
@@ -169,6 +192,7 @@ const operationsUrl = hrefPath("operations/");
         result.hidden = false;
         result.textContent = "Thank you — we have your confirmation on file.";
       }
+      scrollToBlock(confirmBlock!);
       return;
     }
 
@@ -268,7 +292,19 @@ const operationsUrl = hrefPath("operations/");
       bookShell!.hidden = true;
       bar!.hidden = true;
       done!.hidden = false;
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      renderScheduleConfirmation("schedule-done", {
+        firstName: data.firstName ?? "",
+        lastName: data.lastName,
+        jobTitle: data.jobTitle,
+        officeName: data.officeName,
+        officeLocation: data.officeLocation,
+        locationNotes: data.locationNotes,
+        interviewTimeLocal: data.interviewTimeLocal,
+        primaryInterest: data.primaryInterest,
+        startsAt: data.startsAt,
+        endsAt: data.endsAt,
+      });
+      scrollToBlock(done!);
     } catch (e) {
       alertEl.hidden = false;
       alertEl.textContent = (e as Error).message;

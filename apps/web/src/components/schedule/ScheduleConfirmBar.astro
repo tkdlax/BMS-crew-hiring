@@ -1,0 +1,14 @@
+---
+interface Props {
+  id?: string;
+  buttonId?: string;
+  disabled?: boolean;
+}
+
+const { id = "schedule-bar", buttonId = "confirm-btn", disabled = true } = Astro.props;
+---
+<div class="schedule-bar" id={id} hidden>
+  <button type="button" class="btn btn-primary" id={buttonId} disabled={disabled || undefined}>
+    Confirm interview time
+  </button>
+</div>

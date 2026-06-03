@@ -1,0 +1,22 @@
+---
+interface Props {
+  id?: string;
+  class?: string;
+}
+
+const { id = "schedule-done", class: className = "content-card schedule-success" } = Astro.props;
+---
+<div class={className} id={id} hidden>
+  <p class="section-label">Confirmed</p>
+  <h2 class="section-title schedule-success__title">You&apos;re all set!</h2>
+  <p class="lead schedule-success__intro">
+    Your interview is confirmed. Check your email and text for details. We look forward to meeting you.
+  </p>
+  <div class="schedule-confirmation-details" hidden></div>
+  <div class="schedule-success__actions">
+    <button type="button" class="btn btn-secondary schedule-success__calendar" hidden>
+      Add to calendar
+    </button>
+  </div>
+  <p class="lead schedule-success__foot schedule-success__foot--muted"></p>
+</div>
