@@ -9,6 +9,8 @@ const IMG = {
     "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6605dcb5b748788aaf20a6cc_Hispanic%20Packers-600x400-9801ebf.webp",
   driverDolly:
     "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6605a7efe2d41958e9847690_IMG_0760-1201x800-9b9f185.webp",
+  cdlDriver:
+    "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6602ef9d0eb8336edd2cd556_CDL%20Driver.webp",
   tractor:
     "https://cdn.prod.website-files.com/65a9a00747a21b83f91a2d57/6602ee5fc199de26ed0e15de_cover.webp",
   family:
@@ -168,7 +170,7 @@ const IMG = {
         </ol>
       </div>
       <figure class="career-step__media">
-        <img src={IMG.tractor} alt="Allied tractor and trailer ready for the road" width="600" height="400" loading="lazy" />
+        <img src={IMG.cdlDriver} alt="Allied CDL driver in front of a truck" width="600" height="400" loading="lazy" />
       </figure>
     </section>
 
@@ -208,28 +210,33 @@ const IMG = {
       </p>
     </section>
 
-    <section class="career-path__future" id="future">
-      <p class="section-label">What&apos;s next</p>
-      <h2 class="section-title">Where this can take you</h2>
-      <p class="lead">The Moving Team Leader role is a foundation, not a ceiling.</p>
-      <div class="career-destinations">
-        <article class="career-destination content-card">
-          <h3 class="career-destination__title">CDL-A driver</h3>
-          <p class="career-destination__text">
-            Drivers who perform well and show consistency can earn a CDL-A license to operate larger
-            equipment. This opens the door to significantly higher pay. Ask your manager for current
-            CDL-A pay ranges at your location.
-          </p>
-        </article>
-        <article class="career-destination content-card">
-          <h3 class="career-destination__title">Owner-operator</h3>
-          <p class="career-destination__text">
-            For those who want full control of their income, we offer an owner-operator path.
-            Earnings vary based on commitment and effort, but owner-operators typically earn
-            <strong>$100,000–$200,000 per year</strong> — and can earn more.
-          </p>
-        </article>
+    <section class="career-step" id="future">
+      <div class="career-step__content">
+        <p class="section-label">What&apos;s next</p>
+        <h2 class="section-title">Where this can take you</h2>
+        <p class="lead">The Moving Team Leader role is a foundation, not a ceiling.</p>
+        <div class="career-destinations">
+          <article class="career-destination content-card">
+            <h3 class="career-destination__title">CDL-A driver</h3>
+            <p class="career-destination__text">
+              Drivers who perform well and show consistency can earn a CDL-A license to operate larger
+              equipment. This opens the door to significantly higher pay. Ask your manager for current
+              CDL-A pay ranges at your location.
+            </p>
+          </article>
+          <article class="career-destination content-card">
+            <h3 class="career-destination__title">Owner-operator</h3>
+            <p class="career-destination__text">
+              For those who want full control of their income, we offer an owner-operator path.
+              Earnings vary based on commitment and effort, but owner-operators typically earn
+              <strong>$100,000–$200,000 per year</strong> — and can earn more.
+            </p>
+          </article>
+        </div>
       </div>
+      <figure class="career-step__media">
+        <img src={IMG.tractor} alt="Allied tractor and trailer ready for the road" width="600" height="400" loading="lazy" />
+      </figure>
     </section>
 
     <section class="content-card career-path__cta">

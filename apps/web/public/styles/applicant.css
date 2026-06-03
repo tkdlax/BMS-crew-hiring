@@ -1737,6 +1737,10 @@ h2.section-title {
   margin-top: 1rem;
 }
 
+.career-step__content .career-destinations {
+  grid-template-columns: 1fr;
+}
+
 .career-destination__title {
   font-size: 1.1rem;
   font-weight: 800;
