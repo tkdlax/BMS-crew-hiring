@@ -285,6 +285,23 @@ body.page-apply {
   border-right: none;
 }
 
+a.trust-strip__item--link {
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+a.trust-strip__item--link:hover,
+a.trust-strip__item--link:focus-visible {
+  text-decoration: none;
+  color: inherit;
+}
+
+a.trust-strip__item--link:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 2px;
+}
+
 .trust-strip__logo {
   height: 40px;
   width: auto;
