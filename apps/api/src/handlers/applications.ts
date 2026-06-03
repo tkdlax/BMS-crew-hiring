@@ -3,7 +3,7 @@ import sql from "mssql";
 import { applicationSubmitSchema } from "@bms/shared";
 import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
-import { verifyCaptcha } from "../lib/captcha.js";
+import { verifyCaptcha, captchaFailureMessage } from "../lib/captcha.js";
 import { checkRateLimit } from "../lib/rateLimit.js";
 import { processInvite } from "../services/invite.js";
 
@@ -37,9 +37,9 @@ async function submitApplication(req: HttpRequest, ctx: InvocationContext): Prom
     return error("Too many requests. Please try again later.", 429);
   }
 
-  const captchaOk = await verifyCaptcha(data.captchaToken, ip, ctx, data.captchaProvider);
-  if (!captchaOk) {
-    return error("CAPTCHA verification failed", 400);
+  const captcha = await verifyCaptcha(data.captchaToken, ip, ctx, data.captchaProvider);
+  if (!captcha.ok) {
+    return error(captchaFailureMessage(captcha.codes), 400);
   }
 
   const pool = await getPool();

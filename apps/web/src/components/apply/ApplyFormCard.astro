@@ -103,7 +103,7 @@ const interestOptions = content.interestOptions ?? [];
         {captchaProvider === "turnstile" ? (
           <div class="cf-turnstile" data-sitekey={captchaSiteKey} data-theme="light"></div>
         ) : (
-          <div class="g-recaptcha" data-sitekey={captchaSiteKey}></div>
+          <div id="recaptcha-root" data-sitekey={captchaSiteKey}></div>
         )}
       </div>
     ) : (

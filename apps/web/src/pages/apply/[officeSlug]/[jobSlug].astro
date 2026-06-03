@@ -226,16 +226,62 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
     return { firstName: parts[0]!, lastName: parts.slice(1).join(" ") };
   }
 
+  let recaptchaWidgetId: number | null = null;
+  let recaptchaToken = "";
+
+  function resetCaptchaWidgets() {
+    recaptchaToken = "";
+    if (typeof grecaptcha !== "undefined" && recaptchaWidgetId != null) {
+      grecaptcha.reset(recaptchaWidgetId);
+    }
+    const w = window as Window & { turnstile?: { reset: (el?: HTMLElement) => void } };
+    const turnstileEl = document.querySelector(".cf-turnstile");
+    if (w.turnstile && turnstileEl) w.turnstile.reset(turnstileEl as HTMLElement);
+  }
+
+  async function initRecaptchaWidget() {
+    const captchaKey = await resolveCaptchaSiteKey();
+    const provider = await resolveCaptchaProviderFromConfig();
+    if (!captchaKey || provider !== "recaptcha" || typeof grecaptcha === "undefined") return;
+
+    await new Promise<void>((resolve) => grecaptcha.ready(() => resolve()));
+    const mount = document.getElementById("recaptcha-root");
+    if (!mount || mount.dataset.rendered === "true") return;
+
+    recaptchaWidgetId = grecaptcha.render(mount, {
+      sitekey: captchaKey,
+      callback: (token: string) => {
+        recaptchaToken = token;
+      },
+      "expired-callback": () => {
+        recaptchaToken = "";
+      },
+      "error-callback": () => {
+        recaptchaToken = "";
+      },
+    });
+    mount.dataset.rendered = "true";
+  }
+
+  initRecaptchaWidget();
+
   async function getCaptchaToken() {
     const captchaKey = await resolveCaptchaSiteKey();
     if (!captchaKey) return "dev-bypass";
+    const provider = await resolveCaptchaProviderFromConfig();
+    if (provider === "recaptcha") {
+      if (recaptchaToken) return recaptchaToken;
+      if (typeof grecaptcha !== "undefined" && recaptchaWidgetId != null) {
+        return new Promise<string>((resolve) => {
+          grecaptcha.ready(() => resolve(grecaptcha.getResponse(recaptchaWidgetId!) || recaptchaToken || ""));
+        });
+      }
+      return "";
+    }
     const turnstileEl = form?.querySelector<HTMLElement>(".cf-turnstile");
     if (turnstileEl && "turnstile" in window) {
       const w = window as Window & { turnstile?: { getResponse: (el?: HTMLElement) => string } };
       return w.turnstile?.getResponse(turnstileEl) || "";
-    }
-    if (typeof grecaptcha !== "undefined") {
-      return grecaptcha.getResponse() || "";
     }
     return "";
   }
@@ -292,10 +338,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
       if (!res.ok) throw new Error(data.error || "Submission failed");
 
       form.hidden = true;
-      if (typeof grecaptcha !== "undefined") grecaptcha.reset();
-      const w = window as Window & { turnstile?: { reset: (el?: HTMLElement) => void } };
-      const turnstileEl = document.querySelector(".cf-turnstile");
-      if (w.turnstile && turnstileEl) w.turnstile.reset(turnstileEl as HTMLElement);
+      resetCaptchaWidgets();
 
       showAlert(
         "Thank you! Check your phone and email for instructions. We'll be in touch shortly to discuss your application.",
@@ -305,10 +348,7 @@ const showApply = Boolean(pageContent && (job || knownOpsApply));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Oops! Something went wrong. Check all fields and try again.";
       showAlert(msg, "error");
-      if (typeof grecaptcha !== "undefined") grecaptcha.reset();
-      const w = window as Window & { turnstile?: { reset: (el?: HTMLElement) => void } };
-      const turnstileEl = document.querySelector(".cf-turnstile");
-      if (w.turnstile && turnstileEl) w.turnstile.reset(turnstileEl as HTMLElement);
+      resetCaptchaWidgets();
       if (submitBtn) submitBtn.disabled = false;
     }
   });
