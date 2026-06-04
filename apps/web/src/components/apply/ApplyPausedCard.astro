@@ -1,0 +1,17 @@
+---
+interface Props {
+  title?: string;
+  message: string;
+}
+
+const { title = "Applications paused", message } = Astro.props;
+---
+
+<div class="form-card form-card--paused" role="status">
+  <p class="form-card-title">{title}</p>
+  <div class="form-card-accent" aria-hidden="true"></div>
+  <p class="form-card-paused-message">{message}</p>
+  <p class="form-card-paused-note">
+    This role is still listed, but we are not accepting new applications at this time.
+  </p>
+</div>

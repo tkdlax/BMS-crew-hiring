@@ -239,13 +239,15 @@ async function handleJobs(
       .input("slug", sql.NVarChar, body.slug)
       .input("title", sql.NVarChar, body.title)
       .input("active", sql.Bit, body.active ?? true)
+      .input("accepting", sql.Bit, body.acceptingApplications !== false)
+      .input("pausedMsg", sql.NVarChar, body.applicationsPausedMessage ?? null)
       .input("payMin", sql.Decimal(6, 2), body.payMinHourly ?? null)
       .input("payMax", sql.Decimal(6, 2), body.payMaxHourly ?? null)
       .input("form", sql.NVarChar, JSON.stringify(body.formFields ?? []))
       .input("page", sql.NVarChar, JSON.stringify(body.pageContent ?? {}))
       .query(`
-        INSERT INTO ${t("jobs")} (office_id, slug, title, active, pay_min_hourly, pay_max_hourly, form_fields, page_content)
-        VALUES (@officeId, @slug, @title, @active, @payMin, @payMax, @form, @page)
+        INSERT INTO ${t("jobs")} (office_id, slug, title, active, accepting_applications, applications_paused_message, pay_min_hourly, pay_max_hourly, form_fields, page_content)
+        VALUES (@officeId, @slug, @title, @active, @accepting, @pausedMsg, @payMin, @payMax, @form, @page)
       `);
     return json({ ok: true }, 201);
   }
@@ -259,13 +261,16 @@ async function handleJobs(
       .input("slug", sql.NVarChar, body.slug)
       .input("title", sql.NVarChar, body.title)
       .input("active", sql.Bit, body.active ?? true)
+      .input("accepting", sql.Bit, body.acceptingApplications !== false)
+      .input("pausedMsg", sql.NVarChar, body.applicationsPausedMessage ?? null)
       .input("payMin", sql.Decimal(6, 2), body.payMinHourly ?? null)
       .input("payMax", sql.Decimal(6, 2), body.payMaxHourly ?? null)
       .input("form", sql.NVarChar, JSON.stringify(body.formFields ?? []))
       .input("page", sql.NVarChar, JSON.stringify(body.pageContent ?? {}))
       .query(`
         UPDATE ${t("jobs")} SET office_id=@officeId, slug=@slug, title=@title,
-          active=@active, pay_min_hourly=@payMin, pay_max_hourly=@payMax,
+          active=@active, accepting_applications=@accepting, applications_paused_message=@pausedMsg,
+          pay_min_hourly=@payMin, pay_max_hourly=@payMax,
           form_fields=@form, page_content=@page, updated_at=SYSUTCDATETIME()
         WHERE id=@id
       `);

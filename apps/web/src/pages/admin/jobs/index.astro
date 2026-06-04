@@ -73,6 +73,17 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     };
   }
 
+  function isAcceptingApplications(j) {
+    if (j.accepting_applications === false || j.accepting_applications === 0) return false;
+    if (j.acceptingApplications === false) return false;
+    return true;
+  }
+
+  function formatApplicationsCell(j) {
+    if (!j.active) return "—";
+    return isAcceptingApplications(j) ? "Open" : "Paused";
+  }
+
   function formatPayCell(j) {
     const min = j.pay_min_hourly ?? j.payMinHourly;
     const max = j.pay_max_hourly ?? j.payMaxHourly;
@@ -89,10 +100,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       el.innerHTML = "<p>No jobs yet.</p>";
       return;
     }
-    el.innerHTML = `<table class="data"><thead><tr><th>Title</th><th>Office</th><th>Pay</th><th>Slug</th><th>Apply URL</th><th>Active</th><th></th></tr></thead><tbody>${jobs
+    el.innerHTML = `<table class="data"><thead><tr><th>Title</th><th>Office</th><th>Pay</th><th>Slug</th><th>Apply URL</th><th>Active</th><th>Applications</th><th></th></tr></thead><tbody>${jobs
       .map(
         (j) =>
-          `<tr><td>${esc(j.title)}</td><td>${esc(j.office_name)}</td><td>${formatPayCell(j)}</td><td>${esc(j.slug)}</td><td><a href="${esc(j.applyUrl)}" target="_blank" rel="noopener">Open</a></td><td>${j.active ? "Yes" : "No"}</td><td class="table-actions"><button type="button" class="btn btn-small btn-secondary" data-edit="${j.id}">Edit</button></td></tr>`
+          `<tr><td>${esc(j.title)}</td><td>${esc(j.office_name)}</td><td>${formatPayCell(j)}</td><td>${esc(j.slug)}</td><td><a href="${esc(j.applyUrl)}" target="_blank" rel="noopener">Open</a></td><td>${j.active ? "Yes" : "No"}</td><td>${formatApplicationsCell(j)}</td><td class="table-actions"><button type="button" class="btn btn-small btn-secondary" data-edit="${j.id}">Edit</button></td></tr>`
       )
       .join("")}</tbody></table>`;
     el.querySelectorAll("[data-edit]").forEach((btn) => {
@@ -104,6 +115,10 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     const j = jobs.find((x) => x.id === id);
     if (!j) return;
     const page = parsePageContent(j);
+    const accepting = isAcceptingApplications(j);
+    const pausedMessage = String(
+      j.applications_paused_message ?? j.applicationsPausedMessage ?? ""
+    );
     const officeOptions = offices
       .map((o) => `<option value="${o.id}" ${o.id === j.office_id ? "selected" : ""}>${esc(o.name)}</option>`)
       .join("");
@@ -120,7 +135,15 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           <div class="field"><label>Headline (apply page)</label><input name="headline" value="${esc(page.headline ?? "")}" /></div>
           <div class="field"><label>Address override (apply page)</label><input name="address" value="${esc(page.addressOverride ? page.address ?? "" : "")}" placeholder="Leave blank to use office address" /></div>
           <div class="field"><label>Description (apply page)</label><textarea name="description">${esc(page.description ?? "")}</textarea></div>
-          <div class="field"><label><input type="checkbox" name="active" ${j.active ? "checked" : ""} /> Active</label></div>
+          <div class="field"><label><input type="checkbox" name="active" ${j.active ? "checked" : ""} /> Active (job visible on site)</label></div>
+          <div class="field">
+            <label><input type="checkbox" name="acceptingApplications" ${accepting ? "checked" : ""} /> Accepting new applications</label>
+            <p class="admin-hint">Uncheck to keep the job active but hide the apply form and show a paused message on the apply page.</p>
+          </div>
+          <div class="field">
+            <label>Message when applications are paused (optional)</label>
+            <textarea name="applicationsPausedMessage" rows="3" placeholder="We're not hiring for this role right now. Please check back later.">${esc(pausedMessage)}</textarea>
+          </div>
           <div class="table-actions">
             <button type="submit" class="btn">Save changes</button>
             <button type="button" class="btn btn-secondary" id="job-edit-cancel">Cancel</button>
@@ -154,6 +177,9 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
           slug: fd.get("slug"),
           title: fd.get("title"),
           active: fd.get("active") === "on",
+          acceptingApplications: fd.get("acceptingApplications") === "on",
+          applicationsPausedMessage:
+            String(fd.get("applicationsPausedMessage") ?? "").trim() || null,
           ...parsePayFields(fd),
           pageContent,
           formFields,
@@ -213,6 +239,8 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
         slug: fd.get("slug"),
         title: fd.get("title"),
         active: true,
+        acceptingApplications: true,
+        applicationsPausedMessage: null,
         ...parsePayFields(fd),
         pageContent: buildPageContent(fd),
         formFields: [],

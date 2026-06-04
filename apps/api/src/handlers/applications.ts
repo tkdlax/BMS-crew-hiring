@@ -52,10 +52,11 @@ async function submitApplication(req: HttpRequest, ctx: InvocationContext): Prom
       FROM ${t("jobs")} j
       JOIN ${t("offices")} o ON o.id = j.office_id
       WHERE o.slug = @officeSlug AND j.slug = @jobSlug AND j.active = 1 AND o.active = 1
+        AND j.accepting_applications = 1
     `);
 
   if (job.recordset.length === 0) {
-    return error("Job not found or inactive", 404);
+    return error("This position is not accepting applications right now.", 403);
   }
 
   const { job_id: jobId } = job.recordset[0] as { job_id: number };

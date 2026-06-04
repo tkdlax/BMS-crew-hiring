@@ -83,6 +83,8 @@ export const jobUpsertSchema = z
     slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
     title: z.string().min(1).max(200),
     active: z.boolean().optional(),
+    acceptingApplications: z.boolean().optional(),
+    applicationsPausedMessage: z.string().max(500).nullable().optional(),
     payMinHourly: z.number().min(0).max(999).nullable().optional(),
     payMaxHourly: z.number().min(0).max(999).nullable().optional(),
     formFields: z.array(z.any()).optional(),

@@ -472,6 +472,21 @@ table.data th {
   line-height: 1.4;
 }
 
+.office-feed-card__title {
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.office-feed-actions {
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.office-feed-msg {
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
 .admin-feed-url {
   width: 100%;
   font-size: 0.8125rem;

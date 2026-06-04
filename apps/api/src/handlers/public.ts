@@ -170,6 +170,7 @@ async function getJob(
     .input("jobSlug", sql.NVarChar, jobSlug)
     .query(`
       SELECT j.id, j.slug AS job_slug, j.title, j.pay_min_hourly, j.pay_max_hourly,
+             j.accepting_applications, j.applications_paused_message,
              j.form_fields, j.page_content,
              o.id AS office_id, o.slug AS office_slug, o.name AS office_name, o.location_label
       FROM ${t("jobs")} j
@@ -187,6 +188,10 @@ async function getJob(
     locationLabel: row.location_label,
     payMinHourly: row.pay_min_hourly != null ? Number(row.pay_min_hourly) : null,
     payMaxHourly: row.pay_max_hourly != null ? Number(row.pay_max_hourly) : null,
+    acceptingApplications: row.accepting_applications !== false && row.accepting_applications !== 0,
+    applicationsPausedMessage: row.applications_paused_message
+      ? String(row.applications_paused_message)
+      : null,
     formFields: row.form_fields ? JSON.parse(row.form_fields as string) : [],
     pageContent: row.page_content ? JSON.parse(row.page_content as string) : {},
   });

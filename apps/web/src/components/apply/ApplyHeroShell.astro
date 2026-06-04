@@ -3,6 +3,7 @@ import { BRAND } from "../../constants/brand";
 import { hrefPath } from "../../lib/assets";
 import type { JobPageContent } from "../../lib/jobPageContent";
 import ApplyFormCard from "./ApplyFormCard.astro";
+import ApplyPausedCard from "./ApplyPausedCard.astro";
 
 interface Props {
   content: JobPageContent;
@@ -11,9 +12,20 @@ interface Props {
   captchaSiteKey: string;
   captchaProvider: "turnstile" | "recaptcha";
   privacyUrl: string;
+  acceptingApplications?: boolean;
+  applicationsPausedMessage?: string;
 }
 
-const { content, officeSlug, jobSlug, captchaSiteKey, captchaProvider, privacyUrl } = Astro.props;
+const {
+  content,
+  officeSlug,
+  jobSlug,
+  captchaSiteKey,
+  captchaProvider,
+  privacyUrl,
+  acceptingApplications = true,
+  applicationsPausedMessage = "",
+} = Astro.props;
 
 const operationsUrl = hrefPath("operations/");
 const commuteQuery = content.address
@@ -95,14 +107,18 @@ const heroBg = content.heroImage ? `url('${content.heroImage}')` : undefined;
     </div>
 
     <div class="apply-hero-right">
-      <ApplyFormCard
-        content={content}
-        officeSlug={officeSlug}
-        jobSlug={jobSlug}
-        captchaSiteKey={captchaSiteKey}
-        captchaProvider={captchaProvider}
-        privacyUrl={privacyUrl}
-      />
+      {acceptingApplications ? (
+        <ApplyFormCard
+          content={content}
+          officeSlug={officeSlug}
+          jobSlug={jobSlug}
+          captchaSiteKey={captchaSiteKey}
+          captchaProvider={captchaProvider}
+          privacyUrl={privacyUrl}
+        />
+      ) : (
+        <ApplyPausedCard message={applicationsPausedMessage} />
+      )}
     </div>
   </section>
 </div>

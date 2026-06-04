@@ -20,6 +20,7 @@ import { hrefPath } from "../../../lib/assets";
 import { ogImageForOffice } from "../../../constants/images";
 import { applyPageSeo } from "../../../lib/seo";
 import { resolveCaptchaProvider } from "../../../lib/captcha";
+import { DEFAULT_APPLICATIONS_PAUSED_MESSAGE } from "../../../constants/applications";
 
 export async function getStaticPaths() {
   const api = getApiBaseUrl();
@@ -105,6 +106,13 @@ const pageContent =
 
 const showApply = Boolean(pageContent && (job || knownOpsApply));
 
+const acceptingApplications = job
+  ? job.acceptingApplications !== false && job.acceptingApplications !== 0
+  : true;
+const applicationsPausedMessage =
+  (job?.applicationsPausedMessage && String(job.applicationsPausedMessage).trim()) ||
+  DEFAULT_APPLICATIONS_PAUSED_MESSAGE;
+
 const applySeo = pageContent
   ? applyPageSeo({
       headline: pageContent.headline ?? "Apply",
@@ -150,6 +158,8 @@ const applySeo = pageContent
         captchaSiteKey={captchaKey}
         captchaProvider={captchaProviderNorm}
         privacyUrl={privacyUrl}
+        acceptingApplications={acceptingApplications}
+        applicationsPausedMessage={applicationsPausedMessage}
       />
 
       <TrustStrip />
@@ -172,10 +182,10 @@ const applySeo = pageContent
   )}
 </BaseLayout>
 
-{captchaProviderNorm === "recaptcha" && (
+{acceptingApplications && captchaProviderNorm === "recaptcha" && (
   <script src="https://www.google.com/recaptcha/api.js" async defer></script>
 )}
-{captchaKey && captchaProviderNorm === "turnstile" && (
+{acceptingApplications && captchaKey && captchaProviderNorm === "turnstile" && (
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 )}
 
@@ -320,7 +330,7 @@ const applySeo = pageContent
     }
   }
 
-  initRecaptchaWidget();
+  if (form) initRecaptchaWidget();
 
   async function getCaptchaToken() {
     const captchaKey = await resolveCaptchaSiteKey();
