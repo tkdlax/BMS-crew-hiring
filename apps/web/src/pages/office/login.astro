@@ -1,0 +1,110 @@
+---
+import { assetUrl, hrefPath } from "../../lib/assets";
+
+const officeHome = hrefPath("office/");
+const loginPath = hrefPath("office/login/");
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Office sign in | Bailey&apos;s Hiring</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href={assetUrl("styles/admin.css")} />
+  </head>
+  <body class="admin-body admin-body--login">
+    <main class="admin-login-card">
+      <h1>Office scheduling</h1>
+      <p class="admin-hint">Sign in to manage your office interview calendar and availability.</p>
+      <div id="office-config-error" class="alert alert-error" role="alert" hidden>
+        API not configured. Set <code>PUBLIC_API_BASE_URL</code> in Webflow Cloud.
+      </div>
+      <form id="office-login-form" class="admin-form">
+        <div class="field">
+          <label for="office-slug">Office</label>
+          <select id="office-slug" name="officeSlug" required disabled>
+            <option value="">Loading…</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" required autocomplete="current-password" />
+        </div>
+        <input type="text" name="website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px" />
+        <button type="submit" class="btn btn-primary" id="login-btn" disabled>Sign in</button>
+        <p id="login-error" class="alert alert-error" hidden></p>
+      </form>
+    </main>
+    <script define:vars={{ officeHome }}>
+      import {
+        initOfficeLoginRedirect,
+        resolveHireApiBaseUrl,
+        resolveOfficeApiBaseUrl,
+      } from "../../lib/api.client.ts";
+
+      initOfficeLoginRedirect(officeHome);
+
+      async function loadOffices() {
+        const hire = await resolveHireApiBaseUrl();
+        const sel = document.getElementById("office-slug") as HTMLSelectElement;
+        const btn = document.getElementById("login-btn") as HTMLButtonElement;
+        if (!hire) {
+          document.getElementById("office-config-error")!.hidden = false;
+          return;
+        }
+        try {
+          const res = await fetch(`${hire}/public/openings`);
+          const { openings } = await res.json();
+          const seen = new Set<string>();
+          const offices: { slug: string; name: string }[] = [];
+          for (const o of openings) {
+            if (seen.has(o.office_slug)) continue;
+            seen.add(o.office_slug);
+            offices.push({ slug: o.office_slug, name: o.office_name });
+          }
+          offices.sort((a, b) => a.name.localeCompare(b.name));
+          sel.innerHTML = offices
+            .map((o) => `<option value="${o.slug}">${o.name}</option>`)
+            .join("");
+          sel.disabled = false;
+          btn.disabled = false;
+        } catch {
+          sel.innerHTML = '<option value="">Failed to load offices</option>';
+        }
+      }
+
+      document.getElementById("office-login-form")?.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const api = await resolveOfficeApiBaseUrl();
+        const err = document.getElementById("login-error") as HTMLElement;
+        if (!api) {
+          err.textContent = "API not configured.";
+          err.hidden = false;
+          return;
+        }
+        const fd = new FormData(e.target as HTMLFormElement);
+        const honeypot = String(fd.get("website") || "");
+        const res = await fetch(`${api}/login`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            officeSlug: fd.get("officeSlug"),
+            password: fd.get("password"),
+            honeypot,
+          }),
+        });
+        if (!res.ok) {
+          err.textContent = "Invalid office or password.";
+          err.hidden = false;
+          return;
+        }
+        location.href = "${officeHome}";
+      });
+
+      loadOffices();
+    </script>
+  </body>
+</html>

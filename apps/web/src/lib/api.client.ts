@@ -77,6 +77,12 @@ export function getAdminApiBaseUrl(): string {
   return `${withSlash}api/admin`;
 }
 
+export function getOfficeApiBaseUrl(): string {
+  const base = import.meta.env.BASE_URL || "/";
+  const withSlash = base.endsWith("/") ? base : `${base}/`;
+  return `${withSlash}api/office`;
+}
+
 /** Same-origin applicant API (proxied to Azure — avoids cross-origin preflight on POST). */
 export function getHireApiBaseUrl(): string {
   const base = import.meta.env.BASE_URL || "/";
@@ -98,10 +104,52 @@ export async function resolveAdminApiBaseUrl(): Promise<string> {
   return getAdminApiBaseUrl();
 }
 
+export async function resolveOfficeApiBaseUrl(): Promise<string> {
+  const azure = await resolveApiBaseUrl();
+  if (!azure) return "";
+  return getOfficeApiBaseUrl();
+}
+
 declare global {
   interface Window {
     adminAuthCheck?: Promise<unknown>;
+    officeAuthCheck?: Promise<unknown>;
   }
+}
+
+export function initOfficeSessionGuard(loginPath: string): void {
+  window.officeAuthCheck = resolveOfficeApiBaseUrl().then((api) => {
+    if (!api) {
+      document.documentElement.dataset.officeAuth = "config-error";
+      throw new Error("api-not-configured");
+    }
+    return fetch(`${api}/session`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (!d.authenticated) {
+          location.replace(loginPath);
+          throw new Error("unauthenticated");
+        }
+        document.documentElement.dataset.officeAuth = "ok";
+        return d;
+      })
+      .catch((err) => {
+        if (err?.message !== "unauthenticated") location.replace(loginPath);
+        throw err;
+      });
+  });
+}
+
+export function initOfficeLoginRedirect(officeHome: string): void {
+  resolveOfficeApiBaseUrl().then((api) => {
+    if (!api) return;
+    fetch(`${api}/session`, { credentials: "include" })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.authenticated) location.replace(officeHome);
+      })
+      .catch(() => {});
+  });
 }
 
 export function initAdminSessionGuard(loginPath: string): void {

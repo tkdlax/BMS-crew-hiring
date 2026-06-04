@@ -1,0 +1,232 @@
+---
+interface Props {
+  /** When set, office is fixed (office portal). When empty, admin picks office. */
+  mode?: "admin" | "office";
+  showOfficeSelect?: boolean;
+}
+
+const { mode = "admin", showOfficeSelect = mode === "admin" } = Astro.props;
+---
+<div
+  class="interview-calendar admin-card"
+  data-calendar-mode={mode}
+  data-show-office-select={showOfficeSelect ? "1" : "0"}
+>
+  {showOfficeSelect && (
+    <div class="field" style="margin-bottom: 1rem">
+      <label for="calendar-office-select">Office</label>
+      <select id="calendar-office-select">
+        <option value="">Loading offices…</option>
+      </select>
+    </div>
+  )}
+
+  <div class="interview-calendar__toolbar">
+    <button type="button" class="btn btn-secondary btn-small" id="cal-prev-month" aria-label="Previous month">
+      ←
+    </button>
+    <h2 class="interview-calendar__month" id="cal-month-label"></h2>
+    <button type="button" class="btn btn-secondary btn-small" id="cal-next-month" aria-label="Next month">
+      →
+    </button>
+  </div>
+
+  <div class="interview-calendar__grid" id="cal-grid" aria-label="Interview calendar month view"></div>
+
+  <div class="interview-calendar__day-panel" id="cal-day-panel" hidden>
+    <h3 class="interview-calendar__day-title" id="cal-day-title"></h3>
+    <ul class="interview-calendar__events" id="cal-day-events"></ul>
+    <p class="admin-hint" id="cal-day-empty" hidden>No interviews scheduled this day.</p>
+  </div>
+
+  <p class="admin-hint" id="cal-hint">Loading calendar…</p>
+</div>
+
+<script>
+  import { resolveAdminApiBaseUrl, resolveOfficeApiBaseUrl } from "../../lib/api.client.ts";
+
+  type CalEvent = {
+    id: number;
+    startsAt: string;
+    endsAt: string;
+    firstName: string;
+    lastName: string;
+    primaryInterest: string;
+    jobTitle: string;
+    status: string;
+  };
+
+  const root = document.querySelector(".interview-calendar") as HTMLElement;
+  const mode = root.dataset.calendarMode || "admin";
+  const showOfficeSelect = root.dataset.showOfficeSelect === "1";
+
+  let viewYear = new Date().getFullYear();
+  let viewMonth = new Date().getMonth();
+  let events: CalEvent[] = [];
+  let officeId = 0;
+
+  const MONTHS = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
+
+  function monthRange(y: number, m: number) {
+    const from = new Date(y, m, 1);
+    const to = new Date(y, m + 1, 1);
+    return { from: from.toISOString(), to: to.toISOString() };
+  }
+
+  function formatDayLabel(iso: string) {
+    return new Date(iso).toLocaleString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  async function apiBase() {
+    return mode === "admin" ? resolveAdminApiBaseUrl() : resolveOfficeApiBaseUrl();
+  }
+
+  async function loadEvents() {
+    const api = await apiBase();
+    if (!api || !officeId) return;
+    const { from, to } = monthRange(viewYear, viewMonth);
+    const params = new URLSearchParams({ from, to });
+    if (mode === "admin") params.set("officeId", String(officeId));
+    const path = mode === "admin" ? "calendar/events" : "calendar/events";
+    const res = await fetch(`${api}/${path}?${params}`, { credentials: "include" });
+    if (!res.ok) throw new Error("Failed to load events");
+    const data = await res.json();
+    events = data.events || [];
+  }
+
+  function eventsOnDate(y: number, m: number, d: number) {
+    return events.filter((ev) => {
+      const dt = new Date(ev.startsAt);
+      return dt.getFullYear() === y && dt.getMonth() === m && dt.getDate() === d;
+    });
+  }
+
+  function renderMonth() {
+    const grid = document.getElementById("cal-grid")!;
+    const label = document.getElementById("cal-month-label")!;
+    label.textContent = `${MONTHS[viewMonth]} ${viewYear}`;
+
+    const firstDow = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+    const head = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+      .map((d) => `<div class="interview-calendar__dow">${d}</div>`)
+      .join("");
+    let cells = "";
+    for (let i = 0; i < firstDow; i++) {
+      cells += `<div class="interview-calendar__cell interview-calendar__cell--empty"></div>`;
+    }
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dayEvents = eventsOnDate(viewYear, viewMonth, d);
+      const has = dayEvents.length > 0;
+      const dateKey = `${viewYear}-${String(viewMonth + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      cells += `<button type="button" class="interview-calendar__cell${has ? " interview-calendar__cell--has" : ""}" data-date="${dateKey}" aria-label="${d}${has ? `, ${dayEvents.length} interviews` : ""}">
+        <span class="interview-calendar__day-num">${d}</span>
+        ${has ? `<span class="interview-calendar__dot" aria-hidden="true"></span>` : ""}
+      </button>`;
+    }
+    grid.innerHTML = head + cells;
+
+    grid.querySelectorAll("[data-date]").forEach((btn) => {
+      btn.addEventListener("click", () => showDay(btn.getAttribute("data-date")!));
+    });
+
+    const hint = document.getElementById("cal-hint");
+    if (hint) hint.textContent = `${events.length} interview(s) this month`;
+  }
+
+  function showDay(dateKey: string) {
+    const [ys, ms, ds] = dateKey.split("-").map(Number);
+    const dayEvents = eventsOnDate(ys!, ms! - 1, ds!);
+    const panel = document.getElementById("cal-day-panel")!;
+    const title = document.getElementById("cal-day-title")!;
+    const list = document.getElementById("cal-day-events")!;
+    const empty = document.getElementById("cal-day-empty")!;
+    panel.hidden = false;
+    title.textContent = new Date(ys!, ms! - 1, ds!).toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+    });
+    if (!dayEvents.length) {
+      list.innerHTML = "";
+      empty.hidden = false;
+      return;
+    }
+    empty.hidden = true;
+    list.innerHTML = dayEvents
+      .map(
+        (ev) => `<li class="interview-calendar__event">
+          <strong>${ev.firstName} ${ev.lastName}</strong>
+          <span class="interview-calendar__event-meta">${formatDayLabel(ev.startsAt)}</span>
+          <span class="interview-calendar__event-interest">Interest: ${ev.primaryInterest || "Not specified"}</span>
+          <span class="interview-calendar__event-meta">${ev.jobTitle}</span>
+        </li>`
+      )
+      .join("");
+  }
+
+  async function refresh() {
+    try {
+      await loadEvents();
+      renderMonth();
+    } catch {
+      const hint = document.getElementById("cal-hint");
+      if (hint) hint.textContent = "Could not load calendar.";
+    }
+  }
+
+  document.getElementById("cal-prev-month")?.addEventListener("click", () => {
+    viewMonth -= 1;
+    if (viewMonth < 0) {
+      viewMonth = 11;
+      viewYear -= 1;
+    }
+    refresh();
+  });
+
+  document.getElementById("cal-next-month")?.addEventListener("click", () => {
+    viewMonth += 1;
+    if (viewMonth > 11) {
+      viewMonth = 0;
+      viewYear += 1;
+    }
+    refresh();
+  });
+
+  async function init() {
+    if (mode === "admin") {
+      await window.adminAuthCheck;
+      const api = await resolveAdminApiBaseUrl();
+      if (!api) return;
+      const sel = document.getElementById("calendar-office-select") as HTMLSelectElement;
+      const oRes = await fetch(`${api}/offices`, { credentials: "include" });
+      const { offices } = await oRes.json();
+      sel.innerHTML = offices
+        .map((o: { id: number; name: string }) => `<option value="${o.id}">${o.name}</option>`)
+        .join("");
+      officeId = parseInt(sel.value, 10);
+      sel.addEventListener("change", () => {
+        officeId = parseInt(sel.value, 10);
+        refresh();
+      });
+    } else {
+      await window.officeAuthCheck;
+      const api = await resolveOfficeApiBaseUrl();
+      if (!api) return;
+      const sess = await fetch(`${api}/session`, { credentials: "include" }).then((r) => r.json());
+      officeId = sess.office?.id ?? 0;
+    }
+    await refresh();
+  }
+
+  init();
+</script>

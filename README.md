@@ -10,8 +10,9 @@ Multi-office hiring workflow: job applications, interview scheduling, and automa
 2. **Invite** — After submit, applicants receive a unique email link to schedule an interview.
 3. **Schedule** — Built-in slot picker (office calendar); booking sends email + SMS confirmation.
 4. **Remind** — Configurable reminders (e.g. 24h email, 2h SMS) with quiet-hours rules per office.
+5. **Office calendar** — Per-office ICS subscription feed, month-view interview calendar, and office portal login for availability (weekly hours, closed days, time blocks).
 
-Offices (e.g. Colorado Springs, Denver) each have jobs (Driver, Crew Member, etc.), shared calendars per office, and config-driven message templates.
+Offices (e.g. Colorado Springs, Denver) each have one **Moving Operations Crew** job, shared interview calendars, and config-driven message templates.
 
 ## Architecture
 
@@ -21,6 +22,8 @@ Webflow Cloud (Astro)          Azure Functions              Azure SQL
 /hiring/apply/...      ──►    POST /api/applications  ──►  hire_*
 /hiring/schedule/...   ──►    GET/POST /api/schedule/*
 /hiring/admin/...      ──►    /api/admin/*            ◄──  templates, config
+/hiring/office/...     ──►    /api/office/*           ◄──  office-scoped calendar
+/hiring/api/hire/...   ──►    /api/public/calendar/   ◄──  ICS feed (token URL)
 
                                Timer (every 5 min)     ──►  reminder_jobs
                                     │                      SendGrid + Twilio
@@ -120,6 +123,8 @@ npm run dev:web
 | Operations | http://localhost:4321/hiring/operations/ |
 | Apply (example) | http://localhost:4321/hiring/apply/denver/moving-operations-crew/ |
 | Admin | http://localhost:4321/hiring/admin/login/ |
+| Office portal | http://localhost:4321/hiring/office/login/ |
+| Interview calendar (admin) | http://localhost:4321/hiring/admin/calendar/ |
 
 ## Applicant URLs (production)
 
@@ -129,6 +134,8 @@ npm run dev:web
 | Apply | `https://{site}.webflow.io/hiring/apply/{officeSlug}/{jobSlug}/` |
 | Schedule (from email) | `https://{site}.webflow.io/hiring/schedule/?token={token}` |
 | Admin | `https://{site}.webflow.io/hiring/admin/` |
+| Office portal | `https://{site}.webflow.io/hiring/office/login/` |
+| ICS feed (per office) | `GET /api/public/calendar/{officeSlug}/{feedToken}.ics` |
 
 Schedule links are **per-applicant** (cryptographic token, expiry, single-use after booking).
 
@@ -145,6 +152,12 @@ Base path: `/api`
 | `GET /schedule/{token}/slots` | Available time slots |
 | `POST /schedule/{token}/book` | Book interview |
 | `POST /admin/login` | Admin session cookie |
+| `POST /office/login` | Office session cookie (per-office password) |
+| `GET /admin/calendar/events` | Scheduled interviews (admin) |
+| `GET /office/calendar/events` | Scheduled interviews (office JWT) |
+| `GET /public/calendar/{slug}/{token}.ics` | Subscribe in Outlook/Google Calendar |
+| `GET/POST /admin/availability/exceptions` | Close whole days |
+| `GET/POST /admin/availability/blocks` | Block time windows |
 | `GET/POST /admin/offices`, `/jobs`, `/templates`, … | Admin CRUD |
 
 All outbound messages use one pipeline: `sendMessage({ templateKey, channel, context, scope })` with template inheritance **job → office → global**.

@@ -3,9 +3,9 @@ import sql from "mssql";
 import {
   adminLoginSchema,
   officeUpsertSchema,
+  officeCredentialsSchema,
   jobUpsertSchema,
   templateUpsertSchema,
-  availabilityRuleSchema,
   scheduleConfigUpsertSchema,
   officeWebhooksBatchSchema,
 } from "@bms/shared";
@@ -14,11 +14,16 @@ import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
 import {
   verifyAdminPassword,
-  createSessionToken,
+  createAdminSessionToken,
   requireAdmin,
+  readSession,
   sessionCookieHeader,
   clearSessionCookie,
-} from "../lib/auth/adminSession.js";
+  hashOfficePassword,
+} from "../lib/auth/session.js";
+import { generateCalendarFeedToken } from "../lib/feedToken.js";
+import { listCalendarEvents } from "../lib/calendarEvents.js";
+import { handleAvailabilityRoutes } from "../lib/availabilityManage.js";
 
 export async function handleAdmin(
   req: HttpRequest,
@@ -32,19 +37,27 @@ export async function handleAdmin(
     return { status: 200, headers: clearSessionCookie(), body: JSON.stringify({ ok: true }) };
   }
   if (segments[0] === "session" && req.method === "GET") {
-    const ok = await requireAdmin(req);
-    return json({ authenticated: ok });
+    const session = await readSession(req);
+    return json({
+      authenticated: session?.role === "admin",
+      role: session?.role ?? null,
+    });
   }
 
   if (!(await requireAdmin(req))) {
     return error("Unauthorized", 401);
   }
 
+  if (segments[0] === "calendar" && segments[1] === "events" && req.method === "GET") {
+    return adminCalendarEvents(req);
+  }
   if (segments[0] === "offices") return handleOffices(req, segments.slice(1));
   if (segments[0] === "jobs") return handleJobs(req, segments.slice(1));
   if (segments[0] === "applications") return handleApplicationsList(req);
   if (segments[0] === "templates") return handleTemplates(req, segments.slice(1));
-  if (segments[0] === "availability") return handleAvailability(req, segments.slice(1));
+  if (segments[0] === "availability") {
+    return handleAvailabilityRoutes(req, segments.slice(1), { type: "admin" });
+  }
   if (segments[0] === "schedule-config") return handleScheduleConfig(req, segments.slice(1));
   if (segments[0] === "webhooks") return handleWebhooks(req);
 
@@ -60,10 +73,44 @@ async function adminLogin(req: HttpRequest): Promise<HttpResponseInit> {
   }
   const ok = await verifyAdminPassword(parsed.data.password);
   if (!ok) return error("Invalid password", 401);
-  const token = await createSessionToken();
+  const token = await createAdminSessionToken();
   return {
     ...json({ ok: true }),
     headers: sessionCookieHeader(token),
+  };
+}
+
+async function adminCalendarEvents(req: HttpRequest): Promise<HttpResponseInit> {
+  const url = new URL(req.url);
+  const officeId = parseInt(url.searchParams.get("officeId") ?? "", 10);
+  if (!officeId) return error("officeId required", 400);
+  const fromStr = url.searchParams.get("from");
+  const toStr = url.searchParams.get("to");
+  const from = fromStr ? new Date(fromStr) : new Date();
+  const to = toStr
+    ? new Date(toStr)
+    : new Date(from.getTime() + 90 * 24 * 60 * 60 * 1000);
+  if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+    return error("Invalid date range", 400);
+  }
+  const events = await listCalendarEvents(officeId, from, to);
+  return json({ events });
+}
+
+function mapOfficeRow(row: Record<string, unknown>) {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    timezone: row.timezone,
+    location_label: row.location_label,
+    location_notes: row.location_notes,
+    active: row.active,
+    calendar_feed_token: row.calendar_feed_token,
+    has_office_password: Boolean(row.office_password_hash),
+    webhooks_json: row.webhooks_json,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
   };
 }
 
@@ -73,12 +120,19 @@ async function handleOffices(
 ): Promise<HttpResponseInit> {
   const pool = await getPool();
   if (segments.length === 0 && req.method === "GET") {
-    const r = await pool.request().query(`SELECT * FROM ${t("offices")} ORDER BY name`);
-    return json({ offices: r.recordset });
+    const r = await pool.request().query(`
+      SELECT id, slug, name, timezone, location_label, location_notes, active,
+             calendar_feed_token,
+             CASE WHEN office_password_hash IS NOT NULL THEN 1 ELSE 0 END AS has_office_password,
+             webhooks_json, created_at, updated_at
+      FROM ${t("offices")} ORDER BY name
+    `);
+    return json({ offices: r.recordset.map(mapOfficeRow) });
   }
   if (segments.length === 0 && req.method === "POST") {
     const body = officeUpsertSchema.parse(await req.json());
     const locationNotes = body.locationNotes?.trim() || null;
+    const feedToken = generateCalendarFeedToken();
     await pool
       .request()
       .input("slug", sql.NVarChar, body.slug)
@@ -87,13 +141,40 @@ async function handleOffices(
       .input("loc", sql.NVarChar, body.locationLabel)
       .input("locNotes", sql.NVarChar, locationNotes)
       .input("active", sql.Bit, body.active ?? true)
+      .input("feedToken", sql.NVarChar, feedToken)
       .query(`
-        INSERT INTO ${t("offices")} (slug, name, timezone, location_label, location_notes, active)
-        VALUES (@slug, @name, @tz, @loc, @locNotes, @active)
+        INSERT INTO ${t("offices")}
+          (slug, name, timezone, location_label, location_notes, active, calendar_feed_token)
+        VALUES (@slug, @name, @tz, @loc, @locNotes, @active, @feedToken)
       `);
     return json({ ok: true }, 201);
   }
   const id = parseInt(segments[0]!, 10);
+  if (segments[1] === "credentials" && req.method === "PUT") {
+    const body = officeCredentialsSchema.parse(await req.json());
+    const hash = await hashOfficePassword(body.password);
+    await pool
+      .request()
+      .input("id", sql.Int, id)
+      .input("hash", sql.NVarChar, hash)
+      .query(`
+        UPDATE ${t("offices")} SET office_password_hash = @hash, updated_at = SYSUTCDATETIME()
+        WHERE id = @id
+      `);
+    return json({ ok: true });
+  }
+  if (segments[1] === "regenerate-feed-token" && req.method === "POST") {
+    const feedToken = generateCalendarFeedToken();
+    await pool
+      .request()
+      .input("id", sql.Int, id)
+      .input("feedToken", sql.NVarChar, feedToken)
+      .query(`
+        UPDATE ${t("offices")} SET calendar_feed_token = @feedToken, updated_at = SYSUTCDATETIME()
+        WHERE id = @id
+      `);
+    return json({ ok: true, calendarFeedToken: feedToken });
+  }
   if (segments.length === 1 && req.method === "PUT") {
     const body = officeUpsertSchema.parse(await req.json());
     const locationNotes = body.locationNotes?.trim() || null;
@@ -249,50 +330,6 @@ async function handleTemplates(
         WHEN NOT MATCHED THEN INSERT (template_key, channel, scope, scope_id, subject, body)
           VALUES (@key, @channel, @scope, @scopeId, @subject, @body);
       `);
-    return json({ ok: true });
-  }
-  return error("Not found", 404);
-}
-
-async function handleAvailability(
-  req: HttpRequest,
-  segments: string[]
-): Promise<HttpResponseInit> {
-  const pool = await getPool();
-  if (segments.length === 0 && req.method === "GET") {
-    const url = new URL(req.url);
-    const scope = url.searchParams.get("scope") ?? "office";
-    const scopeId = url.searchParams.get("scopeId");
-    const r = await pool
-      .request()
-      .input("scope", sql.NVarChar, scope)
-      .input("scopeId", sql.Int, scopeId ? parseInt(scopeId, 10) : null)
-      .query(`
-        SELECT * FROM ${t("availability_rules")}
-        WHERE scope = @scope AND ((@scopeId IS NULL AND scope_id IS NULL) OR scope_id = @scopeId)
-      `);
-    return json({ rules: r.recordset });
-  }
-  if (req.method === "POST") {
-    const body = availabilityRuleSchema.parse(await req.json());
-    await pool
-      .request()
-      .input("scope", sql.NVarChar, body.scope)
-      .input("scopeId", sql.Int, body.scopeId)
-      .input("dow", sql.Int, body.dayOfWeek)
-      .input("start", sql.NVarChar, body.startTime)
-      .input("end", sql.NVarChar, body.endTime)
-      .query(`
-        INSERT INTO ${t("availability_rules")} (scope, scope_id, day_of_week, start_time, end_time)
-        VALUES (@scope, @scopeId, @dow, @start, @end)
-      `);
-    return json({ ok: true }, 201);
-  }
-  if (segments[0] && req.method === "DELETE") {
-    await pool
-      .request()
-      .input("id", sql.Int, parseInt(segments[0], 10))
-      .query(`DELETE FROM ${t("availability_rules")} WHERE id = @id`);
     return json({ ok: true });
   }
   return error("Not found", 404);

@@ -42,6 +42,34 @@ export async function getAvailabilityRules(
   return [];
 }
 
+export async function getAvailabilityBlocks(
+  officeId: number,
+  jobId: number
+): Promise<{ startsAt: Date; endsAt: Date }[]> {
+  const pool = await getPool();
+  const intervals: { startsAt: Date; endsAt: Date }[] = [];
+  for (const { scope, scopeId } of [
+    { scope: "job", scopeId: jobId },
+    { scope: "office", scopeId: officeId },
+  ]) {
+    const r = await pool
+      .request()
+      .input("scope", sql.NVarChar, scope)
+      .input("scopeId", sql.Int, scopeId)
+      .query(`
+        SELECT starts_at, ends_at FROM ${t("availability_blocks")}
+        WHERE scope = @scope AND scope_id = @scopeId AND ends_at >= SYSUTCDATETIME()
+      `);
+    for (const row of r.recordset) {
+      intervals.push({
+        startsAt: new Date(row.starts_at as string),
+        endsAt: new Date(row.ends_at as string),
+      });
+    }
+  }
+  return intervals;
+}
+
 export async function getAvailabilityExceptions(
   officeId: number,
   jobId: number
@@ -78,6 +106,7 @@ export async function getAvailableSlots(
   const config = await resolveScheduleConfig(officeId, jobId);
   const rules = await getAvailabilityRules(officeId, jobId);
   const exceptions = await getAvailabilityExceptions(officeId, jobId);
+  const blocks = await getAvailabilityBlocks(officeId, jobId);
 
   const pool = await getPool();
   const booked = await pool.request().input("officeId", sql.Int, officeId).query(`
@@ -97,7 +126,8 @@ export async function getAvailableSlots(
     config.slotDurationMinutes,
     config.bufferMinutes,
     officeTimezone,
-    config.slotCapacity
+    config.slotCapacity,
+    blocks
   );
 
   const now = Date.now();

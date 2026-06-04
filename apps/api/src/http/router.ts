@@ -5,6 +5,7 @@ import { handlePublic } from "../handlers/public.js";
 import { handleApplications } from "../handlers/applications.js";
 import { handleSchedule } from "../handlers/schedule.js";
 import { handleAdmin } from "../handlers/admin.js";
+import { handleOffice } from "../handlers/office.js";
 
 type RouteHandler = (
   req: HttpRequest,
@@ -17,6 +18,7 @@ const routes: Array<{ prefix: string; handler: RouteHandler }> = [
   { prefix: "applications", handler: handleApplications },
   { prefix: "schedule", handler: handleSchedule },
   { prefix: "admin", handler: handleAdmin },
+  { prefix: "office", handler: handleOffice },
 ];
 
 export async function routeRequest(

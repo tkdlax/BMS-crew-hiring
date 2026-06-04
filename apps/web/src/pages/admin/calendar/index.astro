@@ -1,0 +1,10 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import InterviewCalendar from "../../../components/admin/InterviewCalendar.astro";
+---
+<AdminLayout title="Interview calendar" activeNav="scheduling">
+  <p class="admin-hint" style="margin-bottom: 1rem">
+    View scheduled interviews by office. Manage availability and calendar feeds under Office availability and Offices.
+  </p>
+  <InterviewCalendar mode="admin" showOfficeSelect={true} />
+</AdminLayout>

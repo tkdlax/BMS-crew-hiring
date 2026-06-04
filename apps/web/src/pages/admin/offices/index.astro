@@ -21,6 +21,7 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
 
 <script>
   import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
+  import { buildCalendarFeedUrl } from "../../../lib/calendarFeedUrl";
 
   function esc(s) {
     return String(s ?? "")
@@ -67,9 +68,70 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
             <button type="button" class="btn btn-secondary" id="office-edit-cancel">Cancel</button>
           </div>
         </form>
+        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border, #e2e8f0)" />
+        <h3>Office portal password</h3>
+        <p class="admin-hint">Shared login for <a href="/hiring/office/login/" target="_blank" rel="noopener">/hiring/office/login/</a>. ${o.has_office_password ? "Password is set." : "No password set yet."}</p>
+        <form id="office-credentials-form" class="admin-form admin-form--inline">
+          <div class="field"><label>New password</label><input name="password" type="password" minlength="6" required autocomplete="new-password" /></div>
+          <button type="submit" class="btn btn-secondary">Set office password</button>
+        </form>
+        <h3>Calendar subscription (ICS)</h3>
+        <p class="admin-hint">Outlook / Google Calendar subscribe URL. Regenerating invalidates old links.</p>
+        <div class="field">
+          <input type="text" id="office-feed-url-field" readonly class="admin-feed-url" value="" />
+        </div>
+        <div class="table-actions">
+          <button type="button" class="btn btn-secondary btn-small" id="copy-office-feed">Copy link</button>
+          <button type="button" class="btn btn-secondary btn-small" id="regen-office-feed">Regenerate feed link</button>
+        </div>
         <p id="office-edit-msg"></p>
       </div>`;
     host.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+    const feedInput = document.getElementById("office-feed-url-field") as HTMLInputElement;
+    if (feedInput && o.calendar_feed_token && o.slug) {
+      feedInput.value = buildCalendarFeedUrl(o.slug, o.calendar_feed_token);
+    }
+    document.getElementById("copy-office-feed")?.addEventListener("click", async () => {
+      if (feedInput?.value) {
+        try {
+          await navigator.clipboard.writeText(feedInput.value);
+        } catch {
+          feedInput.select();
+        }
+      }
+    });
+    document.getElementById("regen-office-feed")?.addEventListener("click", async () => {
+      const api = await resolveAdminApiBaseUrl();
+      if (!api) return;
+      const res = await fetch(`${api}/offices/${id}/regenerate-feed-token`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok && data.calendarFeedToken && o.slug) {
+        feedInput.value = buildCalendarFeedUrl(o.slug, data.calendarFeedToken);
+        o.calendar_feed_token = data.calendarFeedToken;
+        const msg = document.getElementById("office-edit-msg");
+        if (msg) msg.textContent = "Feed link regenerated.";
+      }
+    });
+    document.getElementById("office-credentials-form")?.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const api = await resolveAdminApiBaseUrl();
+      if (!api) return;
+      const fd = new FormData(e.target as HTMLFormElement);
+      const res = await fetch(`${api}/offices/${id}/credentials`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: fd.get("password") }),
+      });
+      const msg = document.getElementById("office-edit-msg");
+      if (msg) msg.textContent = res.ok ? "Office password updated." : "Failed to set password.";
+      if (res.ok) (e.target as HTMLFormElement).reset();
+    });
+
     document.getElementById("office-edit-cancel")?.addEventListener("click", () => {
       host.innerHTML = "";
     });

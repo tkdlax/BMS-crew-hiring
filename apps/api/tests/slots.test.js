@@ -73,4 +73,29 @@ describe("generateSlots", () => {
     const full = generateSlots(from, to, rules, [], booked, 30, 0, "UTC", 2);
     expect(full.some((s) => s.startsAt === firstStart)).toBe(false);
   });
+
+  it("skips slots on exception dates", () => {
+    const rules = [{ dayOfWeek: 0, startTime: "09:00", endTime: "12:00" }];
+    const from = "2030-01-06";
+    const to = "2030-01-06";
+    const slots = generateSlots(from, to, rules, ["2030-01-06"], [], 30, 0, "UTC");
+    expect(slots.length).toBe(0);
+  });
+
+  it("skips slots overlapping blocked intervals", () => {
+    const rules = [{ dayOfWeek: 0, startTime: "09:00", endTime: "12:00" }];
+    const from = "2030-01-06";
+    const to = "2030-01-06";
+    const all = generateSlots(from, to, rules, [], [], 30, 0, "UTC");
+    expect(all.length).toBeGreaterThan(0);
+    const target = all[0];
+    const blocked = [
+      {
+        startsAt: new Date(target.startsAt),
+        endsAt: new Date(target.endsAt),
+      },
+    ];
+    const filtered = generateSlots(from, to, rules, [], [], 30, 0, "UTC", 1, blocked);
+    expect(filtered.some((s) => s.startsAt === target.startsAt)).toBe(false);
+  });
 });

@@ -14,6 +14,14 @@ import { hrefPath } from "../../lib/assets";
   </p>
 
   <div class="admin-event-list">
+    <a class="admin-event-row" href={hrefPath("admin/calendar/")}>
+      <span class="admin-event-row__bar admin-event-row__bar--orange"></span>
+      <div class="admin-event-row__body">
+        <p class="admin-event-row__title">Interview calendar</p>
+        <p class="admin-event-row__meta">Scheduled applicants by office — month view</p>
+      </div>
+      <span class="admin-event-row__action">View →</span>
+    </a>
     <a class="admin-event-row" href={hrefPath("admin/scheduling/")}>
       <span class="admin-event-row__bar"></span>
       <div class="admin-event-row__body">

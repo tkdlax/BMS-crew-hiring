@@ -52,7 +52,13 @@
 
    **Apply and schedule POSTs** use same-origin `/hiring/api/hire/*` for the same reason (Azure often answers OPTIONS without CORS headers even when `ALLOWED_ORIGINS` is set).
 
+   **Office portal** uses same-origin `/hiring/api/office/*` (same session cookie as admin).
+
 5. Publish the main Webflow site after Cloud environment is created.
+
+6. Run migration `017_office_calendar.sql` (office passwords, ICS feed tokens, availability blocks).
+
+7. In **Admin → Offices**, set each office portal password and copy the ICS subscribe URL for hiring managers.
 
 ### Admin login
 
@@ -71,6 +77,9 @@
 - [ ] Admin password rotated from default
 - [ ] Test apply → email → schedule → confirm SMS/email on mobile
 - [ ] Test reminder timer (book slot within reminder window in staging config)
+- [ ] Set office portal password; sign in at `/hiring/office/login/`
+- [ ] Subscribe to ICS feed in a calendar app; verify name, interest, and time
+- [ ] Add a closed date and a time block; confirm applicant slots disappear on preview
 
 ## Production checklist
 

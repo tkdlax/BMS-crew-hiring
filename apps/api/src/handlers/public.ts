@@ -3,12 +3,21 @@ import sql from "mssql";
 import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
 import { getAvailableSlots, getOfficeDateRange } from "../lib/scheduleSlots.js";
+import { listCalendarEvents } from "../lib/calendarEvents.js";
+import { buildOfficeCalendarFeed } from "../lib/icsCalendar.js";
 
 export async function handlePublic(
   req: HttpRequest,
   _ctx: InvocationContext,
   segments: string[]
 ): Promise<HttpResponseInit> {
+  if (
+    segments[0] === "calendar" &&
+    segments.length === 3 &&
+    req.method === "GET"
+  ) {
+    return getOfficeCalendarFeed(segments[1]!, segments[2]!);
+  }
   if (segments[0] === "openings" && req.method === "GET") {
     return listOpenings();
   }
@@ -25,6 +34,45 @@ export async function handlePublic(
     return getSchedulePreview(segments[1]!, jobSlug);
   }
   return error("Not found", 404);
+}
+
+async function getOfficeCalendarFeed(
+  officeSlug: string,
+  tokenSegment: string
+): Promise<HttpResponseInit> {
+  const feedToken = tokenSegment.replace(/\.ics$/i, "");
+  const pool = await getPool();
+  const office = await pool
+    .request()
+    .input("slug", sql.NVarChar, officeSlug)
+    .input("token", sql.NVarChar, feedToken)
+    .query(`
+      SELECT id, slug, name, location_label, location_notes, timezone, calendar_feed_token
+      FROM ${t("offices")}
+      WHERE slug = @slug AND calendar_feed_token = @token AND active = 1
+    `);
+  if (office.recordset.length === 0) return error("Not found", 404);
+  const o = office.recordset[0] as Record<string, unknown>;
+  const officeId = o.id as number;
+  const from = new Date();
+  const to = new Date(from.getTime() + 90 * 24 * 60 * 60 * 1000);
+  const events = await listCalendarEvents(officeId, from, to);
+  const ics = buildOfficeCalendarFeed(
+    events.map((ev) => ({
+      ...ev,
+      officeName: o.name as string,
+      officeLocation: (o.location_label as string) || "",
+      locationNotes: (o.location_notes as string | null) ?? undefined,
+    }))
+  );
+  return {
+    status: 200,
+    headers: {
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": 'inline; filename="baileys-interviews.ics"',
+    },
+    body: ics,
+  };
 }
 
 async function getSchedulePreview(

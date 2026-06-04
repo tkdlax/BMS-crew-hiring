@@ -43,6 +43,31 @@ export const adminLoginSchema = z.object({
   username: z.string().max(200).optional(),
 });
 
+export const officeLoginSchema = z.object({
+  officeSlug: z.string().min(1).max(100),
+  password: z.string().min(1),
+  honeypot: z.string().max(0).optional(),
+});
+
+export const officeCredentialsSchema = z.object({
+  password: z.string().min(6).max(200),
+});
+
+export const availabilityExceptionSchema = z.object({
+  scope: z.enum(["office", "job"]),
+  scopeId: z.number().int().positive(),
+  exceptionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+});
+
+export const availabilityBlockSchema = z.object({
+  scope: z.enum(["office", "job"]),
+  scopeId: z.number().int().positive(),
+  localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  startTime: z.string().regex(/^\d{2}:\d{2}$/),
+  endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  note: z.string().max(500).optional(),
+});
+
 export const officeUpsertSchema = z.object({
   slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
   name: z.string().min(1).max(200),

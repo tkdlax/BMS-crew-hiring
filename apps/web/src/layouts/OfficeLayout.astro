@@ -1,0 +1,95 @@
+---
+import { assetUrl, hrefPath } from "../lib/assets";
+
+interface Props {
+  title: string;
+  activeNav?: "calendar" | "availability";
+}
+
+const { title, activeNav = "calendar" } = Astro.props;
+const loginPath = hrefPath("office/login/");
+const calendarPath = hrefPath("office/");
+const availabilityPath = hrefPath("office/availability/");
+---
+<!doctype html>
+<html
+  lang="en"
+  data-office-auth="checking"
+  data-login-path={loginPath}
+  data-office-home={calendarPath}
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>{title} | Bailey&apos;s Office Scheduling</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href={assetUrl("styles/admin.css")} />
+    <link rel="stylesheet" href={assetUrl("styles/applicant.css")} />
+  </head>
+  <body class="admin-body">
+    <div class="admin-shell">
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar__brand">
+          <span class="admin-sidebar__brand-mark" aria-hidden="true"></span>
+          Office scheduling
+        </div>
+        <p class="office-sidebar__office" id="office-sidebar-name"></p>
+        <nav class="admin-sidebar__nav" aria-label="Office">
+          <a
+            href={calendarPath}
+            class:list={["admin-sidebar__link", activeNav === "calendar" && "active"]}
+          >
+            <span class="admin-sidebar__icon" aria-hidden="true">📅</span>
+            Interview calendar
+          </a>
+          <a
+            href={availabilityPath}
+            class:list={["admin-sidebar__link", activeNav === "availability" && "active"]}
+          >
+            <span class="admin-sidebar__icon" aria-hidden="true">🕐</span>
+            Availability &amp; blocks
+          </a>
+        </nav>
+        <div class="admin-sidebar__footer">
+          <button type="button" id="office-logout" class="admin-sidebar__link admin-sidebar__logout">
+            <span class="admin-sidebar__icon" aria-hidden="true">↩</span>
+            Log out
+          </button>
+        </div>
+      </aside>
+      <div class="admin-content">
+        <header class="admin-topbar">
+          <h1>{title}</h1>
+        </header>
+        <main class="admin-main">
+          <div id="office-config-error" class="admin-card alert alert-error" role="alert" hidden>
+            <strong>API not configured.</strong> Set <code>PUBLIC_API_BASE_URL</code> in Webflow Cloud and redeploy.
+          </div>
+          <slot />
+        </main>
+      </div>
+    </div>
+    <script>
+      import { initOfficeSessionGuard, resolveOfficeApiBaseUrl } from "../lib/api.client.ts";
+
+      const root = document.documentElement;
+      const loginPath = root.dataset.loginPath!;
+      initOfficeSessionGuard(loginPath);
+
+      window.officeAuthCheck?.then((d: { office?: { name?: string } }) => {
+        const name = d?.office?.name;
+        const el = document.getElementById("office-sidebar-name");
+        if (el && name) el.textContent = name;
+      });
+
+      document.getElementById("office-logout")?.addEventListener("click", async () => {
+        const api = await resolveOfficeApiBaseUrl();
+        if (!api) return;
+        await fetch(`${api}/logout`, { method: "POST", credentials: "include" });
+        location.href = loginPath;
+      });
+    </script>
+  </body>
+</html>

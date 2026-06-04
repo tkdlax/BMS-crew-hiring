@@ -464,6 +464,134 @@ table.data th {
   border-bottom-color: var(--calendly-blue);
 }
 
+.office-sidebar__office {
+  font-size: 0.8125rem;
+  color: var(--text-light);
+  padding: 0 1.25rem 1rem;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.admin-feed-url {
+  width: 100%;
+  font-size: 0.8125rem;
+  font-family: ui-monospace, monospace;
+}
+
+.admin-simple-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+}
+
+.admin-simple-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+}
+
+.interview-calendar__toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.interview-calendar__month {
+  font-size: 1.125rem;
+  font-weight: 700;
+  margin: 0;
+  min-width: 10rem;
+  text-align: center;
+}
+
+.interview-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.interview-calendar__dow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-light);
+  padding: 0.25rem;
+}
+
+.interview-calendar__cell {
+  aspect-ratio: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--white, #fff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  cursor: pointer;
+  font: inherit;
+  padding: 0.25rem;
+}
+
+.interview-calendar__cell--empty {
+  border: none;
+  background: transparent;
+  cursor: default;
+}
+
+.interview-calendar__cell--has {
+  background: #ebf5ff;
+  border-color: #93c5fd;
+}
+
+.interview-calendar__day-num {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.interview-calendar__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--orange, #ee7b22);
+}
+
+.interview-calendar__day-panel {
+  border-top: 1px solid var(--border);
+  padding-top: 1rem;
+}
+
+.interview-calendar__day-title {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.interview-calendar__events {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.interview-calendar__event {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.interview-calendar__event-meta,
+.interview-calendar__event-interest {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin-top: 0.25rem;
+}
+
 @media (max-width: 768px) {
   .admin-shell {
     flex-direction: column;

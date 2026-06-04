@@ -90,13 +90,26 @@ function isSameSlot(
   );
 }
 
+function overlapsInterval(
+  slotStart: Date,
+  slotEnd: Date,
+  interval: BookedInterval
+): boolean {
+  return slotStart < interval.endsAt && slotEnd > interval.startsAt;
+}
+
 function slotIsAvailable(
   slotStart: Date,
   slotEnd: Date,
   booked: BookedInterval[],
+  blocked: BookedInterval[],
   bufferMinutes: number,
   slotCapacity: number
 ): boolean {
+  for (const b of blocked) {
+    if (overlapsInterval(slotStart, slotEnd, b)) return false;
+  }
+
   const exactCount = countOverlapping(slotStart, slotEnd, booked);
   if (exactCount >= slotCapacity) return false;
   if (bufferMinutes <= 0) return true;
@@ -121,7 +134,8 @@ export function generateSlots(
   slotDurationMinutes: number,
   bufferMinutes: number,
   officeTimezone: string,
-  slotCapacity: number = DEFAULT_SLOT_CAPACITY
+  slotCapacity: number = DEFAULT_SLOT_CAPACITY,
+  blocked: BookedInterval[] = []
 ): SlotResult[] {
   const slots: SlotResult[] = [];
   const exceptionSet = new Set(exceptions);
@@ -159,6 +173,7 @@ export function generateSlots(
               slotStart,
               slotEnd,
               booked,
+              blocked,
               bufferMinutes,
               slotCapacity
             )

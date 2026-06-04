@@ -1,0 +1,54 @@
+---
+import OfficeLayout from "../../layouts/OfficeLayout.astro";
+---
+<OfficeLayout title="Availability & blocks" activeNav="availability">
+  <div class="admin-card">
+    <p class="admin-hint">
+      Set weekly interview hours, close entire days, or block specific time windows so applicants cannot book those slots.
+    </p>
+
+    <h2>Weekly hours</h2>
+    <div id="rules-list"></div>
+    <form id="rule-form" class="admin-form admin-form--inline">
+      <div class="field">
+        <label>Day</label>
+        <select name="dayOfWeek">
+          <option value="1">Monday</option>
+          <option value="2">Tuesday</option>
+          <option value="3">Wednesday</option>
+          <option value="4">Thursday</option>
+          <option value="5">Friday</option>
+          <option value="6">Saturday</option>
+          <option value="0">Sunday</option>
+        </select>
+      </div>
+      <div class="field"><label>Start</label><input name="startTime" value="10:00" pattern="\d{2}:\d{2}" /></div>
+      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="\d{2}:\d{2}" /></div>
+      <button type="submit" class="btn">Add hours</button>
+    </form>
+
+    <h2>Closed dates</h2>
+    <p class="admin-hint">No interviews offered on these days (holidays, office closed).</p>
+    <div id="exceptions-list"></div>
+    <form id="exception-form" class="admin-form admin-form--inline">
+      <div class="field"><label>Date</label><input name="exceptionDate" type="date" required /></div>
+      <button type="submit" class="btn btn-secondary">Add closed date</button>
+    </form>
+
+    <h2>Blocked times</h2>
+    <p class="admin-hint">Block a portion of a day (meetings, training, etc.).</p>
+    <div id="blocks-list"></div>
+    <form id="block-form" class="admin-form admin-form--inline">
+      <div class="field"><label>Date</label><input name="localDate" type="date" required /></div>
+      <div class="field"><label>Start</label><input name="startTime" value="14:00" pattern="\d{2}:\d{2}" required /></div>
+      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="\d{2}:\d{2}" required /></div>
+      <div class="field"><label>Note</label><input name="note" maxlength="500" placeholder="Optional" /></div>
+      <button type="submit" class="btn btn-secondary">Add block</button>
+    </form>
+  </div>
+</OfficeLayout>
+
+<script>
+  import { initAvailabilityEditor } from "../../lib/officeAvailability.client.ts";
+  initAvailabilityEditor({ mode: "office", showBookingRules: false });
+</script>

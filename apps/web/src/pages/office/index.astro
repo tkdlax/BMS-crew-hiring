@@ -1,0 +1,47 @@
+---
+import OfficeLayout from "../../layouts/OfficeLayout.astro";
+import InterviewCalendar from "../../components/admin/InterviewCalendar.astro";
+import { buildCalendarFeedUrl } from "../../lib/calendarFeedUrl";
+---
+<OfficeLayout title="Interview calendar" activeNav="calendar">
+  <p class="admin-hint" style="margin-bottom: 1rem">
+    Upcoming interviews for your office. Subscribe in Outlook or Google Calendar using the link below.
+  </p>
+  <div class="admin-card" id="office-feed-card" style="margin-bottom: 1rem" hidden>
+    <h2 style="font-size: 1rem; margin-bottom: 0.5rem">Calendar subscription</h2>
+    <p class="admin-hint">Add this URL to your calendar app (refreshes automatically).</p>
+    <div class="field">
+      <input type="text" id="office-feed-url" readonly class="admin-feed-url" />
+    </div>
+    <button type="button" class="btn btn-secondary btn-small" id="copy-feed-url">Copy link</button>
+  </div>
+  <InterviewCalendar mode="office" showOfficeSelect={false} />
+</OfficeLayout>
+
+<script>
+  import { resolveOfficeApiBaseUrl } from "../../lib/api.client.ts";
+  import { buildCalendarFeedUrl } from "../../lib/calendarFeedUrl";
+
+  (async () => {
+    await window.officeAuthCheck;
+    const api = await resolveOfficeApiBaseUrl();
+    if (!api) return;
+    const sess = await fetch(`${api}/session`, { credentials: "include" }).then((r) => r.json());
+    const office = sess.office;
+    if (!office?.calendarFeedToken || !office?.slug) return;
+    const httpsUrl = buildCalendarFeedUrl(office.slug, office.calendarFeedToken);
+    const card = document.getElementById("office-feed-card");
+    const input = document.getElementById("office-feed-url") as HTMLInputElement;
+    if (card && input) {
+      input.value = httpsUrl;
+      card.hidden = false;
+    }
+    document.getElementById("copy-feed-url")?.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(httpsUrl);
+      } catch {
+        input.select();
+      }
+    });
+  })();
+</script>

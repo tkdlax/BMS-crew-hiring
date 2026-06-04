@@ -53,6 +53,26 @@ const previewBase = hrefPath("schedule/preview/");
       <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="\d{2}:\d{2}" /></div>
       <button type="submit" class="btn">Add</button>
     </form>
+
+    <h2>Closed dates</h2>
+    <p class="admin-hint">No interview slots on these days.</p>
+    <div id="exceptions-list"></div>
+    <form id="exception-form" class="admin-form admin-form--inline">
+      <div class="field"><label>Date</label><input name="exceptionDate" type="date" required /></div>
+      <button type="submit" class="btn btn-secondary">Add closed date</button>
+    </form>
+
+    <h2>Blocked times</h2>
+    <p class="admin-hint">Block specific windows on a day (office local time).</p>
+    <div id="blocks-list"></div>
+    <form id="block-form" class="admin-form admin-form--inline">
+      <div class="field"><label>Date</label><input name="localDate" type="date" required /></div>
+      <div class="field"><label>Start</label><input name="startTime" value="14:00" pattern="\d{2}:\d{2}" required /></div>
+      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="\d{2}:\d{2}" required /></div>
+      <div class="field"><label>Note</label><input name="note" maxlength="500" placeholder="Optional" /></div>
+      <button type="submit" class="btn btn-secondary">Add block</button>
+    </form>
+
     <p id="sched-msg" class="admin-hint"></p>
   </div>
 </AdminLayout>
@@ -65,133 +85,38 @@ const previewBase = hrefPath("schedule/preview/");
 
 <script>
   import { resolveAdminApiBaseUrl } from "../../../lib/api.client.ts";
+  import { initAvailabilityEditor } from "../../../lib/officeAvailability.client.ts";
 
-  const DAY = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const previewBase =
     document.getElementById("preview-link")?.dataset.previewBase ||
     "/hiring/schedule/preview/";
 
-  async function loadOffices(api: string) {
-    const sel = document.getElementById("office-select") as HTMLSelectElement;
-    try {
-      const res = await fetch(`${api}/offices`, { credentials: "include" });
-      if (!res.ok) throw new Error("Could not load offices");
-      const data = await res.json();
-      const offices = data.offices as { id: number; slug: string; name: string }[];
-      if (!offices.length) {
-        sel.innerHTML = '<option value="">No offices found</option>';
-        return;
-      }
-      sel.innerHTML = offices
-        .map((o) => `<option value="${o.id}" data-slug="${o.slug}">${o.name}</option>`)
-        .join("");
-      sel.addEventListener("change", () => loadOfficeData(api));
-      updatePreviewLink();
-      await loadOfficeData(api);
-    } catch {
-      sel.innerHTML = '<option value="">Failed to load offices</option>';
-      document.getElementById("sched-msg")!.textContent =
-        "Could not load offices. Check that you are signed in and the API is configured.";
-    }
-  }
-
-  function officeId(): number {
-    return parseInt((document.getElementById("office-select") as HTMLSelectElement).value, 10);
-  }
-
   function updatePreviewLink() {
     const sel = document.getElementById("office-select") as HTMLSelectElement;
-    const slug = sel.selectedOptions[0]?.dataset.slug || "denver";
+    const slug = sel?.selectedOptions[0]?.dataset.slug || "denver";
     const link = document.getElementById("preview-link") as HTMLAnchorElement;
-    link.href = `${previewBase}?office=${slug}`;
+    if (link) link.href = `${previewBase}?office=${slug}`;
   }
-
-  async function loadOfficeData(api: string) {
-    const id = officeId();
-    if (!id) return;
-    updatePreviewLink();
-    const cfgRes = await fetch(`${api}/schedule-config?scope=office&scopeId=${id}`, {
-      credentials: "include",
-    });
-    const { config: c } = await cfgRes.json();
-    const f = document.getElementById("office-config-form") as HTMLFormElement;
-    if (c) {
-      (f.elements.namedItem("bookingWindowDays") as HTMLInputElement).value = String(
-        c.booking_window_days ?? 7
-      );
-      (f.elements.namedItem("minNoticeHours") as HTMLInputElement).value = String(
-        c.min_notice_hours ?? 8
-      );
-    }
-    const rulesRes = await fetch(`${api}/availability?scope=office&scopeId=${id}`, {
-      credentials: "include",
-    });
-    const { rules } = await rulesRes.json();
-    const el = document.getElementById("rules-list")!;
-    if (!rules.length) {
-      el.innerHTML = "<p>No hours yet — add below.</p>";
-      return;
-    }
-    el.innerHTML = `<table class="data"><thead><tr><th>Day</th><th>Start</th><th>End</th><th></th></tr></thead><tbody>${rules
-      .map(
-        (r: { id: number; day_of_week: number; start_time: string; end_time: string }) =>
-          `<tr><td>${DAY[r.day_of_week]}</td><td>${r.start_time}</td><td>${r.end_time}</td><td><button type="button" class="btn btn-small btn-secondary" data-del="${r.id}">Remove</button></td></tr>`
-      )
-      .join("")}</tbody></table>`;
-    el.querySelectorAll("[data-del]").forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        await fetch(`${api}/availability/${btn.getAttribute("data-del")}`, {
-          method: "DELETE",
-          credentials: "include",
-        });
-        loadOfficeData(api);
-      });
-    });
-  }
-
-  document.getElementById("office-config-form")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const api = await resolveAdminApiBaseUrl();
-    if (!api) return;
-    const fd = new FormData(e.target as HTMLFormElement);
-    await fetch(`${api}/schedule-config`, {
-      method: "PUT",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        scope: "office",
-        scopeId: officeId(),
-        bookingWindowDays: parseInt(String(fd.get("bookingWindowDays")), 10),
-        minNoticeHours: parseInt(String(fd.get("minNoticeHours")), 10),
-      }),
-    });
-    document.getElementById("sched-msg")!.textContent = "Booking rules saved.";
-  });
-
-  document.getElementById("rule-form")?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const api = await resolveAdminApiBaseUrl();
-    if (!api) return;
-    const fd = new FormData(e.target as HTMLFormElement);
-    await fetch(`${api}/availability`, {
-      method: "POST",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        scope: "office",
-        scopeId: officeId(),
-        dayOfWeek: parseInt(String(fd.get("dayOfWeek")), 10),
-        startTime: fd.get("startTime"),
-        endTime: fd.get("endTime"),
-      }),
-    });
-    document.getElementById("sched-msg")!.textContent = "Hours added.";
-    loadOfficeData(api);
-  });
 
   (async () => {
     await window.adminAuthCheck;
     const api = await resolveAdminApiBaseUrl();
-    if (api) await loadOffices(api);
+    if (!api) return;
+    const sel = document.getElementById("office-select") as HTMLSelectElement;
+    const res = await fetch(`${api}/offices`, { credentials: "include" });
+    const { offices } = await res.json();
+    sel.innerHTML = offices
+      .map(
+        (o: { id: number; slug: string; name: string }) =>
+          `<option value="${o.id}" data-slug="${o.slug}">${o.name}</option>`
+      )
+      .join("");
+    sel.addEventListener("change", updatePreviewLink);
+    updatePreviewLink();
+    initAvailabilityEditor({
+      mode: "admin",
+      officeSelectId: "office-select",
+      showBookingRules: true,
+    });
   })();
 </script>
