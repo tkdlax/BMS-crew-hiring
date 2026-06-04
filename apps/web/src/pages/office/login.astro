@@ -2,10 +2,9 @@
 import { assetUrl, hrefPath } from "../../lib/assets";
 
 const officeHome = hrefPath("office/");
-const loginPath = hrefPath("office/login/");
 ---
 <!doctype html>
-<html lang="en">
+<html lang="en" data-office-home={officeHome}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -37,12 +36,14 @@ const loginPath = hrefPath("office/login/");
         <p id="login-error" class="alert alert-error" hidden></p>
       </form>
     </main>
-    <script define:vars={{ officeHome }}>
+    <script>
       import {
         initOfficeLoginRedirect,
         resolveHireApiBaseUrl,
         resolveOfficeApiBaseUrl,
       } from "../../lib/api.client.ts";
+
+      const officeHome = document.documentElement.dataset.officeHome!;
 
       initOfficeLoginRedirect(officeHome);
 
@@ -101,7 +102,7 @@ const loginPath = hrefPath("office/login/");
           err.hidden = false;
           return;
         }
-        location.href = "${officeHome}";
+        location.href = officeHome;
       });
 
       loadOffices();
