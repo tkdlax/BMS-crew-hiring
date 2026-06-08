@@ -1,0 +1,17 @@
+---
+interface Props {
+  message?: string;
+  inline?: boolean;
+}
+
+const { message = "Loading…", inline = false } = Astro.props;
+---
+
+<div
+  class:list={["loading-indicator", inline && "loading-indicator--inline"]}
+  role="status"
+  aria-live="polite"
+>
+  <span class="loading-spinner" aria-hidden="true"></span>
+  {message && <span class="loading-indicator__text">{message}</span>}
+</div>

@@ -29,10 +29,11 @@ export async function verifyCaptcha(
 
   if (!config.captchaSecret) {
     ctx?.warn("CAPTCHA_SECRET is not configured", { provider });
-    const ok =
+    const devBypass =
+      process.env.CAPTCHA_DISABLED === "true" &&
       process.env.NODE_ENV !== "production" &&
       process.env.AZURE_FUNCTIONS_ENVIRONMENT !== "Production";
-    return { ok, codes: ok ? [] : ["missing-input-secret"], provider };
+    return { ok: devBypass, codes: devBypass ? [] : ["missing-input-secret"], provider };
   }
 
   if (!token || token === "dev-bypass") {

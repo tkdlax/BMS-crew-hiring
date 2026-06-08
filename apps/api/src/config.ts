@@ -41,3 +41,10 @@ export const config = {
   messagingDisabled: env("MESSAGING_DISABLED", "false") === "true",
   tablePrefix: "hire_",
 };
+
+export function isProduction(): boolean {
+  return (
+    process.env.NODE_ENV === "production" ||
+    process.env.AZURE_FUNCTIONS_ENVIRONMENT === "Production"
+  );
+}

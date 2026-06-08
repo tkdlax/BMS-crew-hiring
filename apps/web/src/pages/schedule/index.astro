@@ -2,6 +2,7 @@
 import BaseLayout from "../../layouts/BaseLayout.astro";
 import ScheduleBookingSuccess from "../../components/schedule/ScheduleBookingSuccess.astro";
 import ScheduleConfirmBar from "../../components/schedule/ScheduleConfirmBar.astro";
+import LoadingIndicator from "../../components/LoadingIndicator.astro";
 import { hrefPath } from "../../lib/assets";
 import { PAGE_SEO } from "../../lib/seo";
 
@@ -18,7 +19,7 @@ const operationsUrl = hrefPath("operations/");
   <div class="page-wrap page-wrap--narrow">
     <div id="schedule-root">
       <div class="content-card" id="schedule-loading">
-        <p class="lead">Loading your scheduling link…</p>
+        <LoadingIndicator message="Loading your scheduling link…" />
       </div>
 
       <div class="schedule-shell" id="schedule-book" hidden>
@@ -40,7 +41,7 @@ const operationsUrl = hrefPath("operations/");
           </div>
           <div id="schedule-step-time" hidden>
             <button type="button" class="cal-back" id="cal-back">← Change date</button>
-            <p class="schedule-picker__heading">Select a time for your interview</p>
+            <p class="schedule-picker__heading" id="schedule-time-heading">Select a time for your interview</p>
             <p class="cal-selected-day" id="cal-selected-day"></p>
             <div class="slot-list" id="time-slots"></div>
           </div>
@@ -89,6 +90,14 @@ const operationsUrl = hrefPath("operations/");
     type ScheduleConfirmationDetails,
   } from "../../lib/scheduleConfirmation.ts";
 
+  type ScheduleMode =
+    | "loading"
+    | "scheduling"
+    | "confirming"
+    | "rescheduling"
+    | "done"
+    | "error";
+
   function resolveToken() {
     const params = new URLSearchParams(window.location.search);
     if (params.get("token")) return params.get("token");
@@ -113,12 +122,29 @@ const operationsUrl = hrefPath("operations/");
   const alertEl = document.getElementById("schedule-alert") as HTMLElement;
 
   let selectedSlot: string | null = null;
+  let mode: ScheduleMode = "loading";
+  let isRescheduling = false;
+  let scheduleContext: Record<string, unknown> | null = null;
   const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+  function setConfirmBarLabel(text: string) {
+    if (confirmBtn) confirmBtn.textContent = text;
+  }
+
+  function setMode(next: ScheduleMode) {
+    mode = next;
+    loading!.hidden = next !== "loading";
+    bookShell!.hidden = next !== "scheduling" && next !== "rescheduling";
+    confirmBlock!.hidden = next !== "confirming";
+    done!.hidden = next !== "done";
+    errBlock!.hidden = next !== "error";
+    bar!.hidden = next !== "scheduling" && next !== "rescheduling";
+    bookShell!.classList.toggle("is-busy", false);
+    confirmBtn.disabled = !selectedSlot;
+  }
+
   function showError(msg: string) {
-    loading!.hidden = true;
-    bookShell!.hidden = true;
-    errBlock!.hidden = false;
+    setMode("error");
     document.getElementById("error-message")!.textContent = msg;
     bar!.hidden = true;
   }
@@ -145,11 +171,127 @@ const operationsUrl = hrefPath("operations/");
       `You're scheduling an in-person interview at our ${ctx.officeName} office.`;
     document.getElementById("sidebar-location")!.textContent = ctx.officeLocation;
     if (ctx.hint) document.getElementById("sidebar-hint")!.textContent = ctx.hint;
+    const tzEl = document.getElementById("sidebar-tz")!;
     if (ctx.officeTimezone) {
-      const tzEl = document.getElementById("sidebar-tz")!;
       tzEl.hidden = false;
       tzEl.textContent = `All times shown in ${formatTimezoneLabel(ctx.officeTimezone)}.`;
+    } else {
+      tzEl.hidden = true;
     }
+  }
+
+  function resetPickerDom() {
+    document.getElementById("schedule-step-date")!.innerHTML = '<div id="cal-root"></div>';
+    document.getElementById("schedule-step-time")!.hidden = true;
+    alertEl.hidden = true;
+    selectedSlot = null;
+    confirmBtn.disabled = true;
+  }
+
+  async function initPicker(apiBase: string, rescheduling: boolean) {
+    const slotsRes = await fetch(`${apiBase}/schedule/${token}/slots`);
+    if (!slotsRes.ok) {
+      const d = await slotsRes.json().catch(() => ({}));
+      showError((d as { error?: string }).error || "Could not load available times.");
+      return false;
+    }
+    const { slots } = await slotsRes.json();
+    resetPickerDom();
+
+    if (!slots.length) {
+      document.getElementById("schedule-step-date")!.innerHTML =
+        '<p class="lead">No times are available in the next two weeks. Please call <a href="tel:+18882605717" style="color:var(--orange);font-weight:700">888-260-5717</a> to schedule with our team.</p>';
+      bar!.hidden = true;
+      return true;
+    }
+
+    initCalendlyPicker({
+      slots,
+      calendarEl: document.getElementById("cal-root")!,
+      dateStepEl: document.getElementById("schedule-step-date")!,
+      timeStepEl: document.getElementById("schedule-step-time")!,
+      selectedDayEl: document.getElementById("cal-selected-day")!,
+      timeListEl: document.getElementById("time-slots")!,
+      backBtn: document.getElementById("cal-back") as HTMLButtonElement,
+      dateHeading: rescheduling ? "Select a new date for your interview" : "Select a date for your interview",
+      timeHeading: rescheduling ? "Select a new time for your interview" : "Select a time for your interview",
+      onTimeSelect: (start) => {
+        selectedSlot = start;
+        confirmBtn.disabled = false;
+      },
+    });
+    return true;
+  }
+
+  async function enterScheduling(rescheduling: boolean) {
+    if (!scheduleContext || !token) return;
+    isRescheduling = rescheduling;
+    setMode(rescheduling ? "rescheduling" : "scheduling");
+    setConfirmBarLabel(rescheduling ? "Confirm new time" : "Confirm interview time");
+
+    setSidebar({
+      firstName: scheduleContext.firstName as string | undefined,
+      jobTitle: String(scheduleContext.jobTitle),
+      officeName: String(scheduleContext.officeName),
+      officeLocation: String(scheduleContext.officeLocation),
+      officeTimezone: scheduleContext.officeTimezone as string | undefined,
+      hint: rescheduling
+        ? "Pick a new date and time for your interview."
+        : "Choose a date, then select a time for your interview.",
+      title: rescheduling ? "Reschedule your interview" : undefined,
+    });
+
+    const apiBase = await resolveHireApiBaseUrl();
+    if (!apiBase) {
+      showError("Scheduling is temporarily unavailable. Please try again later.");
+      return;
+    }
+
+    const ok = await initPicker(apiBase, rescheduling);
+    if (ok) scrollToBlock(bookShell!);
+  }
+
+  async function load(apiBase: string) {
+    setMode("loading");
+    const ctxRes = await fetch(`${apiBase}/schedule/${token}`);
+    if (!ctxRes.ok) {
+      const d = await ctxRes.json().catch(() => ({}));
+      showError((d as { error?: string }).error || "This link is invalid or has expired.");
+      return;
+    }
+    scheduleContext = await ctxRes.json();
+
+    if (scheduleContext.mode === "confirm_attendance") {
+      setMode("confirming");
+      bar!.hidden = true;
+      const details: ScheduleConfirmationDetails = {
+        firstName: (scheduleContext.firstName as string) ?? "",
+        jobTitle: String(scheduleContext.jobTitle),
+        officeName: String(scheduleContext.officeName),
+        officeLocation: String(scheduleContext.officeLocation),
+        locationNotes: scheduleContext.locationNotes as string | undefined,
+        interviewTimeLocal: String(scheduleContext.interviewTimeLocal),
+        primaryInterest: scheduleContext.primaryInterest as string | undefined,
+        startsAt: String(scheduleContext.startsAt),
+        endsAt: String(scheduleContext.endsAt),
+      };
+      populateConfirmationDetails(document.getElementById("confirm-details")!, details);
+      wireCalendarDownload(
+        document.getElementById("confirm-calendar") as HTMLButtonElement,
+        details
+      );
+      if (scheduleContext.attendanceStatus === "confirmed") {
+        document.getElementById("confirm-title")!.textContent = "You're confirmed";
+        (document.querySelector(".confirm-actions") as HTMLElement).hidden = true;
+        const result = document.getElementById("confirm-result")!;
+        result.hidden = false;
+        result.textContent = "Thank you — we have your confirmation on file.";
+      }
+      scrollToBlock(confirmBlock!);
+      return;
+    }
+
+    await enterScheduling(false);
   }
 
   if (!token) {
@@ -164,123 +306,56 @@ const operationsUrl = hrefPath("operations/");
     });
   }
 
-  async function load(apiBase: string) {
-    const ctxRes = await fetch(`${apiBase}/schedule/${token}`);
-    if (!ctxRes.ok) {
-      const d = await ctxRes.json().catch(() => ({}));
-      showError(d.error || "This link is invalid or has expired.");
-      return;
+  async function submitAttendance(apiBase: string, attending: boolean, btn: HTMLButtonElement) {
+    btn.classList.add("is-loading");
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${apiBase}/schedule/${token}/confirm-attendance`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attending }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error((data as { error?: string }).error || "Could not save your response");
+      (document.querySelector(".confirm-actions") as HTMLElement).hidden = true;
+      const result = document.getElementById("confirm-result")!;
+      result.hidden = false;
+      result.textContent = (data as { message?: string }).message;
+      document.getElementById("confirm-title")!.textContent = attending
+        ? "You're confirmed"
+        : "Thanks for letting us know";
+    } finally {
+      btn.classList.remove("is-loading");
+      btn.disabled = false;
     }
-    const ctx = await ctxRes.json();
-
-    if (ctx.mode === "confirm_attendance") {
-      loading!.hidden = true;
-      confirmBlock!.hidden = false;
-      bar!.hidden = true;
-      const details: ScheduleConfirmationDetails = {
-        firstName: ctx.firstName ?? "",
-        jobTitle: ctx.jobTitle,
-        officeName: ctx.officeName,
-        officeLocation: ctx.officeLocation,
-        locationNotes: ctx.locationNotes,
-        interviewTimeLocal: ctx.interviewTimeLocal,
-        primaryInterest: ctx.primaryInterest,
-        startsAt: ctx.startsAt,
-        endsAt: ctx.endsAt,
-      };
-      populateConfirmationDetails(document.getElementById("confirm-details")!, details);
-      wireCalendarDownload(
-        document.getElementById("confirm-calendar") as HTMLButtonElement,
-        details
-      );
-      if (ctx.attendanceStatus === "confirmed") {
-        document.getElementById("confirm-title")!.textContent = "You're confirmed";
-        (document.querySelector(".confirm-actions") as HTMLElement).hidden = true;
-        const result = document.getElementById("confirm-result")!;
-        result.hidden = false;
-        result.textContent = "Thank you — we have your confirmation on file.";
-      }
-      scrollToBlock(confirmBlock!);
-      return;
-    }
-
-    setSidebar({
-      firstName: ctx.firstName,
-      jobTitle: ctx.jobTitle,
-      officeName: ctx.officeName,
-      officeLocation: ctx.officeLocation,
-      officeTimezone: ctx.officeTimezone,
-      hint: "Choose a date, then select a time for your interview.",
-    });
-
-    const slotsRes = await fetch(`${apiBase}/schedule/${token}/slots`);
-    if (!slotsRes.ok) {
-      showError("Could not load available times.");
-      return;
-    }
-    const { slots } = await slotsRes.json();
-    loading!.hidden = true;
-    bookShell!.hidden = false;
-    bar!.hidden = false;
-
-    if (!slots.length) {
-      document.getElementById("schedule-step-date")!.innerHTML =
-        '<p class="lead">No times are available in the next two weeks. Please call <a href="tel:+18882605717" style="color:var(--orange);font-weight:700">888-260-5717</a> to schedule with our team.</p>';
-      bar!.hidden = true;
-      return;
-    }
-
-    initCalendlyPicker({
-      slots,
-      calendarEl: document.getElementById("cal-root")!,
-      dateStepEl: document.getElementById("schedule-step-date")!,
-      timeStepEl: document.getElementById("schedule-step-time")!,
-      selectedDayEl: document.getElementById("cal-selected-day")!,
-      timeListEl: document.getElementById("time-slots")!,
-      backBtn: document.getElementById("cal-back") as HTMLButtonElement,
-      dateHeading: "Select a date for your interview",
-      timeHeading: "Select a time for your interview",
-      onTimeSelect: (start) => {
-        selectedSlot = start;
-        confirmBtn.disabled = false;
-      },
-    });
-  }
-
-  async function submitAttendance(apiBase: string, attending: boolean) {
-    const res = await fetch(`${apiBase}/schedule/${token}/confirm-attendance`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ attending }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || "Could not save your response");
-    (document.querySelector(".confirm-actions") as HTMLElement).hidden = true;
-    const result = document.getElementById("confirm-result")!;
-    result.hidden = false;
-    result.textContent = data.message;
-    document.getElementById("confirm-title")!.textContent = attending
-      ? "You're confirmed"
-      : "Thanks for letting us know";
   }
 
   document.getElementById("confirm-yes")?.addEventListener("click", async () => {
     const apiBase = await resolveHireApiBaseUrl();
-    if (!apiBase) return;
+    const btn = document.getElementById("confirm-yes") as HTMLButtonElement;
+    if (!apiBase || !btn) return;
     try {
-      await submitAttendance(apiBase, true);
+      await submitAttendance(apiBase, true, btn);
     } catch (e) {
       alert((e as Error).message);
     }
   });
 
   document.getElementById("confirm-no")?.addEventListener("click", async () => {
-    const apiBase = await resolveHireApiBaseUrl();
-    if (!apiBase) return;
+    const btn = document.getElementById("confirm-no") as HTMLButtonElement;
+    if (!btn || !scheduleContext) return;
+    btn.classList.add("is-loading");
+    btn.disabled = true;
     try {
-      await submitAttendance(apiBase, false);
+      setMode("loading");
+      const loadingText = loading?.querySelector(".loading-indicator__text");
+      if (loadingText) loadingText.textContent = "Loading available times…";
+      await enterScheduling(true);
     } catch (e) {
-      alert((e as Error).message);
+      showError((e as Error).message);
+    } finally {
+      btn.classList.remove("is-loading");
+      btn.disabled = false;
     }
   });
 
@@ -288,35 +363,43 @@ const operationsUrl = hrefPath("operations/");
     if (!selectedSlot || !token) return;
     const api = await resolveHireApiBaseUrl();
     if (!api) return;
+
+    confirmBtn.classList.add("is-loading");
     confirmBtn.disabled = true;
+    bookShell!.classList.add("is-busy");
+    alertEl.hidden = true;
+
+    const endpoint = isRescheduling ? "reschedule" : "book";
     try {
-      const res = await fetch(`${api}/schedule/${token}/book`, {
+      const res = await fetch(`${api}/schedule/${token}/${endpoint}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ slotStart: selectedSlot, applicantTimezone: tz }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Booking failed");
-      bookShell!.hidden = true;
-      bar!.hidden = true;
-      done!.hidden = false;
+      if (!res.ok) throw new Error((data as { error?: string }).error || "Booking failed");
+
+      setMode("done");
       renderScheduleConfirmation("schedule-done", {
-        firstName: data.firstName ?? "",
-        lastName: data.lastName,
-        jobTitle: data.jobTitle,
-        officeName: data.officeName,
-        officeLocation: data.officeLocation,
-        locationNotes: data.locationNotes,
-        interviewTimeLocal: data.interviewTimeLocal,
-        primaryInterest: data.primaryInterest,
-        startsAt: data.startsAt,
-        endsAt: data.endsAt,
+        firstName: (data as { firstName?: string }).firstName ?? "",
+        lastName: (data as { lastName?: string }).lastName,
+        jobTitle: (data as { jobTitle?: string }).jobTitle,
+        officeName: (data as { officeName?: string }).officeName,
+        officeLocation: (data as { officeLocation?: string }).officeLocation,
+        locationNotes: (data as { locationNotes?: string }).locationNotes,
+        interviewTimeLocal: (data as { interviewTimeLocal?: string }).interviewTimeLocal,
+        primaryInterest: (data as { primaryInterest?: string }).primaryInterest,
+        startsAt: (data as { startsAt?: string }).startsAt,
+        endsAt: (data as { endsAt?: string }).endsAt,
       });
       scrollToBlock(done!);
     } catch (e) {
       alertEl.hidden = false;
       alertEl.textContent = (e as Error).message;
-      confirmBtn.disabled = false;
+      confirmBtn.disabled = !selectedSlot;
+    } finally {
+      confirmBtn.classList.remove("is-loading");
+      bookShell!.classList.remove("is-busy");
     }
   });
 </script>

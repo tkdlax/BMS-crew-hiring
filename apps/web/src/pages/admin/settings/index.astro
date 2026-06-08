@@ -88,12 +88,13 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
       el.innerHTML = "<p>No offices found.</p>";
       return;
     }
-    el.innerHTML = `<table class="data"><thead><tr><th>Office</th><th>New application submitted</th><th>Interview scheduled</th></tr></thead><tbody>${officeWebhooks
+    el.innerHTML = `<table class="data"><thead><tr><th>Office</th><th>New application submitted</th><th>Interview scheduled</th><th>Interview rescheduled</th></tr></thead><tbody>${officeWebhooks
       .map(
         (o) => `<tr>
           <td><strong>${o.name}</strong><br><span class="admin-hint">${o.slug}</span></td>
           <td><input class="webhook-url-input" type="url" data-office-id="${o.id}" data-event="application_submitted" value="${esc(o.webhooks.application_submitted || "")}" placeholder="https://hooks.zapier.com/..." /></td>
           <td><input class="webhook-url-input" type="url" data-office-id="${o.id}" data-event="interview_scheduled" value="${esc(o.webhooks.interview_scheduled || "")}" placeholder="https://hooks.zapier.com/..." /></td>
+          <td><input class="webhook-url-input" type="url" data-office-id="${o.id}" data-event="interview_rescheduled" value="${esc(o.webhooks.interview_rescheduled || "")}" placeholder="https://hooks.zapier.com/..." /></td>
         </tr>`
       )
       .join("")}</tbody></table>`;
@@ -145,10 +146,20 @@ import AdminLayout from "../../../layouts/AdminLayout.astro";
     const inputs = document.querySelectorAll(
       ".webhook-url-input"
     ) as NodeListOf<HTMLInputElement>;
-    const byOffice = new Map<number, { application_submitted?: string; interview_scheduled?: string }>();
+    const byOffice = new Map<
+      number,
+      {
+        application_submitted?: string;
+        interview_scheduled?: string;
+        interview_rescheduled?: string;
+      }
+    >();
     inputs.forEach((input) => {
       const id = parseInt(input.dataset.officeId!, 10);
-      const event = input.dataset.event as "application_submitted" | "interview_scheduled";
+      const event = input.dataset.event as
+        | "application_submitted"
+        | "interview_scheduled"
+        | "interview_rescheduled";
       if (!byOffice.has(id)) byOffice.set(id, {});
       const entry = byOffice.get(id)!;
       const val = input.value.trim();

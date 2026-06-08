@@ -52,8 +52,7 @@ export async function routeRequest(
     return withCors(req, res);
   } catch (e) {
     ctx.error(e);
-    const msg = e instanceof Error ? e.message : "Internal server error";
-    return withCors(req, error(msg, 500));
+    return withCors(req, error("Internal server error", 500));
   }
 }
 

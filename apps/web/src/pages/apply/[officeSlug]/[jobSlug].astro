@@ -21,6 +21,7 @@ import { ogImageForOffice } from "../../../constants/images";
 import { applyPageSeo } from "../../../lib/seo";
 import { resolveCaptchaProvider } from "../../../lib/captcha";
 import { DEFAULT_APPLICATIONS_PAUSED_MESSAGE } from "../../../constants/applications";
+import LoadingIndicator from "../../../components/LoadingIndicator.astro";
 
 export async function getStaticPaths() {
   const api = getApiBaseUrl();
@@ -177,7 +178,7 @@ const applySeo = pageContent
     </>
   ) : (
     <div class="page-wrap">
-      <p class="lead">Loading position details…</p>
+      <LoadingIndicator message="Loading position details…" />
     </div>
   )}
 </BaseLayout>
@@ -364,7 +365,6 @@ const applySeo = pageContent
       return;
     }
 
-    if (submitBtn) submitBtn.disabled = true;
     const fd = new FormData(form);
     const { firstName, lastName } = splitName(fd.get("fullName"));
     const customFields: Record<string, string> = {};
@@ -382,6 +382,11 @@ const applySeo = pageContent
     if (!email) {
       showAlert("Please enter your email address.", "error");
       return;
+    }
+
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.classList.add("is-loading");
     }
 
     const body = {
@@ -418,7 +423,10 @@ const applySeo = pageContent
       const msg = err instanceof Error ? err.message : "Oops! Something went wrong. Check all fields and try again.";
       showAlert(msg, "error");
       resetCaptchaWidgets();
-      if (submitBtn) submitBtn.disabled = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.classList.remove("is-loading");
+      }
     }
   });
 </script>

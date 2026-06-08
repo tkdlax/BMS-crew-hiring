@@ -3,13 +3,19 @@ import sql from "mssql";
 import { bookSlotSchema } from "@bms/shared";
 import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
-import { getAvailableSlots, getOfficeDateRange } from "../lib/scheduleSlots.js";
+import {
+  assertSlotBookable,
+  getAvailableSlots,
+  getOfficeDateRange,
+  SlotNotBookableError,
+} from "../lib/scheduleSlots.js";
 import { formatInterviewTime } from "../lib/slots.js";
 import {
   interviewTimeForBooking,
   loadApplicationRow,
 } from "../lib/applicationContext.js";
-import { confirmBooking } from "../services/booking.js";
+import { checkRateLimit } from "../lib/rateLimit.js";
+import { confirmBooking, rescheduleBooking } from "../services/booking.js";
 
 type TokenRow = Record<string, unknown>;
 
@@ -33,10 +39,45 @@ async function fetchTokenRow(token: string): Promise<TokenRow | null> {
 async function fetchBookingForApplication(applicationId: number) {
   const pool = await getPool();
   const r = await pool.request().input("appId", sql.Int, applicationId).query(`
-    SELECT starts_at, ends_at, applicant_timezone, attendance_confirmed_at, attendance_status
+    SELECT id, starts_at, ends_at, applicant_timezone, attendance_confirmed_at, attendance_status
     FROM ${t("interview_bookings")} WHERE application_id = @appId
   `);
   return (r.recordset[0] as Record<string, unknown>) ?? null;
+}
+
+function tokenExpired(row: TokenRow): boolean {
+  return new Date(row.expires_at as string) < new Date();
+}
+
+async function buildBookingResponse(
+  applicationId: number,
+  startsAt: Date,
+  endsAt: Date,
+  applicantTimezone: string,
+  officeTimezone: string
+): Promise<HttpResponseInit> {
+  const app = await loadApplicationRow(applicationId);
+  if (!app) return json({ status: "scheduled", startsAt: startsAt.toISOString() });
+
+  const interviewTimeLocal = interviewTimeForBooking(
+    startsAt,
+    applicantTimezone,
+    officeTimezone
+  );
+
+  return json({
+    status: "scheduled",
+    startsAt: startsAt.toISOString(),
+    endsAt: endsAt.toISOString(),
+    firstName: app.firstName,
+    lastName: app.lastName,
+    jobTitle: app.jobTitle,
+    officeName: app.officeName,
+    officeLocation: app.officeLocation,
+    locationNotes: app.officeLocationNotes || undefined,
+    interviewTimeLocal,
+    primaryInterest: app.primaryInterest || undefined,
+  });
 }
 
 export async function handleSchedule(
@@ -62,6 +103,9 @@ export async function handleSchedule(
   if (segments[1] === "book" && req.method === "POST") {
     return bookSlot(token, req);
   }
+  if (segments[1] === "reschedule" && req.method === "POST") {
+    return rescheduleSlot(token, req);
+  }
   if (segments[1] === "confirm-attendance" && req.method === "POST") {
     return confirmAttendance(token, req);
   }
@@ -71,7 +115,7 @@ export async function handleSchedule(
 async function getScheduleContext(token: string): Promise<HttpResponseInit> {
   const row = await fetchTokenRow(token);
   if (!row) return error("Not found", 404);
-  if (new Date(row.expires_at as string) < new Date()) {
+  if (tokenExpired(row)) {
     return error("This scheduling link has expired", 410);
   }
 
@@ -86,6 +130,7 @@ async function getScheduleContext(token: string): Promise<HttpResponseInit> {
     const app = await loadApplicationRow(row.application_id as number);
     return json({
       mode: "confirm_attendance",
+      canReschedule: true,
       firstName: row.first_name,
       jobTitle: row.job_title,
       officeName: row.office_name,
@@ -97,6 +142,7 @@ async function getScheduleContext(token: string): Promise<HttpResponseInit> {
       primaryInterest: app?.primaryInterest || undefined,
       attendanceStatus: booking.attendance_status ?? null,
       attendanceConfirmedAt: booking.attendance_confirmed_at ?? null,
+      officeTimezone: row.office_timezone,
     });
   }
 
@@ -119,11 +165,17 @@ async function getSlots(
 ): Promise<HttpResponseInit> {
   const resolved = row ?? (await fetchTokenRow(token));
   if (!resolved) return error("Not found", 404);
-  if (new Date(resolved.expires_at as string) < new Date()) {
+  if (tokenExpired(resolved)) {
     return error("This scheduling link has expired", 410);
   }
+
+  let excludeApplicationId: number | undefined;
   if (resolved.used_at) {
-    return error("Interview already scheduled — use this link to confirm attendance", 409);
+    const booking = await fetchBookingForApplication(resolved.application_id as number);
+    if (!booking) {
+      return error("Interview already scheduled — use this link to confirm attendance", 409);
+    }
+    excludeApplicationId = resolved.application_id as number;
   }
 
   const officeId = resolved.office_id as number;
@@ -133,7 +185,8 @@ async function getSlots(
     jobId,
     resolved.office_timezone as string,
     from,
-    to
+    to,
+    excludeApplicationId
   );
 
   return json({
@@ -142,6 +195,7 @@ async function getSlots(
     slotDurationMinutes: config.slotDurationMinutes,
     bookingWindowDays: config.bookingWindowDays,
     minNoticeHours: config.minNoticeHours,
+    rescheduling: Boolean(excludeApplicationId),
   });
 }
 
@@ -151,10 +205,14 @@ async function bookSlot(
 ): Promise<HttpResponseInit> {
   const row = await fetchTokenRow(token);
   if (!row) return error("Not found", 404);
-  if (new Date(row.expires_at as string) < new Date()) {
+  if (tokenExpired(row)) {
     return error("This scheduling link has expired", 410);
   }
   if (row.used_at) return error("You have already scheduled your interview", 410);
+
+  if (!(await checkRateLimit(`schedule:book:${token}`, 10))) {
+    return error("Too many booking attempts. Please try again later.", 429);
+  }
 
   const body = (await req.json()) as unknown;
   const parsed = bookSlotSchema.safeParse(body);
@@ -163,15 +221,25 @@ async function bookSlot(
   const applicationId = row.application_id as number;
   const officeId = row.office_id as number;
   const jobId = row.job_id as number;
-  const { config } = await getAvailableSlots(
-    officeId,
-    jobId,
-    row.office_timezone as string,
-    new Date().toISOString().slice(0, 10),
-    new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10)
-  );
-  const startsAt = new Date(parsed.data.slotStart);
-  const endsAt = new Date(startsAt.getTime() + config.slotDurationMinutes * 60 * 1000);
+  const officeTimezone = row.office_timezone as string;
+
+  let startsAt: Date;
+  let endsAt: Date;
+  let slotConfig;
+  try {
+    const validated = await assertSlotBookable({
+      officeId,
+      jobId,
+      officeTimezone,
+      slotStart: new Date(parsed.data.slotStart),
+    });
+    startsAt = validated.startsAt;
+    endsAt = validated.endsAt;
+    slotConfig = validated.config;
+  } catch (e) {
+    if (e instanceof SlotNotBookableError) return error(e.message, 409);
+    throw e;
+  }
 
   const pool = await getPool();
   const tx = new sql.Transaction(pool);
@@ -186,7 +254,7 @@ async function bookSlot(
         WHERE office_id = @officeId AND starts_at < @end AND ends_at > @start
       `);
     const bookedCount = (overlap.recordset[0] as { cnt: number }).cnt;
-    if (bookedCount >= config.slotCapacity) {
+    if (bookedCount >= slotConfig.slotCapacity) {
       await tx.rollback();
       return error("That time slot is no longer available", 409);
     }
@@ -230,31 +298,130 @@ async function bookSlot(
     startsAt,
     endsAt,
     parsed.data.applicantTimezone,
-    row.office_timezone as string
+    officeTimezone
   );
 
-  const app = await loadApplicationRow(applicationId);
-  if (!app) return json({ status: "scheduled", startsAt: startsAt.toISOString() });
-
-  const interviewTimeLocal = interviewTimeForBooking(
+  return buildBookingResponse(
+    applicationId,
     startsAt,
+    endsAt,
     parsed.data.applicantTimezone,
-    row.office_timezone as string
+    officeTimezone
+  );
+}
+
+async function rescheduleSlot(
+  token: string,
+  req: HttpRequest
+): Promise<HttpResponseInit> {
+  const row = await fetchTokenRow(token);
+  if (!row) return error("Not found", 404);
+  if (tokenExpired(row)) {
+    return error("This scheduling link has expired", 410);
+  }
+  if (!row.used_at) {
+    return error("Please schedule your interview first", 400);
+  }
+
+  if (!(await checkRateLimit(`schedule:reschedule:${token}`, 5))) {
+    return error("Too many reschedule attempts. Please try again later.", 429);
+  }
+
+  const booking = await fetchBookingForApplication(row.application_id as number);
+  if (!booking) return error("No interview booking found", 404);
+
+  const body = (await req.json()) as unknown;
+  const parsed = bookSlotSchema.safeParse(body);
+  if (!parsed.success) return error(parsed.error.message, 400);
+
+  const applicationId = row.application_id as number;
+  const officeId = row.office_id as number;
+  const jobId = row.job_id as number;
+  const officeTimezone = row.office_timezone as string;
+  const bookingId = booking.id as number;
+
+  let startsAt: Date;
+  let endsAt: Date;
+  let slotConfig;
+  try {
+    const validated = await assertSlotBookable({
+      officeId,
+      jobId,
+      officeTimezone,
+      slotStart: new Date(parsed.data.slotStart),
+      excludeApplicationId: applicationId,
+    });
+    startsAt = validated.startsAt;
+    endsAt = validated.endsAt;
+    slotConfig = validated.config;
+  } catch (e) {
+    if (e instanceof SlotNotBookableError) return error(e.message, 409);
+    throw e;
+  }
+
+  const pool = await getPool();
+  const tx = new sql.Transaction(pool);
+  await tx.begin();
+  try {
+    const overlap = await new sql.Request(tx)
+      .input("officeId", sql.Int, officeId)
+      .input("appId", sql.Int, applicationId)
+      .input("start", sql.DateTime2, startsAt)
+      .input("end", sql.DateTime2, endsAt)
+      .query(`
+        SELECT COUNT(*) AS cnt FROM ${t("interview_bookings")} WITH (UPDLOCK, HOLDLOCK)
+        WHERE office_id = @officeId AND application_id <> @appId
+          AND starts_at < @end AND ends_at > @start
+      `);
+    const bookedCount = (overlap.recordset[0] as { cnt: number }).cnt;
+    if (bookedCount >= slotConfig.slotCapacity) {
+      await tx.rollback();
+      return error("That time slot is no longer available", 409);
+    }
+
+    await new sql.Request(tx)
+      .input("appId", sql.Int, applicationId)
+      .input("start", sql.DateTime2, startsAt)
+      .input("end", sql.DateTime2, endsAt)
+      .input("tz", sql.NVarChar, parsed.data.applicantTimezone)
+      .query(`
+        UPDATE ${t("interview_bookings")}
+        SET starts_at = @start, ends_at = @end, applicant_timezone = @tz,
+            attendance_status = NULL, attendance_confirmed_at = NULL
+        WHERE application_id = @appId
+      `);
+
+    await new sql.Request(tx)
+      .input("appId", sql.Int, applicationId)
+      .query(`
+        UPDATE ${t("applications")} SET status = 'scheduled', updated_at = SYSUTCDATETIME()
+        WHERE id = @appId
+      `);
+
+    await tx.commit();
+  } catch (e) {
+    await tx.rollback();
+    throw e;
+  }
+
+  await rescheduleBooking(
+    applicationId,
+    officeId,
+    jobId,
+    bookingId,
+    startsAt,
+    endsAt,
+    parsed.data.applicantTimezone,
+    officeTimezone
   );
 
-  return json({
-    status: "scheduled",
-    startsAt: startsAt.toISOString(),
-    endsAt: endsAt.toISOString(),
-    firstName: app.firstName,
-    lastName: app.lastName,
-    jobTitle: app.jobTitle,
-    officeName: app.officeName,
-    officeLocation: app.officeLocation,
-    locationNotes: app.officeLocationNotes || undefined,
-    interviewTimeLocal,
-    primaryInterest: app.primaryInterest || undefined,
-  });
+  return buildBookingResponse(
+    applicationId,
+    startsAt,
+    endsAt,
+    parsed.data.applicantTimezone,
+    officeTimezone
+  );
 }
 
 async function confirmAttendance(
@@ -263,7 +430,7 @@ async function confirmAttendance(
 ): Promise<HttpResponseInit> {
   const row = await fetchTokenRow(token);
   if (!row) return error("Not found", 404);
-  if (new Date(row.expires_at as string) < new Date()) {
+  if (tokenExpired(row)) {
     return error("This link has expired", 410);
   }
   if (!row.used_at) {

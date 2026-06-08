@@ -493,6 +493,62 @@ table.data th {
   font-family: ui-monospace, monospace;
 }
 
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.loading-indicator--inline {
+  flex-direction: row;
+  padding: 0.75rem 0;
+  justify-content: flex-start;
+}
+
+.loading-indicator__text {
+  color: var(--text-light);
+  font-size: 0.95rem;
+}
+
+.loading-spinner {
+  display: inline-block;
+  width: 2rem;
+  height: 2rem;
+  border: 3px solid rgba(0, 82, 155, 0.15);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: admin-loading-spin 0.75s linear infinite;
+}
+
+@keyframes admin-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.btn.is-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+}
+
+.btn.is-loading::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 1.125rem;
+  height: 1.125rem;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: admin-loading-spin 0.75s linear infinite;
+}
+
 .admin-simple-list {
   list-style: none;
   padding: 0;

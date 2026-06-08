@@ -134,3 +134,115 @@ export async function confirmBooking(
     confirmationUrl,
   });
 }
+
+export async function shiftReminderJobs(
+  bookingId: number,
+  officeId: number,
+  jobId: number,
+  startsAt: Date
+): Promise<void> {
+  const scheduleConfig = await resolveScheduleConfig(officeId, jobId);
+  const pool = await getPool();
+
+  for (const offset of scheduleConfig.reminderOffsets) {
+    const scheduledFor = new Date(
+      startsAt.getTime() - offset.hoursBefore * 60 * 60 * 1000
+    );
+    const types = [offset.templateKeyEmail, offset.templateKeySms].filter(Boolean) as string[];
+    for (const reminderType of types) {
+      await pool
+        .request()
+        .input("bookingId", sql.Int, bookingId)
+        .input("type", sql.NVarChar, reminderType)
+        .input("scheduledFor", sql.DateTime2, scheduledFor)
+        .query(`
+          UPDATE ${t("reminder_jobs")}
+          SET scheduled_for = @scheduledFor
+          WHERE booking_id = @bookingId AND reminder_type = @type AND sent_at IS NULL
+        `);
+    }
+  }
+}
+
+export async function rescheduleBooking(
+  applicationId: number,
+  officeId: number,
+  jobId: number,
+  bookingId: number,
+  startsAt: Date,
+  endsAt: Date,
+  applicantTimezone: string,
+  officeTimezone: string
+): Promise<void> {
+  const app = await loadApplicationRow(applicationId);
+  if (!app) throw new Error("Application not found");
+
+  const interviewTimeLocal = interviewTimeForBooking(
+    startsAt,
+    applicantTimezone,
+    officeTimezone
+  );
+
+  const scheduleToken = await getScheduleTokenForApplication(applicationId);
+  const confirmationUrl = scheduleToken
+    ? `${config.publicSiteBaseUrl}/schedule/?token=${scheduleToken}`
+    : undefined;
+
+  const ctx = buildMessageContext(app, {
+    interviewTimeLocal,
+    confirmationUrl,
+  });
+  const scope = { officeId, jobId };
+
+  await sendMessage({
+    templateKey: "booking_confirm_email",
+    channel: "email",
+    to: { email: app.email },
+    context: ctx,
+    scope,
+    applicationId,
+  });
+
+  await sendMessage({
+    templateKey: "booking_confirm_sms",
+    channel: "sms",
+    to: { phone: app.phone },
+    context: ctx,
+    scope,
+    applicationId,
+  });
+
+  await shiftReminderJobs(bookingId, officeId, jobId, startsAt);
+
+  await dispatchWebhook("interview_rescheduled", app.officeId, {
+    event: "interview_rescheduled",
+    occurredAt: new Date().toISOString(),
+    summary: buildInterviewScheduledSummary(app, interviewTimeLocal),
+    application: {
+      id: app.applicationId,
+      firstName: app.firstName,
+      lastName: app.lastName,
+      email: app.email,
+      phone: app.phone,
+      primaryInterest: app.primaryInterest,
+      customFields: app.customFields,
+      status: "scheduled",
+      submittedAt: app.submittedAt,
+    },
+    job: { id: app.jobId, title: app.jobTitle, slug: app.jobSlug },
+    office: {
+      id: app.officeId,
+      name: app.officeName,
+      slug: app.officeSlug,
+      locationLabel: app.officeLocation,
+    },
+    booking: {
+      id: bookingId,
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+      interviewTimeLocal,
+      applicantTimezone,
+    },
+    confirmationUrl,
+  });
+}

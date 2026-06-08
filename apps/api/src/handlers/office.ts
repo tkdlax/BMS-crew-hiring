@@ -13,6 +13,7 @@ import {
 } from "../lib/auth/session.js";
 import { listCalendarEvents } from "../lib/calendarEvents.js";
 import { handleAvailabilityRoutes } from "../lib/availabilityManage.js";
+import { checkRateLimit } from "../lib/rateLimit.js";
 
 export async function handleOffice(
   req: HttpRequest,
@@ -69,6 +70,11 @@ export async function handleOffice(
 }
 
 async function officeLogin(req: HttpRequest): Promise<HttpResponseInit> {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!(await checkRateLimit(`login:office:ip:${ip}`, 20))) {
+    return error("Too many login attempts. Please try again later.", 429);
+  }
+
   const body = (await req.json()) as unknown;
   const parsed = officeLoginSchema.safeParse(body);
   if (!parsed.success) return error("Invalid request", 400);

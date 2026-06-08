@@ -24,6 +24,7 @@ import {
 import { generateCalendarFeedToken } from "../lib/feedToken.js";
 import { listCalendarEvents } from "../lib/calendarEvents.js";
 import { handleAvailabilityRoutes } from "../lib/availabilityManage.js";
+import { checkRateLimit } from "../lib/rateLimit.js";
 
 export async function handleAdmin(
   req: HttpRequest,
@@ -65,6 +66,11 @@ export async function handleAdmin(
 }
 
 async function adminLogin(req: HttpRequest): Promise<HttpResponseInit> {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!(await checkRateLimit(`login:admin:ip:${ip}`, 20))) {
+    return error("Too many login attempts. Please try again later.", 429);
+  }
+
   const body = (await req.json()) as unknown;
   const parsed = adminLoginSchema.safeParse(body);
   if (!parsed.success) return error("Invalid request", 400);

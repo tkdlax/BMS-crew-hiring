@@ -1,7 +1,7 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import type { HttpRequest } from "@azure/functions";
 import bcrypt from "bcryptjs";
-import { config } from "../../config.js";
+import { config, isProduction } from "../../config.js";
 
 export const SESSION_COOKIE_NAME = "bms_admin_session";
 const TTL = "8h";
@@ -15,7 +15,10 @@ export type SessionPayload = {
 };
 
 export async function verifyAdminPassword(password: string): Promise<boolean> {
-  if (!config.adminPasswordHash) return password === "admin";
+  if (!config.adminPasswordHash) {
+    if (isProduction()) return false;
+    return password === "admin";
+  }
   return bcrypt.compare(password, config.adminPasswordHash);
 }
 

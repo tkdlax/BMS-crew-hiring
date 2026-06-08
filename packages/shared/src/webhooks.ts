@@ -2,6 +2,7 @@
 export const WEBHOOK_EVENTS = [
   "application_submitted",
   "interview_scheduled",
+  "interview_rescheduled",
 ] as const;
 
 export type WebhookEvent = (typeof WEBHOOK_EVENTS)[number];

@@ -101,7 +101,8 @@ export async function getAvailableSlots(
   jobId: number,
   officeTimezone: string,
   from: string,
-  to: string
+  to: string,
+  excludeApplicationId?: number
 ) {
   const config = await resolveScheduleConfig(officeId, jobId);
   const rules = await getAvailabilityRules(officeId, jobId);
@@ -109,10 +110,15 @@ export async function getAvailableSlots(
   const blocks = await getAvailabilityBlocks(officeId, jobId);
 
   const pool = await getPool();
-  const booked = await pool.request().input("officeId", sql.Int, officeId).query(`
-    SELECT starts_at, ends_at FROM ${t("interview_bookings")}
-    WHERE office_id = @officeId AND starts_at >= SYSUTCDATETIME()
-  `);
+  const booked = await pool
+    .request()
+    .input("officeId", sql.Int, officeId)
+    .input("excludeAppId", sql.Int, excludeApplicationId ?? null)
+    .query(`
+      SELECT starts_at, ends_at FROM ${t("interview_bookings")}
+      WHERE office_id = @officeId AND starts_at >= SYSUTCDATETIME()
+        AND (@excludeAppId IS NULL OR application_id <> @excludeAppId)
+    `);
 
   let slots = generateSlots(
     from,
@@ -139,4 +145,47 @@ export async function getAvailableSlots(
   });
 
   return { slots, config };
+}
+
+export class SlotNotBookableError extends Error {
+  constructor(message = "That time slot is no longer available") {
+    super(message);
+    this.name = "SlotNotBookableError";
+  }
+}
+
+/** Match a requested start time to a generated slot (ms precision). */
+export function findMatchingSlot(
+  slots: { startsAt: string; endsAt: string }[],
+  slotStart: Date
+): { startsAt: string; endsAt: string } | undefined {
+  const target = slotStart.getTime();
+  return slots.find((s) => new Date(s.startsAt).getTime() === target);
+}
+
+export async function assertSlotBookable(params: {
+  officeId: number;
+  jobId: number;
+  officeTimezone: string;
+  slotStart: Date;
+  excludeApplicationId?: number;
+}): Promise<{ startsAt: Date; endsAt: Date; config: Awaited<ReturnType<typeof resolveScheduleConfig>> }> {
+  const { officeId, jobId, officeTimezone, slotStart, excludeApplicationId } = params;
+  const config = await resolveScheduleConfig(officeId, jobId);
+  const range = getOfficeDateRange(officeTimezone, config.bookingWindowDays);
+  const { slots, config: resolvedConfig } = await getAvailableSlots(
+    officeId,
+    jobId,
+    officeTimezone,
+    range.from,
+    range.to,
+    excludeApplicationId
+  );
+  const match = findMatchingSlot(slots, slotStart);
+  if (!match) throw new SlotNotBookableError();
+  return {
+    startsAt: new Date(match.startsAt),
+    endsAt: new Date(match.endsAt),
+    config: resolvedConfig,
+  };
 }

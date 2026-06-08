@@ -2,9 +2,12 @@ import sql from "mssql";
 import { getPool, t } from "../db/pool.js";
 
 const WINDOW_MS = 60 * 60 * 1000;
-const MAX_PER_WINDOW = 10;
+const DEFAULT_MAX_PER_WINDOW = 10;
 
-export async function checkRateLimit(key: string): Promise<boolean> {
+export async function checkRateLimit(
+  key: string,
+  maxPerWindow = DEFAULT_MAX_PER_WINDOW
+): Promise<boolean> {
   const pool = await getPool();
   const windowStart = new Date(Math.floor(Date.now() / WINDOW_MS) * WINDOW_MS);
 
@@ -30,7 +33,7 @@ export async function checkRateLimit(key: string): Promise<boolean> {
   }
 
   const count = existing.recordset[0].hit_count as number;
-  if (count >= MAX_PER_WINDOW) return false;
+  if (count >= maxPerWindow) return false;
 
   await pool
     .request()

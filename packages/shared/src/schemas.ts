@@ -28,6 +28,7 @@ export const officeWebhooksUpsertSchema = z.object({
   webhooks: z.object({
     application_submitted: z.string().max(2000).optional(),
     interview_scheduled: z.string().max(2000).optional(),
+    interview_rescheduled: z.string().max(2000).optional(),
   }),
 });
 

@@ -86,7 +86,7 @@ const operationsUrl = hrefPath("operations/");
     </div>
 
     <div id="preview-confirm-stage" style="margin-top: 1rem">
-      <div class="schedule-shell" id="preview-confirm-before">
+      <div class="schedule-shell" id="preview-confirm-before" hidden>
         <aside class="schedule-sidebar">
           <p class="schedule-sidebar__eyebrow">Interview scheduling</p>
           <h1 class="schedule-sidebar__title">Hi, Alex</h1>
@@ -153,11 +153,15 @@ const operationsUrl = hrefPath("operations/");
   }
 
   document.getElementById("load-preview")?.addEventListener("click", async () => {
+    const loadBtn = document.getElementById("load-preview") as HTMLButtonElement;
     const api = await resolveApiBaseUrl();
     if (!api) {
       alert("API not configured");
       return;
     }
+    loadBtn.classList.add("is-loading");
+    loadBtn.disabled = true;
+    try {
     const office = (document.getElementById("office-select") as HTMLSelectElement).value;
     const res = await fetch(`${api}/public/schedule-preview/${office}?job=moving-operations-crew`);
     const data = await res.json();
@@ -202,6 +206,10 @@ const operationsUrl = hrefPath("operations/");
       timeHeading: "Select a time for your interview",
       readOnly: true,
     });
+    } finally {
+      loadBtn.classList.remove("is-loading");
+      loadBtn.disabled = false;
+    }
   });
 
   if (officeParam) {
