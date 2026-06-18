@@ -20,9 +20,9 @@ export async function getRuleById(id: number): Promise<RuleRow | null> {
   const row = r.recordset[0] as Record<string, unknown> | undefined;
   if (!row) return null;
   return {
-    id: row.id as number,
-    scope: row.scope as string,
-    scope_id: row.scope_id as number | null,
+    id: Number(row.id),
+    scope: String(row.scope).trim(),
+    scope_id: row.scope_id == null ? null : Number(row.scope_id),
     day_of_week: row.day_of_week as number,
     start_time: normalizeTimeHM(String(row.start_time)),
     end_time: normalizeTimeHM(String(row.end_time)),

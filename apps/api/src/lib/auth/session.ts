@@ -42,7 +42,7 @@ export async function createOfficeSessionToken(
   officeId: number,
   officeSlug: string
 ): Promise<string> {
-  return signSession({ role: "office", officeId, officeSlug });
+  return signSession({ role: "office", officeId: Number(officeId), officeSlug });
 }
 
 async function signSession(payload: SessionPayload): Promise<string> {
@@ -65,8 +65,10 @@ export async function readSession(req: HttpRequest): Promise<SessionPayload | nu
     if (role === "office") {
       const officeId = payload.officeId as number | undefined;
       const officeSlug = payload.officeSlug as string | undefined;
-      if (!officeId || !officeSlug) return null;
-      return { role, officeId, officeSlug };
+      if (officeId == null || !officeSlug) return null;
+      const id = Number(officeId);
+      if (!Number.isFinite(id)) return null;
+      return { role, officeId: id, officeSlug };
     }
     return { role: "admin" };
   } catch {
@@ -113,7 +115,7 @@ export async function canAccessOffice(
   const session = await readSession(req);
   if (!session) return false;
   if (session.role === "admin") return true;
-  if (session.role === "office") return session.officeId === officeId;
+  if (session.role === "office") return Number(session.officeId) === Number(officeId);
   return false;
 }
 

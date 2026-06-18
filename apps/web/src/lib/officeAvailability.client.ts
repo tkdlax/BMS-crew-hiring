@@ -436,18 +436,21 @@ export function initAvailabilityEditor(opts: AvailabilityEditorOptions): void {
 
       setButtonLoading(submit, true);
       try {
-        const payload = {
-          scope: "office",
-          scopeId: officeId(),
-          dayOfWeek,
-          startTime,
-          endTime,
-        };
         if (editingRuleId) {
-          await apiJson("PUT", `/availability/${editingRuleId}`, payload);
+          await apiJson("PUT", `/availability/${editingRuleId}`, {
+            dayOfWeek,
+            startTime,
+            endTime,
+          });
           showFeedback("success", "Weekly hours updated.");
         } else {
-          await apiJson("POST", "/availability", payload);
+          await apiJson("POST", "/availability", {
+            scope: "office",
+            scopeId: officeId(),
+            dayOfWeek,
+            startTime,
+            endTime,
+          });
           showFeedback("success", "Weekly hours added.");
         }
         resetRuleForm();

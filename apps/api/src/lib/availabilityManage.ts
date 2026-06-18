@@ -24,10 +24,26 @@ type Actor =
   | { type: "admin" }
   | { type: "office"; officeId: number };
 
-function enforceOfficeScope(actor: Actor, scopeId: number | null, scope: string): boolean {
+function asScopeId(value: unknown): number | null {
+  if (value == null || value === "") return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function officeScopeMatches(
+  actor: Actor,
+  scopeId: unknown,
+  scope: string
+): boolean {
   if (actor.type === "admin") return true;
-  if (scope !== "office") return false;
-  return scopeId === actor.officeId;
+  if (scope.trim().toLowerCase() !== "office") return false;
+  const ruleOfficeId = asScopeId(scopeId);
+  if (ruleOfficeId == null) return false;
+  return ruleOfficeId === asScopeId(actor.officeId);
+}
+
+function enforceOfficeScope(actor: Actor, scopeId: number | null, scope: string): boolean {
+  return officeScopeMatches(actor, scopeId, scope);
 }
 
 async function getOfficeTimezone(officeId: number): Promise<string> {
@@ -136,8 +152,8 @@ export async function handleAvailabilityRoutes(
         .request()
         .input("id", sql.Int, id)
         .query(`SELECT scope, scope_id FROM ${t("availability_rules")} WHERE id = @id`);
-      const row = check.recordset[0] as { scope: string; scope_id: number } | undefined;
-      if (!row || row.scope !== "office" || row.scope_id !== actor.officeId) {
+      const row = check.recordset[0] as { scope: string; scope_id: unknown } | undefined;
+      if (!row || !officeScopeMatches(actor, row.scope_id, row.scope)) {
         return error("Forbidden", 403);
       }
     }
@@ -259,8 +275,8 @@ async function handleExceptions(
       const check = await pool.request().input("id", sql.Int, id).query(`
         SELECT scope, scope_id FROM ${t("availability_exceptions")} WHERE id = @id
       `);
-      const row = check.recordset[0] as { scope: string; scope_id: number } | undefined;
-      if (!row || row.scope !== "office" || row.scope_id !== actor.officeId) {
+      const row = check.recordset[0] as { scope: string; scope_id: unknown } | undefined;
+      if (!row || !officeScopeMatches(actor, row.scope_id, row.scope)) {
         return error("Forbidden", 403);
       }
     }
@@ -341,8 +357,8 @@ async function handleBlocks(
       const check = await pool.request().input("id", sql.Int, id).query(`
         SELECT scope, scope_id FROM ${t("availability_blocks")} WHERE id = @id
       `);
-      const row = check.recordset[0] as { scope: string; scope_id: number } | undefined;
-      if (!row || row.scope !== "office" || row.scope_id !== actor.officeId) {
+      const row = check.recordset[0] as { scope: string; scope_id: unknown } | undefined;
+      if (!row || !officeScopeMatches(actor, row.scope_id, row.scope)) {
         return error("Forbidden", 403);
       }
     }
