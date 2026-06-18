@@ -103,16 +103,19 @@ export function initAvailabilityEditor(opts: AvailabilityEditorOptions): void {
       body: body ? JSON.stringify(body) : undefined,
     });
     let data: Record<string, unknown> = {};
-    try {
-      data = (await res.json()) as Record<string, unknown>;
-    } catch {
-      /* empty body */
+    const text = await res.text();
+    if (text) {
+      try {
+        data = JSON.parse(text) as Record<string, unknown>;
+      } catch {
+        if (!res.ok) throw new Error(text.slice(0, 200) || `Request failed (${res.status})`);
+      }
     }
     if (!res.ok) {
       const msg =
         (typeof data.error === "string" && data.error) ||
         (typeof data.message === "string" && data.message) ||
-        `Request failed (${res.status})`;
+        (text ? text.slice(0, 200) : `Request failed (${res.status})`);
       throw new Error(msg);
     }
     return data;
@@ -437,7 +440,8 @@ export function initAvailabilityEditor(opts: AvailabilityEditorOptions): void {
       setButtonLoading(submit, true);
       try {
         if (editingRuleId) {
-          await apiJson("PUT", `/availability/${editingRuleId}`, {
+          // POST instead of PUT — Webflow Cloud worker may block PUT before it reaches Azure.
+          await apiJson("POST", `/availability/${editingRuleId}`, {
             dayOfWeek,
             startTime,
             endTime,

@@ -15,6 +15,11 @@ if (!apiBase) {
 export default defineConfig({
   base,
   output: "static",
+  security: {
+    // Allow same-origin POST/PUT/DELETE through the Cloudflare worker proxy (CSRF origin
+    // checks can 403 before our API route handlers run on Webflow Cloud).
+    checkOrigin: false,
+  },
   adapter: cloudflare({
     imageService: "passthrough",
   }),

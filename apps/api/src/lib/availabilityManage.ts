@@ -142,8 +142,10 @@ export async function handleAvailabilityRoutes(
       `);
     return json({ ok: true }, 201);
   }
-  if (segments[0] && req.method === "PUT") {
-    return updateRule(parseInt(segments[0], 10), req, actor);
+  if (segments.length === 1 && (req.method === "PUT" || req.method === "POST")) {
+    const id = parseInt(segments[0]!, 10);
+    if (!Number.isFinite(id)) return error("Invalid rule id", 400);
+    return updateRule(id, req, actor);
   }
   if (segments[0] && req.method === "DELETE") {
     const id = parseInt(segments[0], 10);
