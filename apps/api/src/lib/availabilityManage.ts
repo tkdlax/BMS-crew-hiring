@@ -46,6 +46,32 @@ function enforceOfficeScope(actor: Actor, scopeId: number | null, scope: string)
   return officeScopeMatches(actor, scopeId, scope);
 }
 
+async function deleteScopedRow(
+  actor: Actor,
+  table: "availability_rules" | "availability_exceptions" | "availability_blocks",
+  id: number
+): Promise<HttpResponseInit> {
+  if (!Number.isFinite(id)) return error("Invalid id", 400);
+  const pool = await getPool();
+  if (actor.type === "office") {
+    const check = await pool.request().input("id", sql.Int, id).query(`
+      SELECT scope, scope_id FROM ${t(table)} WHERE id = @id
+    `);
+    const row = check.recordset[0] as { scope: string; scope_id: unknown } | undefined;
+    if (!row || !officeScopeMatches(actor, row.scope_id, row.scope)) {
+      return error("Forbidden", 403);
+    }
+  }
+  await pool.request().input("id", sql.Int, id).query(`
+    DELETE FROM ${t(table)} WHERE id = @id
+  `);
+  return json({ ok: true });
+}
+
+function isPostDelete(segments: string[], method: string): boolean {
+  return segments.length === 2 && segments[1] === "delete" && method === "POST";
+}
+
 async function getOfficeTimezone(officeId: number): Promise<string> {
   const pool = await getPool();
   const r = await pool
@@ -142,27 +168,16 @@ export async function handleAvailabilityRoutes(
       `);
     return json({ ok: true }, 201);
   }
+  if (isPostDelete(segments, req.method)) {
+    return deleteScopedRow(actor, "availability_rules", parseInt(segments[0]!, 10));
+  }
   if (segments.length === 1 && (req.method === "PUT" || req.method === "POST")) {
     const id = parseInt(segments[0]!, 10);
     if (!Number.isFinite(id)) return error("Invalid rule id", 400);
     return updateRule(id, req, actor);
   }
   if (segments[0] && req.method === "DELETE") {
-    const id = parseInt(segments[0], 10);
-    if (actor.type === "office") {
-      const check = await pool
-        .request()
-        .input("id", sql.Int, id)
-        .query(`SELECT scope, scope_id FROM ${t("availability_rules")} WHERE id = @id`);
-      const row = check.recordset[0] as { scope: string; scope_id: unknown } | undefined;
-      if (!row || !officeScopeMatches(actor, row.scope_id, row.scope)) {
-        return error("Forbidden", 403);
-      }
-    }
-    await pool.request().input("id", sql.Int, id).query(`
-      DELETE FROM ${t("availability_rules")} WHERE id = @id
-    `);
-    return json({ ok: true });
+    return deleteScopedRow(actor, "availability_rules", parseInt(segments[0], 10));
   }
   return error("Not found", 404);
 }
@@ -271,21 +286,11 @@ async function handleExceptions(
       `);
     return json({ ok: true }, 201);
   }
+  if (isPostDelete(segments, req.method)) {
+    return deleteScopedRow(actor, "availability_exceptions", parseInt(segments[0]!, 10));
+  }
   if (segments[0] && req.method === "DELETE") {
-    const id = parseInt(segments[0], 10);
-    if (actor.type === "office") {
-      const check = await pool.request().input("id", sql.Int, id).query(`
-        SELECT scope, scope_id FROM ${t("availability_exceptions")} WHERE id = @id
-      `);
-      const row = check.recordset[0] as { scope: string; scope_id: unknown } | undefined;
-      if (!row || !officeScopeMatches(actor, row.scope_id, row.scope)) {
-        return error("Forbidden", 403);
-      }
-    }
-    await pool.request().input("id", sql.Int, id).query(`
-      DELETE FROM ${t("availability_exceptions")} WHERE id = @id
-    `);
-    return json({ ok: true });
+    return deleteScopedRow(actor, "availability_exceptions", parseInt(segments[0], 10));
   }
   return error("Not found", 404);
 }
@@ -353,21 +358,11 @@ async function handleBlocks(
       `);
     return json({ ok: true }, 201);
   }
+  if (isPostDelete(segments, req.method)) {
+    return deleteScopedRow(actor, "availability_blocks", parseInt(segments[0]!, 10));
+  }
   if (segments[0] && req.method === "DELETE") {
-    const id = parseInt(segments[0], 10);
-    if (actor.type === "office") {
-      const check = await pool.request().input("id", sql.Int, id).query(`
-        SELECT scope, scope_id FROM ${t("availability_blocks")} WHERE id = @id
-      `);
-      const row = check.recordset[0] as { scope: string; scope_id: unknown } | undefined;
-      if (!row || !officeScopeMatches(actor, row.scope_id, row.scope)) {
-        return error("Forbidden", 403);
-      }
-    }
-    await pool.request().input("id", sql.Int, id).query(`
-      DELETE FROM ${t("availability_blocks")} WHERE id = @id
-    `);
-    return json({ ok: true });
+    return deleteScopedRow(actor, "availability_blocks", parseInt(segments[0], 10));
   }
   return error("Not found", 404);
 }

@@ -237,7 +237,7 @@ export function initAvailabilityEditor(opts: AvailabilityEditorOptions): void {
       : "these hours";
     if (!confirm(`Remove ${label}?`)) return;
     try {
-      await apiJson("DELETE", `/availability/${id}`);
+      await apiJson("POST", `/availability/${id}/delete`);
       if (editingRuleId === parseInt(id, 10)) resetRuleForm();
       showFeedback("success", "Weekly hours removed.");
       await loadAll();
@@ -301,7 +301,7 @@ export function initAvailabilityEditor(opts: AvailabilityEditorOptions): void {
           const exId = btn.getAttribute("data-del-ex");
           if (!exId || !confirm("Remove this closed date?")) return;
           try {
-            await apiJson("DELETE", `/availability/exceptions/${exId}`);
+            await apiJson("POST", `/availability/exceptions/${exId}/delete`);
             showFeedback("success", "Closed date removed.");
             await loadExceptions();
           } catch (e) {
@@ -359,7 +359,7 @@ export function initAvailabilityEditor(opts: AvailabilityEditorOptions): void {
           const blockId = btn.getAttribute("data-del-block");
           if (!blockId || !confirm("Remove this blocked time?")) return;
           try {
-            await apiJson("DELETE", `/availability/blocks/${blockId}`);
+            await apiJson("POST", `/availability/blocks/${blockId}/delete`);
             showFeedback("success", "Time block removed.");
             await loadBlocks();
           } catch (e) {
