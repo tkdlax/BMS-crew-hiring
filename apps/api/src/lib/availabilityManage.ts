@@ -2,12 +2,23 @@ import type { HttpRequest, HttpResponseInit } from "@azure/functions";
 import sql from "mssql";
 import {
   availabilityRuleSchema,
+  availabilityRuleUpdateSchema,
   availabilityExceptionSchema,
   availabilityBlockSchema,
+  zodFirstErrorMessage,
+  DAY_NAMES,
+  normalizeTimeHM,
+  formatTime12h,
 } from "@bms/shared";
 import { getPool, t } from "../db/pool.js";
 import { json, error } from "../http/response.js";
 import { localTimeToUtc } from "./timezone.js";
+import {
+  exceptionExists,
+  findOverlappingBlock,
+  findOverlappingRule,
+  getRuleById,
+} from "./availabilityConflicts.js";
 
 type Actor =
   | { type: "admin" }
@@ -26,6 +37,25 @@ async function getOfficeTimezone(officeId: number): Promise<string> {
     .input("id", sql.Int, officeId)
     .query(`SELECT timezone FROM ${t("offices")} WHERE id = @id`);
   return (r.recordset[0]?.timezone as string) || "America/Denver";
+}
+
+function overlapRuleMessage(dayOfWeek: number, start: string, end: string): string {
+  const day = DAY_NAMES[dayOfWeek] ?? "that day";
+  return `This overlaps existing hours on ${day} (${formatTime12h(start)}–${formatTime12h(end)}). Edit or remove the other block first.`;
+}
+
+function mapRuleRow(row: Record<string, unknown>) {
+  const start = normalizeTimeHM(String(row.start_time));
+  const end = normalizeTimeHM(String(row.end_time));
+  return {
+    id: row.id as number,
+    dayOfWeek: row.day_of_week as number,
+    startTime: start,
+    endTime: end,
+    day_of_week: row.day_of_week as number,
+    start_time: start,
+    end_time: end,
+  };
 }
 
 export async function handleAvailabilityRoutes(
@@ -56,26 +86,48 @@ export async function handleAvailabilityRoutes(
       .query(`
         SELECT * FROM ${t("availability_rules")}
         WHERE scope = @scope AND ((@scopeId IS NULL AND scope_id IS NULL) OR scope_id = @scopeId)
+        ORDER BY day_of_week, start_time
       `);
-    return json({ rules: r.recordset });
+    const rules = r.recordset.map(mapRuleRow);
+    return json({ rules });
   }
-  if (req.method === "POST") {
-    const body = availabilityRuleSchema.parse(await req.json());
+  if (segments.length === 0 && req.method === "POST") {
+    const parsed = availabilityRuleSchema.safeParse(await req.json());
+    if (!parsed.success) return error(zodFirstErrorMessage(parsed.error), 400);
+    const body = parsed.data;
     if (!enforceOfficeScope(actor, body.scopeId, body.scope)) {
       return error("Forbidden", 403);
+    }
+    const startTime = normalizeTimeHM(body.startTime);
+    const endTime = normalizeTimeHM(body.endTime);
+    const overlap = await findOverlappingRule(
+      body.scope,
+      body.scopeId,
+      body.dayOfWeek,
+      startTime,
+      endTime
+    );
+    if (overlap) {
+      return error(
+        overlapRuleMessage(overlap.day_of_week, overlap.start_time, overlap.end_time),
+        409
+      );
     }
     await pool
       .request()
       .input("scope", sql.NVarChar, body.scope)
       .input("scopeId", sql.Int, body.scopeId)
       .input("dow", sql.Int, body.dayOfWeek)
-      .input("start", sql.NVarChar, body.startTime)
-      .input("end", sql.NVarChar, body.endTime)
+      .input("start", sql.NVarChar, startTime)
+      .input("end", sql.NVarChar, endTime)
       .query(`
         INSERT INTO ${t("availability_rules")} (scope, scope_id, day_of_week, start_time, end_time)
         VALUES (@scope, @scopeId, @dow, @start, @end)
       `);
     return json({ ok: true }, 201);
+  }
+  if (segments[0] && req.method === "PUT") {
+    return updateRule(parseInt(segments[0], 10), req, actor);
   }
   if (segments[0] && req.method === "DELETE") {
     const id = parseInt(segments[0], 10);
@@ -95,6 +147,60 @@ export async function handleAvailabilityRoutes(
     return json({ ok: true });
   }
   return error("Not found", 404);
+}
+
+async function updateRule(
+  id: number,
+  req: HttpRequest,
+  actor: Actor
+): Promise<HttpResponseInit> {
+  const existing = await getRuleById(id);
+  if (!existing) return error("Rule not found", 404);
+  if (!enforceOfficeScope(actor, existing.scope_id, existing.scope)) {
+    return error("Forbidden", 403);
+  }
+
+  const parsed = availabilityRuleUpdateSchema.safeParse(await req.json());
+  if (!parsed.success) return error(zodFirstErrorMessage(parsed.error), 400);
+  const body = parsed.data;
+
+  const dayOfWeek = body.dayOfWeek ?? existing.day_of_week;
+  const startTime = normalizeTimeHM(body.startTime ?? existing.start_time);
+  const endTime = normalizeTimeHM(body.endTime ?? existing.end_time);
+
+  const startMins =
+    Number(startTime.split(":")[0]) * 60 + Number(startTime.split(":")[1]);
+  const endMins = Number(endTime.split(":")[0]) * 60 + Number(endTime.split(":")[1]);
+  if (endMins <= startMins) return error("End time must be after start time", 400);
+
+  const overlap = await findOverlappingRule(
+    existing.scope,
+    existing.scope_id,
+    dayOfWeek,
+    startTime,
+    endTime,
+    id
+  );
+  if (overlap) {
+    return error(
+      overlapRuleMessage(overlap.day_of_week, overlap.start_time, overlap.end_time),
+      409
+    );
+  }
+
+  const pool = await getPool();
+  await pool
+    .request()
+    .input("id", sql.Int, id)
+    .input("dow", sql.Int, dayOfWeek)
+    .input("start", sql.NVarChar, startTime)
+    .input("end", sql.NVarChar, endTime)
+    .query(`
+      UPDATE ${t("availability_rules")}
+      SET day_of_week = @dow, start_time = @start, end_time = @end
+      WHERE id = @id
+    `);
+  return json({ ok: true });
 }
 
 async function handleExceptions(
@@ -127,9 +233,14 @@ async function handleExceptions(
     return json({ exceptions });
   }
   if (segments.length === 0 && req.method === "POST") {
-    const body = availabilityExceptionSchema.parse(await req.json());
+    const parsed = availabilityExceptionSchema.safeParse(await req.json());
+    if (!parsed.success) return error(zodFirstErrorMessage(parsed.error), 400);
+    const body = parsed.data;
     if (!enforceOfficeScope(actor, body.scopeId, body.scope)) {
       return error("Forbidden", 403);
+    }
+    if (await exceptionExists(body.scope, body.scopeId, body.exceptionDate)) {
+      return error("That date is already marked as closed", 409);
     }
     await pool
       .request()
@@ -193,7 +304,9 @@ async function handleBlocks(
     return json({ blocks });
   }
   if (segments.length === 0 && req.method === "POST") {
-    const body = availabilityBlockSchema.parse(await req.json());
+    const parsed = availabilityBlockSchema.safeParse(await req.json());
+    if (!parsed.success) return error(zodFirstErrorMessage(parsed.error), 400);
+    const body = parsed.data;
     if (!enforceOfficeScope(actor, body.scopeId, body.scope)) {
       return error("Forbidden", 403);
     }
@@ -203,7 +316,11 @@ async function handleBlocks(
     const [eh, em] = body.endTime.split(":").map(Number);
     const startsAt = localTimeToUtc(y!, m!, d!, sh!, sm!, tz);
     const endsAt = localTimeToUtc(y!, m!, d!, eh!, em!, tz);
-    if (endsAt <= startsAt) return error("End time must be after start time", 400);
+
+    const overlap = await findOverlappingBlock(body.scope, body.scopeId, startsAt, endsAt);
+    if (overlap) {
+      return error("This time block overlaps an existing block on that day", 409);
+    }
 
     await pool
       .request()

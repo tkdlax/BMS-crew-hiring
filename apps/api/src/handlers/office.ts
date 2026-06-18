@@ -36,7 +36,7 @@ export async function handleOffice(
       .request()
       .input("id", sql.Int, session.officeId)
       .query(`
-        SELECT id, slug, name, calendar_feed_token FROM ${t("offices")} WHERE id = @id
+        SELECT id, slug, name, timezone, calendar_feed_token FROM ${t("offices")} WHERE id = @id
       `);
     const office = r.recordset[0] as Record<string, unknown> | undefined;
     return json({
@@ -47,6 +47,7 @@ export async function handleOffice(
             id: office.id,
             slug: office.slug,
             name: office.name,
+            timezone: office.timezone,
             calendarFeedToken: office.calendar_feed_token,
           }
         : null,

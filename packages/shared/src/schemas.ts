@@ -60,14 +60,20 @@ export const availabilityExceptionSchema = z.object({
   exceptionDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
 });
 
-export const availabilityBlockSchema = z.object({
-  scope: z.enum(["office", "job"]),
-  scopeId: z.number().int().positive(),
-  localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/),
-  note: z.string().max(500).optional(),
-});
+export const availabilityBlockSchema = z
+  .object({
+    scope: z.enum(["office", "job"]),
+    scopeId: z.number().int().positive(),
+    localDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    startTime: z.string().regex(/^\d{2}:\d{2}$/),
+    endTime: z.string().regex(/^\d{2}:\d{2}$/),
+    note: z.string().max(500).optional(),
+  })
+  .refine((d) => {
+    const [sh, sm] = d.startTime.split(":").map(Number);
+    const [eh, em] = d.endTime.split(":").map(Number);
+    return eh! * 60 + em! > sh! * 60 + sm!;
+  }, { message: "End time must be after start time" });
 
 export const officeUpsertSchema = z.object({
   slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/),
@@ -110,13 +116,35 @@ export const templateUpsertSchema = z.object({
   body: z.string().min(1),
 });
 
-export const availabilityRuleSchema = z.object({
-  scope: z.enum(["global", "office", "job"]),
-  scopeId: z.number().int().positive().nullable(),
-  dayOfWeek: z.number().int().min(0).max(6),
-  startTime: z.string().regex(/^\d{2}:\d{2}$/),
-  endTime: z.string().regex(/^\d{2}:\d{2}$/),
-});
+export const availabilityRuleUpdateSchema = z
+  .object({
+    dayOfWeek: z.number().int().min(0).max(6).optional(),
+    startTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+    endTime: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+  })
+  .refine(
+    (d) => {
+      if (!d.startTime || !d.endTime) return true;
+      const [sh, sm] = d.startTime.split(":").map(Number);
+      const [eh, em] = d.endTime.split(":").map(Number);
+      return eh! * 60 + em! > sh! * 60 + sm!;
+    },
+    { message: "End time must be after start time" }
+  );
+
+export const availabilityRuleSchema = z
+  .object({
+    scope: z.enum(["global", "office", "job"]),
+    scopeId: z.number().int().positive().nullable(),
+    dayOfWeek: z.number().int().min(0).max(6),
+    startTime: z.string().regex(/^\d{2}:\d{2}$/),
+    endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  })
+  .refine((d) => {
+    const [sh, sm] = d.startTime.split(":").map(Number);
+    const [eh, em] = d.endTime.split(":").map(Number);
+    return eh! * 60 + em! > sh! * 60 + sm!;
+  }, { message: "End time must be after start time" });
 
 export const scheduleConfigUpsertSchema = z.object({
   scope: z.enum(["global", "office", "job"]),

@@ -34,9 +34,11 @@ const previewBase = hrefPath("schedule/preview/");
       <button type="submit" class="btn btn-secondary">Save booking rules</button>
     </form>
     <h2>Weekly hours</h2>
-    <p class="admin-hint">Mon–Fri 10:00–16:00 is typical for Denver. Add one row per day that is open.</p>
+    <p class="admin-hint">Mon–Fri 10:00–16:00 is typical for Denver. Overlapping blocks on the same day are not allowed.</p>
+    <div id="avail-feedback" class="avail-feedback" hidden role="alert"></div>
+    <div id="week-overview" class="avail-week" aria-label="Week overview"></div>
     <div id="rules-list"></div>
-    <h3>Add hours</h3>
+    <h3 class="avail-form-heading">Add or edit hours</h3>
     <form id="rule-form" class="admin-form admin-form--inline">
       <div class="field"><label>Day</label>
         <select name="dayOfWeek">
@@ -49,9 +51,10 @@ const previewBase = hrefPath("schedule/preview/");
           <option value="6">Saturday</option>
         </select>
       </div>
-      <div class="field"><label>Start</label><input name="startTime" value="10:00" pattern="[0-9]{2}:[0-9]{2}" title="HH:MM (24-hour), e.g. 10:00" required /></div>
-      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="[0-9]{2}:[0-9]{2}" title="HH:MM (24-hour), e.g. 16:00" required /></div>
-      <button type="submit" class="btn">Add</button>
+      <div class="field"><label>Start</label><input name="startTime" type="time" value="10:00" required /></div>
+      <div class="field"><label>End</label><input name="endTime" type="time" value="16:00" required /></div>
+      <button type="submit" class="btn">Add hours</button>
+      <button type="button" id="rule-form-cancel" class="btn btn-secondary" hidden>Cancel edit</button>
     </form>
 
     <h2>Closed dates</h2>
@@ -67,8 +70,8 @@ const previewBase = hrefPath("schedule/preview/");
     <div id="blocks-list"></div>
     <form id="block-form" class="admin-form admin-form--inline">
       <div class="field"><label>Date</label><input name="localDate" type="date" required /></div>
-      <div class="field"><label>Start</label><input name="startTime" value="14:00" pattern="[0-9]{2}:[0-9]{2}" title="HH:MM (24-hour), e.g. 14:00" required /></div>
-      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="[0-9]{2}:[0-9]{2}" title="HH:MM (24-hour), e.g. 16:00" required /></div>
+      <div class="field"><label>Start</label><input name="startTime" type="time" value="14:00" required /></div>
+      <div class="field"><label>End</label><input name="endTime" type="time" value="16:00" required /></div>
       <div class="field"><label>Note</label><input name="note" maxlength="500" placeholder="Optional" /></div>
       <button type="submit" class="btn btn-secondary">Add block</button>
     </form>
@@ -107,8 +110,8 @@ const previewBase = hrefPath("schedule/preview/");
     const { offices } = await res.json();
     sel.innerHTML = offices
       .map(
-        (o: { id: number; slug: string; name: string }) =>
-          `<option value="${o.id}" data-slug="${o.slug}">${o.name}</option>`
+        (o: { id: number; slug: string; name: string; timezone?: string }) =>
+          `<option value="${o.id}" data-slug="${o.slug}" data-timezone="${o.timezone || "America/Denver"}">${o.name}</option>`
       )
       .join("");
     sel.addEventListener("change", updatePreviewLink);
