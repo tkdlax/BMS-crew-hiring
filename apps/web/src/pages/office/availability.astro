@@ -22,8 +22,8 @@ import OfficeLayout from "../../layouts/OfficeLayout.astro";
           <option value="0">Sunday</option>
         </select>
       </div>
-      <div class="field"><label>Start</label><input name="startTime" value="10:00" pattern="\d{2}:\d{2}" /></div>
-      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="\d{2}:\d{2}" /></div>
+      <div class="field"><label>Start</label><input name="startTime" value="10:00" pattern="[0-9]{2}:[0-9]{2}" title="HH:MM (24-hour), e.g. 10:00" required /></div>
+      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="[0-9]{2}:[0-9]{2}" title="HH:MM (24-hour), e.g. 16:00" required /></div>
       <button type="submit" class="btn">Add hours</button>
     </form>
 
@@ -40,8 +40,8 @@ import OfficeLayout from "../../layouts/OfficeLayout.astro";
     <div id="blocks-list"></div>
     <form id="block-form" class="admin-form admin-form--inline">
       <div class="field"><label>Date</label><input name="localDate" type="date" required /></div>
-      <div class="field"><label>Start</label><input name="startTime" value="14:00" pattern="\d{2}:\d{2}" required /></div>
-      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="\d{2}:\d{2}" required /></div>
+      <div class="field"><label>Start</label><input name="startTime" value="14:00" pattern="[0-9]{2}:[0-9]{2}" title="HH:MM (24-hour), e.g. 14:00" required /></div>
+      <div class="field"><label>End</label><input name="endTime" value="16:00" pattern="[0-9]{2}:[0-9]{2}" title="HH:MM (24-hour), e.g. 16:00" required /></div>
       <div class="field"><label>Note</label><input name="note" maxlength="500" placeholder="Optional" /></div>
       <button type="submit" class="btn btn-secondary">Add block</button>
     </form>
