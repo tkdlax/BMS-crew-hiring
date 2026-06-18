@@ -18,8 +18,16 @@ export const OG_IMAGE_BY_ROUTE = {
   home: HIRING_IMAGES.heroMover,
   operations: HIRING_IMAGES.packers,
   careerPath: HIRING_IMAGES.cdlDriver,
+  cdlDrivers: HIRING_IMAGES.tractor,
   schedule: HIRING_IMAGES.family,
   schedulePreview: HIRING_IMAGES.tractor,
+} as const;
+
+/** Local assets pulled from teambaileys.com (served from /cdl/). */
+export const CDL_PAGE_IMAGES = {
+  hero: "cdl/cover.jpg",
+  parallax: "cdl/parallax-bg.jpg",
+  team: (filename: string) => `cdl/${filename}`,
 } as const;
 
 const OFFICE_OG_IMAGES: Record<string, string> = {

@@ -25,6 +25,12 @@ export const PAGE_SEO = {
       "See how Bailey's movers advance from crew member to team leader and CDL driver — requirements, training, pay tiers, and what comes next.",
     ogImage: OG_IMAGE_BY_ROUTE.careerPath,
   },
+  cdlDrivers: {
+    title: "Wanted: CDL Drivers",
+    description:
+      "Drive for a team that works for you. Bailey's Moving & Storage hires CDL drivers with packing opportunities, incentive pay, top equipment, and experienced dispatch.",
+    ogImage: OG_IMAGE_BY_ROUTE.cdlDrivers,
+  },
   schedule: {
     title: "Schedule your interview",
     description:

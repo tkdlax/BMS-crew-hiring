@@ -2734,3 +2734,454 @@ body.page-apply {
     padding-top: 3rem;
   }
 }
+
+/* —— CDL drivers recruiting page —— */
+body.cdl-drivers-page .site-header {
+  display: none;
+}
+
+.cdl-hero {
+  position: relative;
+  min-height: min(92vh, 52rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(3rem, 8vw, 5rem) var(--page-gutter);
+  background-color: var(--blue-dark);
+  background-image: linear-gradient(rgba(0, 0, 0, 0.62), rgba(0, 0, 0, 0.62)), var(--cdl-hero-bg, none);
+  background-size: cover;
+  background-position: center;
+  text-align: center;
+  color: var(--white);
+}
+
+.cdl-hero__inner {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+.cdl-hero__logo {
+  display: inline-block;
+  margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
+}
+
+.cdl-hero__logo img {
+  height: clamp(2.5rem, 6vw, 3.5rem);
+  width: auto;
+}
+
+.cdl-hero h1 {
+  font-size: clamp(1.85rem, 5.5vw, 3.25rem);
+  font-weight: 900;
+  line-height: 1.12;
+  margin-bottom: 1rem;
+  color: var(--white);
+}
+
+.cdl-hero__tagline {
+  font-size: clamp(1rem, 2.5vw, 1.35rem);
+  color: rgba(255, 255, 255, 0.92);
+  margin-bottom: 1.75rem;
+  line-height: 1.45;
+}
+
+.cdl-hero__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.cdl-hero__phone {
+  background: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.85);
+  color: var(--white);
+}
+
+.cdl-hero__phone:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--white);
+  color: var(--white);
+}
+
+.cdl-subnav {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: var(--blue);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: var(--shadow-sm);
+}
+
+.cdl-subnav__inner {
+  max-width: var(--max-w);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.25rem 1.25rem;
+  padding: 0.65rem var(--page-gutter);
+}
+
+.cdl-subnav a {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  padding: 0.35rem 0;
+}
+
+.cdl-subnav a:hover {
+  color: var(--orange);
+}
+
+.cdl-drivers {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(2rem, 5vw, 3rem);
+}
+
+.cdl-stats {
+  list-style: none;
+  margin: 2rem 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.cdl-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 9.5rem;
+  padding: 2.5rem 1rem 1.25rem;
+  border: 5px solid var(--blue);
+  border-radius: 50%;
+  aspect-ratio: 1;
+  max-width: 11rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cdl-stat--compact {
+  padding-top: 2.75rem;
+}
+
+.cdl-stat__value {
+  position: absolute;
+  top: -0.85rem;
+  right: -0.35rem;
+  width: 3.25rem;
+  height: 3.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--orange);
+  color: var(--white);
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.cdl-stat__label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--text-light);
+  line-height: 1.35;
+}
+
+.cdl-parallax {
+  min-height: clamp(12rem, 28vw, 18rem);
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.cdl-benefits__grid {
+  list-style: none;
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.cdl-benefit {
+  text-align: center;
+}
+
+.cdl-benefit__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  margin-bottom: 0.75rem;
+  border-radius: 50%;
+  background: var(--blue);
+  color: var(--white);
+}
+
+.cdl-benefit__title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--blue);
+  margin-bottom: 0.5rem;
+}
+
+.cdl-benefit__text {
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.cdl-cta-band {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  align-items: flex-start;
+  background: linear-gradient(100deg, var(--blue) 0%, var(--blue-dark) 100%);
+  border: none;
+  color: var(--white);
+}
+
+.cdl-cta-band .section-title,
+.cdl-cta-band .lead {
+  color: var(--white);
+}
+
+.cdl-cta-band .lead {
+  opacity: 0.92;
+}
+
+.cdl-cta-band__btn {
+  flex-shrink: 0;
+  background: var(--orange);
+}
+
+.cdl-cta-band__btn:hover:not(:disabled) {
+  background: var(--orange-dark);
+}
+
+.cdl-team__hint {
+  margin-top: -0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.cdl-team__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.cdl-team-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.cdl-team-card:hover {
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
+}
+
+.cdl-team-card__photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+}
+
+.cdl-team-card__name,
+.cdl-team-card__role {
+  display: block;
+  padding: 0 0.75rem;
+}
+
+.cdl-team-card__name {
+  padding-top: 0.75rem;
+  font-size: 0.9375rem;
+  font-weight: 800;
+  color: var(--blue);
+}
+
+.cdl-team-card__role {
+  padding-bottom: 0.85rem;
+  font-size: 0.8125rem;
+  color: var(--text-light);
+}
+
+.cdl-dialog {
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-lg);
+  max-width: min(32rem, calc(100vw - 2rem));
+  width: 100%;
+  box-shadow: var(--shadow-raised);
+}
+
+.cdl-dialog::backdrop {
+  background: rgba(20, 50, 100, 0.55);
+}
+
+.cdl-dialog__panel {
+  padding: 0;
+}
+
+.cdl-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.cdl-dialog__header h3 {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--blue);
+  margin: 0;
+}
+
+.cdl-dialog__close {
+  flex-shrink: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--bg-light);
+  color: var(--text);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cdl-dialog__close:hover {
+  background: var(--border);
+}
+
+.cdl-dialog__body {
+  padding: 1rem 1.15rem 1.25rem;
+}
+
+.cdl-dialog__body p {
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.55;
+  margin-bottom: 0.75rem;
+}
+
+.cdl-dialog__body p:last-child {
+  margin-bottom: 0;
+}
+
+.cdl-contact__phone-block {
+  margin: 1.5rem 0;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  background: var(--bg-light);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.cdl-contact__phone {
+  display: inline-block;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 900;
+  color: var(--blue);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.cdl-contact__phone:hover {
+  color: var(--orange);
+}
+
+.cdl-contact__phone-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-muted);
+}
+
+.cdl-contact__details {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.cdl-contact__details a {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cdl-contact__details a:hover {
+  color: var(--orange);
+}
+
+.cdl-contact__label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--orange);
+  margin-bottom: 0.25rem;
+}
+
+@media (min-width: 640px) {
+  .cdl-hero__actions {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  .cdl-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .cdl-benefits__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cdl-team__grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .cdl-cta-band {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+@media (min-width: 900px) {
+  .cdl-benefits__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cdl-parallax {
+    background-attachment: scroll;
+  }
+}

@@ -1,0 +1,236 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import CareersCrosslink from "../../components/CareersCrosslink.astro";
+import { BRAND } from "../../constants/brand";
+import {
+  CDL_BENEFITS,
+  CDL_RECRUITING,
+  CDL_STATS,
+  CDL_TEAM,
+} from "../../constants/cdlDrivers";
+import { CDL_PAGE_IMAGES } from "../../constants/images";
+import { assetUrl, hrefPath } from "../../lib/assets";
+import { PAGE_SEO } from "../../lib/seo";
+
+const heroBg = assetUrl(CDL_PAGE_IMAGES.hero);
+const parallaxBg = assetUrl(CDL_PAGE_IMAGES.parallax);
+const benefitIcons: Record<string, string> = {
+  archive:
+    "M4 6h16v2H4V6zm0 5h10v2H4v-2zm0 5h16v2H4v-2zm0 5h10v2H4v-2z",
+  users:
+    "M16 11c1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z",
+  trend: "M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z",
+  truck:
+    "M20 8h-3V4H3c-1.1 0-2 .9-2 2v11h2c0 1.66 1.34 3 3 3s3-1.34 3-3h6c0 1.66 1.34 3 3 3s3-1.34 3-3h2v-5l-3-4zM6 18.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm13.5-9l1.96 2.5H17V9.5h2.5zm-1.5 9c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z",
+  dollar:
+    "M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z",
+  card: "M20 4H4c-1.11 0-2 .89-2 2v12c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z",
+};
+---
+<BaseLayout
+  title={PAGE_SEO.cdlDrivers.title}
+  description={PAGE_SEO.cdlDrivers.description}
+  ogImage={PAGE_SEO.cdlDrivers.ogImage}
+  ogImageAlt="Bailey's CDL driver in front of an Allied truck"
+  bodyClass="cdl-drivers-page"
+  hideHero={true}
+>
+  <section class="cdl-hero" style={`--cdl-hero-bg: url('${heroBg}')`}>
+    <div class="cdl-hero__inner">
+      <a href={BRAND.mainSite} class="cdl-hero__logo" target="_blank" rel="noopener noreferrer">
+        <img src={BRAND.logoWhite} alt="Bailey's Moving and Storage" width="220" height="54" />
+      </a>
+      <h1>Drive For A Team That Works For You</h1>
+      <p class="cdl-hero__tagline">
+        Learn Why So Many Drivers Choose to Haul for Bailey&apos;s Moving &amp; Storage
+      </p>
+      <div class="cdl-hero__actions">
+        <a href="#about" class="btn btn-primary">Learn More</a>
+        <a href={CDL_RECRUITING.phoneHref} class="btn btn-secondary cdl-hero__phone">
+          Call {CDL_RECRUITING.phone}
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <nav class="cdl-subnav" aria-label="On this page">
+    <div class="cdl-subnav__inner">
+      <a href="#about">About</a>
+      <a href="#benefits">Benefits</a>
+      <a href="#team">Team</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </nav>
+
+  <div class="page-wrap cdl-drivers">
+    <section class="content-card cdl-about" id="about">
+      <p class="section-label">The advantage</p>
+      <h2 class="section-title">The Bailey&apos;s Moving &amp; Storage Advantage</h2>
+      <p class="lead">
+        <strong>Bailey&apos;s Moving and Storage is one of the best-known and valued moving company in the nation</strong>.
+        As one of the largest agents for Allied Van Lines, we&apos;ve made our reputation by providing quality service
+        for more than 65 years; that starts with having an excellent, customer oriented fleet. To do that, we use an
+        operations team that has extensive experience both in the industry and on the road: you&apos;ll be working with
+        <strong>managers and dispatchers who know what it&apos;s like to do the job you do</strong> because
+        <em>they&apos;ve done it too.</em>
+      </p>
+
+      <ul class="cdl-stats">
+        {CDL_STATS.map((stat) => (
+          <li class:list={["cdl-stat", stat.compact && "cdl-stat--compact"]}>
+            <span class="cdl-stat__value">{stat.value}</span>
+            <span class="cdl-stat__label">{stat.label}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  </div>
+
+  <div class="cdl-parallax" style={`background-image: url('${parallaxBg}')`} role="img" aria-label="Bailey's moving truck on the road" />
+
+  <div class="page-wrap cdl-drivers">
+    <section class="cdl-benefits" id="benefits">
+      <p class="section-label">Why drive for us</p>
+      <h2 class="section-title">Benefits</h2>
+
+      <ul class="cdl-benefits__grid">
+        {CDL_BENEFITS.map((benefit) => (
+          <li class="content-card cdl-benefit">
+            <span class="cdl-benefit__icon" aria-hidden="true">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                <path d={benefitIcons[benefit.icon]} />
+              </svg>
+            </span>
+            <h3 class="cdl-benefit__title">{benefit.title}</h3>
+            <p class="cdl-benefit__text">{benefit.body}</p>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="content-card cdl-cta-band">
+      <div class="cdl-cta-band__copy">
+        <h2 class="section-title">Learn if Joining Our Team is Right For You</h2>
+        <p class="lead">
+          We are always looking for great drivers to join our team, but we know that we&apos;re not for everyone.
+          Call us for an easy, no committment conversation to see if working for Bailey&apos;s is right for you.
+        </p>
+      </div>
+      <a href={CDL_RECRUITING.phoneHref} class="btn btn-primary cdl-cta-band__btn">
+        Call {CDL_RECRUITING.phone}
+      </a>
+    </section>
+
+    <section class="cdl-team" id="team">
+      <p class="section-label">Leadership</p>
+      <h2 class="section-title">Meet Our Operations Leadership Team</h2>
+      <p class="lead cdl-team__hint"><strong>Click on any picture to see more information</strong></p>
+
+      <ul class="cdl-team__grid">
+        {CDL_TEAM.map((member) => (
+          <li>
+            <button
+              type="button"
+              class="cdl-team-card"
+              data-dialog-open={member.id}
+              aria-haspopup="dialog"
+            >
+              <img
+                src={assetUrl(CDL_PAGE_IMAGES.team(member.image))}
+                alt=""
+                width="280"
+                height="280"
+                loading="lazy"
+                class="cdl-team-card__photo"
+              />
+              <span class="cdl-team-card__name">{member.name}</span>
+              <span class="cdl-team-card__role">{member.role}</span>
+            </button>
+            <dialog class="cdl-dialog" id={`dialog-${member.id}`} aria-labelledby={`dialog-title-${member.id}`}>
+              <div class="cdl-dialog__panel">
+                <header class="cdl-dialog__header">
+                  <h3 id={`dialog-title-${member.id}`}>{member.name}</h3>
+                  <button type="button" class="cdl-dialog__close" data-dialog-close aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                  </button>
+                </header>
+                <div class="cdl-dialog__body">
+                  {member.paragraphs.map((p) => <p>{p}</p>)}
+                  <p><strong>{member.experience}</strong></p>
+                </div>
+              </div>
+            </dialog>
+          </li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="content-card cdl-contact" id="contact">
+      <p class="section-label">Get in touch</p>
+      <h2 class="section-title">Contact Us</h2>
+      <p class="lead">
+        Ready to talk? Call our driver recruiting line — no forms, no hassle.
+      </p>
+
+      <div class="cdl-contact__phone-block">
+        <a href={CDL_RECRUITING.phoneHref} class="cdl-contact__phone">
+          {CDL_RECRUITING.phone}
+        </a>
+        <p class="cdl-contact__phone-note">Driver recruiting · toll-free</p>
+      </div>
+
+      <ul class="cdl-contact__details">
+        <li>
+          <span class="cdl-contact__label">Address</span>
+          <a href={CDL_RECRUITING.address.mapsUrl} target="_blank" rel="noopener noreferrer">
+            {CDL_RECRUITING.address.line1}<br />
+            {CDL_RECRUITING.address.line2}
+          </a>
+        </li>
+        <li>
+          <span class="cdl-contact__label">Email</span>
+          <a href={`mailto:${CDL_RECRUITING.email}`}>{CDL_RECRUITING.email}</a>
+        </li>
+      </ul>
+    </section>
+
+    <section class="content-card cdl-drivers__footer-cta">
+      <p class="lead">
+        Looking for local moving operations crew roles instead?
+      </p>
+      <div class="home-cta-row">
+        <a href={hrefPath("operations/")} class="btn btn-secondary">See operations openings</a>
+        <a href={hrefPath("career-path/")} class="btn btn-secondary">Career path from mover to driver</a>
+      </div>
+    </section>
+  </div>
+
+  <CareersCrosslink />
+
+  <script>
+    function bindCdlDialogs() {
+      document.querySelectorAll<HTMLButtonElement>("[data-dialog-open]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-dialog-open");
+          const dialog = document.getElementById(`dialog-${id}`) as HTMLDialogElement | null;
+          dialog?.showModal();
+        });
+      });
+
+      document.querySelectorAll<HTMLButtonElement>("[data-dialog-close]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          btn.closest("dialog")?.close();
+        });
+      });
+
+      document.querySelectorAll<HTMLDialogElement>(".cdl-dialog").forEach((dialog) => {
+        dialog.addEventListener("click", (e) => {
+          if (e.target === dialog) dialog.close();
+        });
+      });
+    }
+
+    bindCdlDialogs();
+    document.addEventListener("astro:page-load", bindCdlDialogs);
+  </script>
+</BaseLayout>
