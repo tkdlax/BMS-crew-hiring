@@ -43,7 +43,7 @@ export const CAREER_PATH_STORIES: CareerPathStory[] = [
     youtubeId: "2OpZ9VGUQ0s",
     name: "The Himes",
     angle: "The Himes — Lifestyle & Being Together",
-    quote: "He didn't want to hit the road alone, so I said okay, I'll go. You've got a partner by your side — most of 24/7, 365.",
+    quote: "He didn't want to hit the road alone, so I said okay, I'll go. You've got a partner by your side.",
     stats: [
       { value: "15", label: "Years at Bailey's" },
       { value: "OTR", label: "Runs" },
