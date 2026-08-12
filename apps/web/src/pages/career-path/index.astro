@@ -206,51 +206,60 @@ const IMG = HIRING_IMAGES;
         location.
       </p>
     </section>
-
-    <section class="career-path__future" id="future">
-      <div class="career-path__future-intro">
-        <p class="section-label">What&apos;s next</p>
-        <h2 class="section-title">Where this can take you</h2>
-        <p class="lead">The Moving Team Leader role is a foundation, not a ceiling.</p>
-      </div>
-
-      <CareerPathStories />
-
-      <div class="career-destinations career-destinations--pair">
-        <article class="career-destination content-card">
-          <h3 class="career-destination__title">CDL-A driver</h3>
-          <p class="career-destination__text">
-            Drivers who perform well and show consistency can earn a CDL-A license to operate larger
-            equipment. This opens the door to significantly higher pay. Ask your manager for current
-            CDL-A pay ranges at your location.
-          </p>
-          <a href={hrefPath("cdl-drivers/")} class="career-inline-link">
-            Learn about hauling for Bailey&apos;s as a CDL driver →
-          </a>
-        </article>
-        <article class="career-destination content-card">
-          <h3 class="career-destination__title">Owner-operator</h3>
-          <p class="career-destination__text">
-            For those who want full control of their income, we offer an owner-operator path.
-            Earnings vary based on commitment and effort, but owner-operators typically earn
-            <strong>$100,000–$200,000 per year</strong> — and can earn more.
-          </p>
-        </article>
-      </div>
-    </section>
-
-    <section class="content-card career-path__cta">
-      <h2 class="section-title">Ready to take the next step?</h2>
-      <p class="lead">
-        Talk to your manager about where you stand and what comes next — or apply to join our
-        operations team and start the path from day one.
-      </p>
-      <div class="home-cta-row">
-        <a href={hrefPath("operations/")} class="btn btn-primary">See open operations roles</a>
-        <a href={BRAND.phoneHref} class="btn btn-secondary">Call {BRAND.phone}</a>
-      </div>
-    </section>
   </div>
+
+  <section class="career-payoff" id="future">
+    <div class="career-payoff__inner">
+      <div class="career-payoff__intro">
+        <p class="career-payoff__label">What&apos;s next</p>
+        <h2 class="career-payoff__title">Where this can take you</h2>
+        <p class="career-payoff__lead">
+          The path keeps climbing. Team leader is the foundation. CDL-A is a real career. Owner-operator
+          is the top.
+        </p>
+      </div>
+
+      <article class="career-altitude career-altitude--cdl">
+        <p class="career-altitude__kicker">A real career</p>
+        <h3 class="career-altitude__title">CDL-A driver</h3>
+        <p class="career-altitude__text">
+          Earn a CDL-A and run larger equipment. It&apos;s a legitimate career with significantly higher
+          pay — and no business ownership required. Ask your manager for current CDL-A pay ranges at
+          your location.
+        </p>
+        <a href={hrefPath("cdl-drivers/")} class="career-inline-link">
+          Learn about hauling for Bailey&apos;s as a CDL driver →
+        </a>
+      </article>
+
+      <article class="career-altitude career-altitude--summit">
+        <p class="career-altitude__kicker">The summit</p>
+        <h3 class="career-altitude__title">Owner-operator</h3>
+        <p class="career-altitude__figure">
+          <span class="career-altitude__number">$100,000–$200,000</span>
+          <span class="career-altitude__figure-label">typical yearly earnings — and more is possible</span>
+        </p>
+        <p class="career-altitude__text career-altitude__text--summit">
+          For a CDL-A driver, this is the single biggest income opportunity available. You own the
+          truck. You run the business. What you earn follows what you put in.
+        </p>
+
+        <CareerPathStories />
+      </article>
+
+      <div class="career-path__cta">
+        <h2 class="career-payoff__cta-title">Ready to take the next step?</h2>
+        <p class="career-payoff__cta-lead">
+          Frank, Troy, and the Himes already run this. Talk to your manager about where you stand —
+          or apply and start the path that leads toward what they have.
+        </p>
+        <div class="home-cta-row">
+          <a href={hrefPath("operations/")} class="btn btn-primary">See open operations roles</a>
+          <a href={BRAND.phoneHref} class="btn btn-secondary">Call {BRAND.phone}</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <CareersCrosslink />
 </BaseLayout>

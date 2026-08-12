@@ -2,9 +2,10 @@
 interface Props {
   youtubeId: string;
   title: string;
+  badge?: string;
 }
 
-const { youtubeId, title } = Astro.props;
+const { youtubeId, title, badge } = Astro.props;
 
 function youtubePosterUrl(id: string) {
   return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
@@ -15,6 +16,7 @@ function youtubePosterFallback(id: string) {
 }
 ---
 <div class="apply-video-embed" data-youtube-id={youtubeId} data-youtube-title={title}>
+  {badge && <span class="yt-embed-badge">{badge}</span>}
   <button type="button" class="apply-video-poster" aria-label={`Play video: ${title}`}>
     <img
       src={youtubePosterUrl(youtubeId)}

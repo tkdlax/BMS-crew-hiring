@@ -1,37 +1,53 @@
+export type CareerPathStat = {
+  value: string;
+  label: string;
+};
+
 export type CareerPathStory = {
   id: string;
   youtubeId: string;
   name: string;
-  role: string;
-  summary: string;
-  featured?: boolean;
+  angle: string;
+  quote: string;
+  stats: CareerPathStat[];
 };
 
-/** Owner-operator / master mover stories on the career path page. */
+export const CAREER_PATH_ROLE = "Master mover · CDL-A · owner-operator";
+
+/** Owner-operator stories — quotes and stats taken from the videos. */
 export const CAREER_PATH_STORIES: CareerPathStory[] = [
   {
     id: "frank",
     youtubeId: "LoDlPPyDaKw",
     name: "Frank",
-    role: "The Master Mover",
-    featured: true,
-    summary:
-      "With a near-perfect customer rating of 4.9 out of 5, Frank is a true professional in the industry. Discover how he got his start and why he's so passionate about his work.",
+    angle: "Frank — the money",
+    quote: "It's helped me raise three beautiful daughters that all have college educations.",
+    stats: [
+      { value: "40", label: "Years at Bailey's" },
+      { value: "4.9", label: "Customer rating" },
+      { value: "Own truck", label: "Runs" },
+    ],
   },
   {
     id: "troy",
     youtubeId: "qgjetrmBrYA",
     name: "Troy Talbot",
-    role: "A career at Bailey's",
-    summary:
-      "Troy shares his history with Bailey's and how moving shaped his career — the skills, the team, and why this work can be a rewarding path.",
+    angle: "Troy Talbot — the long haul",
+    quote: "I'm currently about two years from getting my two-million-mile safe driver award.",
+    stats: [
+      { value: "36", label: "Years at Bailey's" },
+      { value: "OTR", label: "Runs" },
+    ],
   },
   {
     id: "himes",
     youtubeId: "2OpZ9VGUQ0s",
     name: "The Himes",
-    role: "Husband & wife master movers",
-    summary:
-      "A unique moving team: married, and both master movers. Listen to their story.",
+    angle: "The Himes — doing it together",
+    quote: "He didn't want to hit the road alone, so I said okay, I'll go.",
+    stats: [
+      { value: "15", label: "Years at Bailey's" },
+      { value: "Team truck", label: "Runs" },
+    ],
   },
 ];
