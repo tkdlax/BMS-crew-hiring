@@ -24,15 +24,14 @@ export const CAREER_PATH_STORIES: CareerPathStory[] = [
     quote: "It's helped me raise three beautiful daughters that all have college educations.",
     stats: [
       { value: "40", label: "Years at Bailey's" },
-      { value: "4.9", label: "Customer rating" },
-      { value: "Own truck", label: "Runs" },
+      { value: "OTR", label: "Runs" },
     ],
   },
   {
     id: "troy",
     youtubeId: "qgjetrmBrYA",
-    name: "Troy Talbot",
-    angle: "Troy Talbot — Community & Impact",
+    name: "Troy",
+    angle: "Troy — Community & Impact",
     quote: "I'm currently about two years from getting my two-million-mile safe driver award.",
     stats: [
       { value: "36", label: "Years at Bailey's" },
@@ -44,10 +43,10 @@ export const CAREER_PATH_STORIES: CareerPathStory[] = [
     youtubeId: "2OpZ9VGUQ0s",
     name: "The Himes",
     angle: "The Himes — Lifestyle & Being Together",
-    quote: "He didn't want to hit the road alone, so I said okay, I'll go.",
+    quote: "He didn't want to hit the road alone, so I said okay, I'll go. You've got a partner by your side — most of 24/7, 365.",
     stats: [
       { value: "15", label: "Years at Bailey's" },
-      { value: "Team truck", label: "Runs" },
+      { value: "OTR", label: "Runs" },
     ],
   },
 ];
