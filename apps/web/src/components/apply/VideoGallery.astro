@@ -1,4 +1,5 @@
 ---
+import YoutubeEmbed from "../YoutubeEmbed.astro";
 import type { JobVideo } from "../../lib/jobPageContent";
 
 interface Props {
@@ -9,14 +10,6 @@ interface Props {
 }
 
 const { title, videos, bare = false } = Astro.props;
-
-function youtubePosterUrl(youtubeId: string) {
-  return `https://i.ytimg.com/vi/${youtubeId}/maxresdefault.jpg`;
-}
-
-function youtubePosterFallback(youtubeId: string) {
-  return `https://i.ytimg.com/vi/${youtubeId}/hqdefault.jpg`;
-}
 ---
 <div class:list={[bare ? "apply-videos-block" : "apply-videos-section"]} {...(!bare && { id: "videos" })}>
   <p class="apply-section-eyebrow">On the job</p>
@@ -26,59 +19,8 @@ function youtubePosterFallback(youtubeId: string) {
     {videos.map((v) => (
       <article class="apply-video-card">
         <p class="apply-video-card__label">{v.title}</p>
-        <div class="apply-video-embed" data-youtube-id={v.youtubeId}>
-          <button
-            type="button"
-            class="apply-video-poster"
-            aria-label={`Play video: ${v.title}`}
-          >
-            <img
-              src={youtubePosterUrl(v.youtubeId)}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              width="1280"
-              height="720"
-              onerror={`this.onerror=null;this.src='${youtubePosterFallback(v.youtubeId)}'`}
-            />
-            <span class="apply-video-play" aria-hidden="true" />
-          </button>
-          <a
-            class="apply-video-fallback"
-            href={`https://www.youtube.com/watch?v=${v.youtubeId}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Watch on YouTube
-          </a>
-        </div>
+        <YoutubeEmbed youtubeId={v.youtubeId} title={v.title} />
       </article>
     ))}
   </div>
 </div>
-
-<script>
-  function embedYoutube(container: HTMLElement) {
-    const id = container.dataset.youtubeId;
-    if (!id || container.querySelector("iframe")) return;
-
-    const iframe = document.createElement("iframe");
-    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
-    iframe.title = container.closest(".apply-video-card")?.querySelector(".apply-video-card__label")?.textContent ?? "YouTube video";
-    iframe.allow =
-      "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
-    iframe.allowFullscreen = true;
-    iframe.referrerPolicy = "strict-origin-when-cross-origin";
-
-    const poster = container.querySelector(".apply-video-poster");
-    poster?.remove();
-    container.insertBefore(iframe, container.firstChild);
-  }
-
-  document.querySelectorAll(".apply-video-poster").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const container = btn.closest(".apply-video-embed");
-      if (container instanceof HTMLElement) embedYoutube(container);
-    });
-  });
-</script>

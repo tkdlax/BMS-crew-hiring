@@ -1,0 +1,68 @@
+---
+interface Props {
+  youtubeId: string;
+  title: string;
+}
+
+const { youtubeId, title } = Astro.props;
+
+function youtubePosterUrl(id: string) {
+  return `https://i.ytimg.com/vi/${id}/maxresdefault.jpg`;
+}
+
+function youtubePosterFallback(id: string) {
+  return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+}
+---
+<div class="apply-video-embed" data-youtube-id={youtubeId} data-youtube-title={title}>
+  <button type="button" class="apply-video-poster" aria-label={`Play video: ${title}`}>
+    <img
+      src={youtubePosterUrl(youtubeId)}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      width="1280"
+      height="720"
+      onerror={`this.onerror=null;this.src='${youtubePosterFallback(youtubeId)}'`}
+    />
+    <span class="apply-video-play" aria-hidden="true" />
+  </button>
+  <a
+    class="apply-video-fallback"
+    href={`https://www.youtube.com/watch?v=${youtubeId}`}
+    target="_blank"
+    rel="noopener noreferrer"
+  >
+    Watch on YouTube
+  </a>
+</div>
+
+<script>
+  function embedYoutube(container: HTMLElement) {
+    const id = container.dataset.youtubeId;
+    if (!id || container.querySelector("iframe")) return;
+
+    const iframe = document.createElement("iframe");
+    iframe.src = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`;
+    iframe.title = container.dataset.youtubeTitle || "YouTube video";
+    iframe.allow =
+      "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+    iframe.allowFullscreen = true;
+    iframe.referrerPolicy = "strict-origin-when-cross-origin";
+
+    container.querySelector(".apply-video-poster")?.remove();
+    container.insertBefore(iframe, container.firstChild);
+  }
+
+  function bindYoutubeEmbeds() {
+    document.querySelectorAll<HTMLElement>(".apply-video-embed").forEach((container) => {
+      const poster = container.querySelector(".apply-video-poster");
+      if (!(poster instanceof HTMLElement) || poster.dataset.bound === "true") return;
+      poster.dataset.bound = "true";
+      poster.addEventListener("click", () => embedYoutube(container));
+    });
+  }
+
+  bindYoutubeEmbeds();
+  document.addEventListener("astro:page-load", bindYoutubeEmbeds);
+</script>

@@ -1,0 +1,44 @@
+---
+import { CAREER_PATH_STORIES } from "../constants/careerPath";
+import YoutubeEmbed from "./YoutubeEmbed.astro";
+
+const featured = CAREER_PATH_STORIES.find((story) => story.featured) ?? CAREER_PATH_STORIES[0];
+const supporting = CAREER_PATH_STORIES.filter((story) => story.id !== featured.id);
+---
+<div class="career-stories">
+  <div class="career-stories__head">
+    <p class="section-label">From the team</p>
+    <h3 class="career-stories__title">Stories from owner-operators on the team</h3>
+    <p class="lead career-stories__lead">
+      These videos are about the work — driving, moving, and building a career here. Hear it from
+      people who took the path.
+    </p>
+  </div>
+
+  <article class="content-card career-story career-story--featured">
+    <div class="career-story__media">
+      <YoutubeEmbed youtubeId={featured.youtubeId} title={`${featured.name} — ${featured.role}`} />
+    </div>
+    <div class="career-story__body">
+      <p class="career-story__badge">Featured story</p>
+      <h4 class="career-story__name">{featured.name}</h4>
+      <p class="career-story__role">{featured.role}</p>
+      <p class="career-story__text">{featured.summary}</p>
+    </div>
+  </article>
+
+  <div class="career-stories__supporting">
+    {supporting.map((story) => (
+      <article class="content-card career-story">
+        <div class="career-story__media">
+          <YoutubeEmbed youtubeId={story.youtubeId} title={`${story.name} — ${story.role}`} />
+        </div>
+        <div class="career-story__body">
+          <h4 class="career-story__name">{story.name}</h4>
+          <p class="career-story__role">{story.role}</p>
+          <p class="career-story__text">{story.summary}</p>
+        </div>
+      </article>
+    ))}
+  </div>
+</div>

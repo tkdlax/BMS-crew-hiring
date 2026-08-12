@@ -1,5 +1,6 @@
 ---
 import BaseLayout from "../../layouts/BaseLayout.astro";
+import CareerPathStories from "../../components/CareerPathStories.astro";
 import CareersCrosslink from "../../components/CareersCrosslink.astro";
 import { BRAND } from "../../constants/brand";
 import { HIRING_IMAGES } from "../../constants/images";
@@ -212,31 +213,29 @@ const IMG = HIRING_IMAGES;
         <h2 class="section-title">Where this can take you</h2>
         <p class="lead">The Moving Team Leader role is a foundation, not a ceiling.</p>
       </div>
-      <div class="career-path__future-grid">
-        <div class="career-destinations">
-          <article class="career-destination content-card">
-            <h3 class="career-destination__title">CDL-A driver</h3>
-            <p class="career-destination__text">
-              Drivers who perform well and show consistency can earn a CDL-A license to operate larger
-              equipment. This opens the door to significantly higher pay. Ask your manager for current
-              CDL-A pay ranges at your location.
-            </p>
-            <a href={hrefPath("cdl-drivers/")} class="career-inline-link">
-              Learn about hauling for Bailey&apos;s as a CDL driver →
-            </a>
-          </article>
-          <article class="career-destination content-card">
-            <h3 class="career-destination__title">Owner-operator</h3>
-            <p class="career-destination__text">
-              For those who want full control of their income, we offer an owner-operator path.
-              Earnings vary based on commitment and effort, but owner-operators typically earn
-              <strong>$100,000–$200,000 per year</strong> — and can earn more.
-            </p>
-          </article>
-        </div>
-        <figure class="career-step__media">
-          <img src={IMG.tractor} alt="Allied tractor and trailer ready for the road" width="600" height="400" loading="lazy" />
-        </figure>
+
+      <CareerPathStories />
+
+      <div class="career-destinations career-destinations--pair">
+        <article class="career-destination content-card">
+          <h3 class="career-destination__title">CDL-A driver</h3>
+          <p class="career-destination__text">
+            Drivers who perform well and show consistency can earn a CDL-A license to operate larger
+            equipment. This opens the door to significantly higher pay. Ask your manager for current
+            CDL-A pay ranges at your location.
+          </p>
+          <a href={hrefPath("cdl-drivers/")} class="career-inline-link">
+            Learn about hauling for Bailey&apos;s as a CDL driver →
+          </a>
+        </article>
+        <article class="career-destination content-card">
+          <h3 class="career-destination__title">Owner-operator</h3>
+          <p class="career-destination__text">
+            For those who want full control of their income, we offer an owner-operator path.
+            Earnings vary based on commitment and effort, but owner-operators typically earn
+            <strong>$100,000–$200,000 per year</strong> — and can earn more.
+          </p>
+        </article>
       </div>
     </section>
 

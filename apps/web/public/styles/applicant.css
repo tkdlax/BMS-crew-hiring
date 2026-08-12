@@ -1812,22 +1812,89 @@ h2.section-title {
 .career-path__future {
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+}
+
+.career-stories {
+  display: flex;
+  flex-direction: column;
   gap: 1.25rem;
 }
 
-.career-path__future-grid {
+.career-stories__title {
+  font-size: clamp(1.15rem, 3vw, 1.4rem);
+  font-weight: 800;
+  color: var(--blue);
+  line-height: 1.25;
+  margin-bottom: 0.5rem;
+}
+
+.career-stories__lead {
+  margin-bottom: 0;
+}
+
+.career-story {
+  overflow: hidden;
+  padding: 0;
+}
+
+.career-story__media {
+  min-width: 0;
+}
+
+.career-story__body {
+  padding: 1rem 1.15rem 1.2rem;
+}
+
+.career-story__badge {
+  display: inline-block;
+  margin-bottom: 0.55rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(238, 123, 34, 0.12);
+  color: var(--orange);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.career-story__name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--blue);
+  line-height: 1.2;
+  margin-bottom: 0.2rem;
+}
+
+.career-story--featured .career-story__name {
+  font-size: clamp(1.35rem, 3vw, 1.7rem);
+}
+
+.career-story__role {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 0.65rem;
+}
+
+.career-story__text {
+  font-size: 0.9375rem;
+  color: var(--text-light);
+  line-height: 1.55;
+  margin: 0;
+}
+
+.career-stories__supporting {
   display: grid;
-  gap: 1.5rem;
-  align-items: start;
+  gap: 1.25rem;
 }
 
 .career-destinations {
   display: grid;
   gap: 1rem;
-}
-
-.career-path__future-grid .career-destinations {
-  margin-top: 0;
 }
 
 .career-destination__title {
@@ -1869,9 +1936,34 @@ h2.section-title {
     grid-template-columns: repeat(3, 1fr);
   }
 
-  .career-path__future-grid {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-    gap: 2rem;
+  .career-stories__supporting {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .career-destinations--pair {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .career-story--featured {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .career-story--featured .career-story__body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 1.75rem 1.85rem;
+  }
+
+  .career-story--featured .apply-video-play {
+    width: 5rem;
+    height: 5rem;
+    margin: -2.5rem 0 0 -2.5rem;
   }
 }
 
