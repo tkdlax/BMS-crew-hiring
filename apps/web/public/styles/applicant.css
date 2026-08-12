@@ -1942,11 +1942,20 @@ h2.section-title {
   padding: 0;
   display: grid;
   gap: 1.25rem;
+  align-items: stretch;
+}
+
+.career-stories__grid > li {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
 }
 
 .career-story {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  width: 100%;
   min-width: 0;
   overflow: hidden;
   background: var(--bg-light);
